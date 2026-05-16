@@ -31,11 +31,16 @@ class DummyDataService {
       budgetRemaining: 1250000,
       moneySaved: 187500,
       recentItems: [
-        RecentActivity(name: "Indomie Goreng", price: 3500, color: "yellow"),
-        RecentActivity(name: "Susu UHT 1L", price: 18500, color: "green"),
-        RecentActivity(name: "Keripik Kentang 68g", price: 15000, color: "red"),
-        RecentActivity(name: "Minyak Goreng 2L", price: 34000, color: "green"),
-        RecentActivity(name: "Kopi Instan", price: 12000, color: "yellow"),
+        RecentActivity(name: "Indomie Goreng", price: 3500, color: "yellow", date: "2026-05-14"),
+        RecentActivity(name: "Susu UHT 1L", price: 18500, color: "green", date: "2026-05-14"),
+        RecentActivity(name: "Keripik Kentang 68g", price: 15000, color: "red", date: "2026-05-12"),
+        RecentActivity(name: "Minyak Goreng 2L", price: 34000, color: "green", date: "2026-05-10"),
+        RecentActivity(name: "Kopi Instan", price: 12000, color: "yellow", date: "2026-04-20"),
+        RecentActivity(name: "Sabun Cuci", price: 15000, color: "green", date: "2026-04-15"),
+        RecentActivity(name: "Pasta Gigi", price: 12000, color: "green", date: "2026-04-10"),
+        RecentActivity(name: "Shampoo", price: 25000, color: "yellow", date: "2026-04-05"),
+        RecentActivity(name: "Beras 5kg", price: 65000, color: "green", date: "2026-03-25"),
+        RecentActivity(name: "Telur 1kg", price: 28000, color: "red", date: "2026-03-20"),
       ],
     );
   }

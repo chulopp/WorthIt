@@ -26,6 +26,10 @@
 	<string>$(FLUTTER_BUILD_NUMBER)</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>NSCameraUsageDescription</key>
+	<string>WorthIt membutuhkan akses kamera untuk memindai label harga dan struk.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>WorthIt membutuhkan akses galeri untuk membaca teks harga dari gambar yang kamu pilih.</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>

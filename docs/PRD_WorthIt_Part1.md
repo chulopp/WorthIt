@@ -86,6 +86,17 @@ WorthIt adalah **mesin pengambil keputusan belanja real-time** yang:
 | Deteksi manipulasi | Tidak ada | Diskon palsu + Shrinkflation |
 | Arsitektur | Full high-level | C engine + Python + Flutter |
 
+### 3.4 Monetization Strategy (Freemium)
+
+WorthIt menggunakan model bisnis **Freemium** dengan langganan bulanan/tahunan yang diintegrasikan melalui **Google Play Billing (In-App Purchases)**.
+
+| Tier | Harga | Fitur Utama | Batasan |
+|------|-------|-------------|---------|
+| **Free Tier** | Rp0 | Analisis harga dasar (WMA 3 bulan), Kalkulasi Urgensi, Substitusi Basic | Tidak ada deteksi diskon palsu/shrinkflation, limit scan 30x/bulan |
+| **Pro Tier** | Rp 15.000/bln atau Rp 120.000/thn | Analisis harga mendalam (WMA 6 bulan), Support/Resistance, Deteksi Diskon Palsu, Deteksi Shrinkflation, Unlimited Scan, Prioritas Substitusi | - |
+
+Strategi ini memungkinkan penetrasi pasar yang cepat sekaligus memberikan recurring revenue dari pengguna yang peduli dengan optimasi pengeluaran mereka.
+
 ---
 
 ## 4. Tech Stack & Justifikasi
@@ -226,14 +237,54 @@ User Scan/Input
 |-------|-------------|-----------|
 | `users` | id, email, monthly_budget | Data pengguna |
 | `products` | id, name, category, brand, current_weight_gram | Master produk |
-| `price_history` | id, product_id, price, weight_gram, store, recorded_at | Riwayat harga (data inti untuk WMA) |
+| `price_history` | id, product_id, price, weight_gram, store, recorded_at, is_synthetic, data_source | Riwayat harga hybrid untuk WMA, backtesting, dan audit sumber data |
 | `shopping_sessions` | id, user_id, budget_start, budget_remaining, created_at | Sesi belanja aktif |
 | `cart_items` | id, session_id, product_id, price_paid, decision_score, action_taken | Item yang diputuskan user |
 | `substitutions` | id, product_id, substitute_product_id, price_per_gram_ratio | Mapping substitusi |
 
+### 5.4 Data Collection Pipeline
+
+WorthIt mengadopsi **Hybrid Data Strategy** untuk membangun histori harga 6 bulan terakhir tanpa mengorbankan jejak audit data. Sumber data dibagi menjadi tiga jalur:
+
+1. **Data riil saat ini** melalui scraping retailer digital yang aktif.
+2. **Data riil historis** melalui snapshot arsip dari Wayback Machine.
+3. **Data sintetis** melalui generator simulasi cerdas untuk mengisi gap yang tidak tertangkap oleh dua sumber di atas.
+
+Komponen operasional utama pipeline ini adalah background worker Python yang berjalan di luar request-response utama FastAPI. Worker tersebut dipanggil oleh cron dan menulis hasilnya langsung ke `price_history`.
+
+```text
+scraper_worker.py
+  -> dipicu oleh cron mingguan
+  -> memilih hari scraping secara acak
+  -> scrape retailer target
+  -> normalisasi SKU, harga, gramasi, dan timestamp
+  -> simpan ke price_history dengan is_synthetic = FALSE
+```
+
+**Mekanisme random-day weekly scraping:**
+- Job dijalankan **sekali per minggu**, tetapi hari eksekusinya diacak dalam rentang Senin-Minggu.
+- Tujuannya adalah menangkap variasi status harga yang tidak stabil sepanjang minggu, termasuk **harga normal**, **promo payday**, dan **promo JSM (Jumat-Sabtu-Minggu)**.
+- Jika scraping selalu dilakukan pada hari yang sama, dataset berisiko bias terhadap satu pola harga tertentu dan melemahkan kualitas baseline WMA.
+
+**Alur pipeline yang diusulkan:**
+1. Cron mingguan memicu `scraper_worker.py`.
+2. Worker menentukan daftar retailer dan SKU prioritas berdasarkan kategori FMCG inti.
+3. Worker mengeksekusi scraping, lalu menormalisasi nama produk, gramasi, dan store mapping.
+4. Record hasil scraping disimpan dengan `data_source` yang spesifik, misalnya `SCRAPER_KLIKINDOMARET`.
+5. Worker terpisah untuk arsip mengekstrak titik harga historis dari Wayback Machine dan menyimpannya dengan `data_source = WAYBACK_MACHINE`.
+6. Setelah dua jalur data riil selesai, sistem mengidentifikasi gap historis dan mengisi kekosongan menggunakan generator sintetis.
+7. Semua record sintetis ditulis dengan `is_synthetic = TRUE` dan `data_source = SYNTHETIC_GENERATOR`.
+
+**Prinsip integritas data:**
+- Data riil dan data sintetis harus dapat dipisahkan secara deterministik pada level record.
+- Query produksi memprioritaskan observasi riil terbaru, sedangkan query validasi/backtesting dapat menggunakan mode `hybrid`.
+- Pemisahan ini memastikan audit algoritma WMA, support/resistance, dan deteksi anomali dapat dilakukan tanpa ambiguity sumber data.
+
 ---
 
 ## 6. Arsitektur Layar (Screen Flow)
+
+**Kebijakan Retensi Data (Batas Riwayat 1 Bulan):** Untuk mengoptimalkan kinerja database dan storage, seluruh riwayat pemindaian dan aktivitas belanja (Aktivitas Terbaru, Daftar Pembelian, History Scan) dibatasi penampilannya maksimum 30 hari ke belakang. Data yang lebih tua akan dihapus otomatis dari sistem.
 
 ### 6.1 Navigation Map
 
@@ -256,7 +307,7 @@ graph TD
 | **Header** | Greeting + nama user |
 | **Budget Card** | Progress bar sisa budget bulanan (Rp). Warna berubah: hijau (>50%), kuning (25-50%), merah (<25%) |
 | **Metrik Utama** | Card "Uang Terselamatkan" — total penghematan dari keputusan "Batal Beli" bulan ini |
-| **Aktivitas Terbaru** | List 5 item terakhir yang dianalisis (nama, harga, status hijau/kuning/merah) |
+| **Aktivitas Terbaru** | List 5 item terakhir yang dianalisis (nama, harga, status hijau/kuning/merah). Terbatas pada histori 30 hari terakhir. |
 | **FAB (Floating Action Button)** | Tombol kamera besar di tengah bawah. Primary CTA untuk memulai scan |
 
 **State yang dikelola:**
@@ -313,6 +364,7 @@ class DashboardState {
   "decision": "SUBSTITUTE",
   "color": "yellow",
   "score": 42,
+  "image_url": "https://example.com/images/indomie.jpg",
   "insights": [
     "Harga Rp3.500 untuk 80g = Rp43.75/g",
     "Rata-rata 3 bulan terakhir: Rp3.200 (Rp40/g)",
@@ -320,6 +372,7 @@ class DashboardState {
   ],
   "substitution": {
     "product_name": "Mie Sedaap Goreng",
+    "image_url": "https://example.com/images/miesedaap.jpg",
     "price": 3000,
     "weight_gram": 86,
     "price_per_gram": 34.88,
@@ -337,37 +390,75 @@ class DashboardState {
 |----------|--------|
 | **Pie Chart** | Grafik donat pengeluaran per kategori (makanan, minuman, snack, dll.) |
 | **Summary Cards** | Total belanja, jumlah item, rata-rata per item |
-| **Daftar Pembelian** | List scrollable semua item bulan ini: nama, harga, tanggal, skor keputusan |
+| **Daftar Pembelian** | List scrollable semua item bulan ini: nama, harga, tanggal, skor keputusan. Hanya mencakup data 30 hari terakhir sesuai batasan retensi. |
 | **Filter** | Dropdown bulan/minggu |
+
+### 6.6 Screen E — History Scan (Bottom Sheet Analisis)
+
+**Tujuan:** Melihat riwayat produk yang pernah dipindai sebelumnya dengan snapshot hasil keputusan.
+
+| Komponen | Detail |
+|----------|--------|
+| **Daftar Riwayat** | Menampilkan daftar item yang pernah di-scan maksimal 30 hari ke belakang sesuai aturan retensi data. |
+| **Aksi Klik** | Saat salah satu item diklik, aplikasi akan memunculkan "Decision Bottom Sheet" berdasarkan data snapshot yang disimpan di tabel `scan_analysis_results`, bukan melakukan kalkulasi ulang. |
 
 ---
 
 ## 7. Logika Keputusan (Core Engine)
 
-### 7.1 Arsitektur Skoring — Single Point of Entry
+### 7.1 Arsitektur Skoring — Free Tier vs Pro Tier
+
+Logika keputusan dibagi menjadi dua jalur berdasarkan status langganan (*subscription tier*) pengguna:
+
+**Free Tier Engine:**
+- Hanya menggunakan historis harga 3 bulan (WMA)
+- Mempertimbangkan Urgensi User
+- Substitusi dasar tanpa memperhitungkan Support/Resistance, Fake Discount, atau Shrinkflation.
+
+**Pro Tier Engine:**
+- Menggunakan historis harga penuh 6 bulan (WMA)
+- Analisis teknikal Support/Resistance
+- Deteksi anomali: Fake Discount Penalty & Shrinkflation Penalty
 
 ```mermaid
 graph TD
-    A["Input: Harga, Berat, Kategori, Urgensi"] --> B["Base Score Calculator"]
-    B --> C{"Penalty Check"}
-    C -->|"Diskon Palsu?"| D["Fake Discount Penalty -10 s/d -30"]
-    C -->|"Shrinkflation?"| E["Shrinkflation Penalty -10 s/d -25"]
-    C -->|"Clean"| F["No Penalty"]
-    D --> G["Final Score"]
-    E --> G
-    F --> G
-    G -->|"score >= 70"| H["🟢 BELI"]
-    G -->|"40 - 69"| I["🟡 SUBSTITUSI"]
-    G -->|"score < 40"| J["🔴 JANGAN BELI"]
-    I --> K["Cari Substitusi Terbaik"]
+    A["Input: Harga, Berat, Kategori, Urgensi"] --> B{"Cek Subscription"}
+    B -->|Free| C["WMA 3 Bulan + Urgensi"]
+    B -->|Pro| D["WMA 6 Bulan + S/R + Urgensi"]
+    C --> E["Final Score (Free)"]
+    D --> F{"Penalty Check (Pro)"}
+    F -->|"Diskon Palsu?"| G["Fake Discount Penalty -10 s/d -30"]
+    F -->|"Shrinkflation?"| H["Shrinkflation Penalty -10 s/d -25"]
+    F -->|"Clean"| I["No Penalty"]
+    G --> J["Final Score (Pro)"]
+    H --> J
+    I --> J
+    E --> K["Evaluasi Threshold"]
     J --> K
+    K -->|"score >= 70"| L["🟢 BELI"]
+    K -->|"40 - 69"| M["🟡 SUBSTITUSI"]
+    K -->|"score < 40"| N["🔴 JANGAN BELI"]
+    M --> O["Cari Substitusi Terbaik"]
+    N --> O
 ```
 
 ### 7.2 Base Score — Tiga Komponen
 
 #### A. Weighted Moving Average (WMA)
 
-Memprediksi tren harga berdasarkan data historis 6 bulan:
+Untuk meredam noise fluktuasi harian namun tetap menangkap tren harga wajar, WorthIt tidak langsung menghitung WMA dari seluruh titik data harian. Sistem terlebih dahulu membentuk **harga representatif bulanan** dari **rata-rata 4 titik data mingguan** pada setiap bulan observasi.
+
+Alurnya adalah sebagai berikut:
+1. Data harga dikelompokkan ke dalam 4 bucket mingguan per bulan.
+2. Setiap bucket mingguan menghasilkan satu **weekly representative price**.
+3. Empat nilai mingguan dirata-ratakan untuk membentuk **monthly price point**.
+4. Nilai bulanan tersebut baru diberi bobot lintas bulan dalam formula WMA.
+
+Pendekatan ini dipilih agar promo singkat satu hari tidak mendistorsi baseline terlalu besar, tetapi pola promo berulang seperti JSM tetap ikut tercermin karena sampling mingguan masih menangkap observasi akhir pekan.
+
+Memprediksi tren harga berdasarkan data historis:
+- **Free Tier:** Historis 3 bulan.
+- **Pro Tier:** Historis 6 bulan.
 
 ```
 WMA = Σ(Wi × Pi) / Σ(Wi)
@@ -375,6 +466,15 @@ WMA = Σ(Wi × Pi) / Σ(Wi)
 Wi = bobot (data terbaru berbobot lebih tinggi)
 Pi = harga pada periode i
 ```
+
+Dengan notasi agregasi bulanannya:
+
+```
+MonthlyPrice_i = AVG(WeeklyPoint_1, WeeklyPoint_2, WeeklyPoint_3, WeeklyPoint_4)
+WMA = Î£(Wi Ã— MonthlyPrice_i) / Î£(Wi)
+```
+
+Dalam notasi ASCII yang lebih implementatif, formula yang sama dapat ditulis sebagai `WMA = SUM(Wi * MonthlyPrice_i) / SUM(Wi)`.
 
 | Periode | Bobot | Alasan |
 |---------|-------|--------|
@@ -415,7 +515,7 @@ Parameter dari frontend (skala 1-5 yang dipilih user):
 - Urgensi 2 → 12 poin
 - Urgensi 1 (tidak mendesak) → 6 poin
 
-### 7.3 Faktor Penalti
+### 7.3 Faktor Penalti (Eksklusif Pro Tier)
 
 #### A. Deteksi Diskon Palsu
 

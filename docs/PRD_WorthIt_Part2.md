@@ -28,20 +28,83 @@ Karena WorthIt adalah **mesin keputusan**, akurasi keputusannya harus diuji seca
 
 | Parameter | Spesifikasi |
 |-----------|-------------|
-| **Sumber Data** | Data harga produk FMCG dari supermarket besar (dikumpulkan manual atau dari open dataset) |
+| **Sumber Data** | Hybrid dataset: data riil (scraping terkini + Wayback Machine) dan data sintetis untuk mengisi gap historis |
 | **Rentang Waktu** | 6 bulan terakhir (minimum 180 hari) |
 | **Jumlah Produk** | Minimum 50 SKU dari 5 kategori berbeda |
 | **Frekuensi** | Minimal 1 data point per minggu per produk |
 | **Format** | CSV → diimpor ke Supabase `price_history` |
 
+Enam bulan histori awal dibangun dengan komposisi berikut:
+
+- **Bulan paling dekat ke hari ini** diprioritaskan menggunakan data riil hasil scraping mingguan.
+- **Titik historis yang tersedia** dari arsip Wayback Machine digunakan sebagai anchor point riil tambahan.
+- **Gap antar-anchor** diisi oleh synthetic dataset yang ditandai eksplisit pada tabel `price_history` melalui `is_synthetic = TRUE` dan `data_source = 'SYNTHETIC_GENERATOR'`.
+
+Pendekatan ini memungkinkan backtesting dilakukan sejak fase awal pengembangan tanpa menunggu 6 bulan akumulasi data organik, namun tetap menjaga auditability antara observasi riil dan simulasi.
+
 **Struktur Data Historis:**
 ```csv
-product_id,product_name,category,price,weight_gram,store,recorded_at
-P001,Indomie Goreng,mie_instan,3200,85,Alfamart,2025-11-01
-P001,Indomie Goreng,mie_instan,3200,85,Alfamart,2025-12-01
-P001,Indomie Goreng,mie_instan,3500,80,Alfamart,2026-01-15
+product_id,product_name,category,price,weight_gram,store,recorded_at,is_synthetic,data_source
+P001,Indomie Goreng,mie_instan,3200,85,Alfamart,2025-11-01,FALSE,WAYBACK_MACHINE
+P001,Indomie Goreng,mie_instan,3240,85,Alfamart,2025-12-08,TRUE,SYNTHETIC_GENERATOR
+P001,Indomie Goreng,mie_instan,3500,80,Alfamart,2026-01-15,FALSE,SCRAPER_KLIKINDOMARET
 ...
 ```
+
+### 8.2.1 Algoritma Pembentukan Synthetic Dataset
+
+Synthetic dataset digunakan **khusus untuk menutup celah histori 6 bulan pertama** ketika observasi riil belum lengkap. Generator ini bukan random walk bebas, melainkan simulasi terkontrol yang meniru perilaku harga FMCG ritel Indonesia.
+
+#### A. Anchor Points
+
+Generator selalu memulai dari titik harga riil yang dapat diverifikasi:
+- **Anchor terbaru:** harga riil hari ini hasil scraping aktif.
+- **Anchor historis:** snapshot harga masa lalu dari Wayback Machine bila tersedia.
+
+Jika terdapat lebih dari satu anchor dalam horizon 6 bulan, generator melakukan interpolasi bertahap di antara anchor tersebut. Jika hanya tersedia satu anchor, generator melakukan simulasi backward dengan batas volatilitas konservatif.
+
+#### B. Step-Function Volatility
+
+Harga FMCG diasumsikan bersifat **sticky**, yaitu cenderung datar untuk periode 14-30 hari sebelum berubah ke plateau berikutnya. Aturannya:
+
+- Harga dipertahankan relatif konstan selama 14-30 hari.
+- Perubahan harga hanya terjadi pada titik perubahan (change point).
+- Besar perubahan dibatasi maksimum **10%** dari plateau sebelumnya, kecuali ada event seasonality yang eksplisit.
+
+Contoh pseudo-logic:
+
+```python
+plateau_days = random.randint(14, 30)
+delta_pct = random.uniform(-0.10, 0.10)
+next_price = current_price * (1 + delta_pct)
+```
+
+#### C. JSM Noise Injection
+
+Untuk meniru promo akhir pekan, setiap minggu memiliki probabilitas **25%** untuk memunculkan diskon temporer model JSM:
+
+- Besar diskon: **10-15%** dari harga plateau aktif.
+- Diskon berlaku pada titik observasi akhir pekan dalam minggu tersebut.
+- Setelah periode promo berakhir, harga kembali ke baseline plateau kecuali change point memang terjadi.
+
+Mekanisme ini penting agar model backtesting belajar membedakan harga wajar reguler versus harga promo temporer.
+
+#### D. Seasonality
+
+Generator juga menambahkan penyesuaian musiman pada periode hari raya atau lonjakan konsumsi:
+
+- Menjelang Ramadan, Idul Fitri, Natal, dan Tahun Baru, kategori tertentu dapat mengalami uplift harga atau frekuensi promo yang berbeda.
+- Besaran seasonality diterapkan sebagai adjustment terkontrol pada plateau atau probabilitas promo, bukan sebagai noise acak murni.
+- Kategori seperti sirup, biskuit, minyak goreng, dan mie instan dapat memiliki profil musiman yang berbeda.
+
+#### E. Constraint Kualitas Data
+
+Seluruh data sintetis wajib memenuhi constraint berikut:
+
+- Tidak boleh melampaui anchor riil secara tidak wajar.
+- Tidak boleh menghasilkan lonjakan zig-zag harian yang tidak realistis untuk FMCG.
+- Wajib menyimpan metadata `is_synthetic` dan `data_source` untuk keperluan audit algoritma.
+- Harus dapat diregenerasi ulang dengan seed yang sama untuk eksperimen yang reproducible.
 
 ### 8.3 Metrik Pengujian
 
@@ -104,10 +167,10 @@ def calculate_cost_savings(recommendations, actual_prices):
 
 | Fase | Aktivitas | Output |
 |------|-----------|--------|
-| 1 | Kumpulkan data 6 bulan, import ke Supabase | Dataset tervalidasi |
-| 2 | Jalankan walk-forward backtesting | Confusion matrix per kategori |
-| 3 | Hitung Hit Rate per kategori produk | Tabel akurasi per kategori |
-| 4 | Simulasi sesi belanja dengan data nyata | Cost Savings percentage |
+| 1 | Kumpulkan anchor data riil, generate synthetic dataset, lalu import hybrid dataset ke Supabase | Dataset hybrid tervalidasi |
+| 2 | Jalankan walk-forward backtesting pada mode real-only dan hybrid | Confusion matrix per kategori |
+| 3 | Hitung Hit Rate per kategori produk dan per tipe sumber data | Tabel akurasi per kategori |
+| 4 | Simulasi sesi belanja dengan data nyata dan data hybrid | Cost Savings percentage |
 | 5 | Tuning threshold jika akurasi < target | Parameter optimized |
 
 ### 8.5 Format Laporan Backtesting
@@ -177,31 +240,40 @@ Auth     : Bearer Token (Supabase Auth JWT)
     "decision": "SUBSTITUTE",
     "color": "yellow",
     "score": 42,
+    "image_url": "https://example.com/images/indomie.jpg",
+    "tier_used": "free",
+    "locked_features": [
+      "support_resistance_analysis",
+      "fake_discount_detection",
+      "shrinkflation_detection"
+    ],
     "base_score": {
       "wma": 20,
-      "support_resistance": 15,
+      "support_resistance": 0,
       "urgency": 18
     },
     "penalties": {
-      "fake_discount": -8,
-      "shrinkflation": -3
+      "fake_discount": 0,
+      "shrinkflation": 0
     },
     "insights": [
       "Harga Rp3.500 untuk 80g = Rp43.75/g",
       "Rata-rata 3 bulan: Rp3.200 (Rp40/g)",
-      "⚠️ Kenaikan 9.4% tanpa perubahan kualitas"
+      "🔒 Upgrade ke Pro untuk melihat analisa Fake Discount & Shrinkflation"
     ],
     "substitution": {
       "product_name": "Mie Sedaap Goreng",
+      "image_url": "https://example.com/images/miesedaap.jpg",
       "price": 3000,
       "weight_gram": 86,
       "price_per_gram": 34.88,
       "savings_percent": 20.3
     },
-    "reasoning": "Harga berada di atas level resistance. Disarankan beralih ke Mie Sedaap — 20% lebih hemat per gram."
+    "reasoning": "Harga berada di atas rata-rata 3 bulan terakhir. Disarankan beralih ke Mie Sedaap."
   }
 }
 ```
+*Catatan: Jika user adalah Pro Tier, `tier_used` akan bernilai `pro`, `locked_features` akan kosong, dan insight mendalam (termasuk penalti) akan terisi.*
 
 #### GET `/v1/dashboard` — Data Dashboard
 
@@ -216,6 +288,7 @@ Auth     : Bearer Token (Supabase Auth JWT)
     "recent_activities": [
       {
         "product_name": "Indomie Goreng",
+        "image_url": "https://example.com/images/indomie.jpg",
         "price": 3500,
         "decision": "SUBSTITUTE",
         "color": "yellow",
@@ -271,6 +344,7 @@ Auth     : Bearer Token (Supabase Auth JWT)
     "items": [
       {
         "product_name": "Mie Sedaap Goreng",
+        "image_url": "https://example.com/images/miesedaap.jpg",
         "price_paid": 3000,
         "date": "2026-05-05",
         "decision_score": 42
@@ -458,6 +532,11 @@ worthit_backend/
     └── supabase_client.py  # Supabase connection
 ```
 
+Tambahan modul Fase 2 yang wajib diimplementasikan:
+
+- `workers/data_seeder.py` untuk membangun dataset sintetis awal berdasarkan anchor price riil dan aturan simulasi pada Bab 8.
+- `workers/scraper_worker.py` untuk menjalankan otomasi scraping mingguan pada hari acak, lalu menulis data riil terbaru ke `price_history` dengan metadata sumber data yang sesuai.
+
 #### Langkah 2.3: Pydantic Models
 
 ```python
@@ -607,6 +686,7 @@ final analysis = await ApiService.analyzeProduct(input);
 | **Keamanan** | Transmisi data | HTTPS only |
 | **UX** | Minimum tap to result | ≤ 3 tap (buka app → scan → lihat hasil) |
 | **Kompatibilitas** | Android minimum | API Level 24 (Android 7.0) |
+| **Data Management** | Data Retention | Riwayat scan dibatasi maksimum 1 bulan (30 hari) untuk optimasi storage database |
 | **Data** | Dataset minimal untuk demo | 50 produk × 6 bulan |
 
 ---
@@ -634,7 +714,8 @@ gantt
 
     section Fase 1 - Frontend
     Setup Flutter project        :f1, 2026-05-06, 2d
-    Dashboard screen             :f2, after f1, 3d
+    Penyusunan dataset & scraper :f1a, after f1, 3d
+    Dashboard screen             :f2, after f1a, 3d
     Scanner screen               :f3, after f2, 3d
     Decision Bottom Sheet        :f4, after f3, 2d
     Tracker screen               :f5, after f4, 3d
@@ -659,7 +740,7 @@ gantt
 
 | Fase | Durasi | Deliverable |
 |------|--------|-------------|
-| **Fase 1** | 2 minggu | 4 layar Flutter berfungsi dengan dummy data |
+| **Fase 1** | 2 minggu | 4 layar Flutter berfungsi dengan dummy data + penyusunan dataset sintetis awal dan script scraper |
 | **Fase 2** | 2 minggu | API lengkap, C engine compiled, scoring tested |
 | **Fase 3** | 1 minggu | App end-to-end, backtesting report |
 | **Polish** | 1 minggu | Bug fix, demo prep |

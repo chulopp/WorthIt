@@ -2,11 +2,15 @@ class RecentActivity {
   final String name;
   final double price;
   final String color; // "green", "yellow", "red"
+  final String date;
+  final String category;
 
   RecentActivity({
     required this.name,
     required this.price,
     required this.color,
+    required this.date,
+    this.category = 'Sembako',
   });
 }
 
