@@ -11,7 +11,12 @@
 .svn/
 .swiftpm/
 migrate_working_dir/
-.venv
+
+# Python virtual environment
+.venv/
+venv/
+__pycache__/
+*.pyc
 
 
 # IntelliJ related

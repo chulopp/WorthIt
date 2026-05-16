@@ -1,8 +1,0 @@
-#!/bin/sh
-'''exec' "/mnt/d/Fallah's File/Code/Personal Project/WorthIt/.venv/bin/python" "$0" "$@"
-' '''
-import sys
-from tabulate import _main
-if __name__ == '__main__':
-    sys.argv[0] = sys.argv[0].removesuffix('.exe')
-    sys.exit(_main())
