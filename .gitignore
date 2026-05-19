@@ -18,6 +18,7 @@ pip-log.txt
 # ─── Backend specifics ────────────────────────────────────────────────────────
 backend/scratch/
 backend/data/
+backend/scraper_profile/
 *.so
 
 # ─── Flutter/Dart ─────────────────────────────────────────────────────────────
