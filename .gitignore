@@ -1,52 +1,74 @@
-# Miscellaneous
-*.class
-*.log
-*.pyc
-*.swp
-.DS_Store
-.atom/
-.build/
-.buildlog/
-.history
-.svn/
-.swiftpm/
-migrate_working_dir/
+# ─── Credentials & Secrets ────────────────────────────────────────────────────
+.env
+*.env
+backend/.env
+!backend/.env.example
 
-# Python virtual environment
+# ─── Python ───────────────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyc
+*.pyo
 .venv/
 venv/
-__pycache__/
-*.pyc
+env/
+pip-log.txt
 
+# ─── Backend specifics ────────────────────────────────────────────────────────
+backend/scratch/
+backend/data/
+*.so
 
-# IntelliJ related
-*.iml
-*.ipr
-*.iws
-.idea/
-
-# The .vscode folder contains launch configuration and tasks you configure in
-# VS Code which you may wish to be included in version control, so this line
-# is commented out by default.
-#.vscode/
-
-# Flutter/Dart/Pub related
+# ─── Flutter/Dart ─────────────────────────────────────────────────────────────
 **/doc/api/
 **/ios/Flutter/.last_build_id
 .dart_tool/
+.flutter-plugins
 .flutter-plugins-dependencies
 .pub-cache/
 .pub/
 /build/
+/frontend/build/
 /coverage/
+flutter_*.log
 
-# Symbolication related
+# ─── Flutter local config (contains credentials) ──────────────────────────────
+frontend/lib/config/local_config.dart
+!frontend/lib/config/local_config.example.dart
+
+# ─── IDE & Editor ─────────────────────────────────────────────────────────────
+.idea/
+*.iml
+*.ipr
+*.iws
+#.vscode/
+*.swp
+*.swo
+.agents/ 
+skills-lock.json
+
+# ─── OS Files ─────────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+.history
+.svn/
+.swiftpm/
+
+# ─── Backup & Temp Files ──────────────────────────────────────────────────────
+*.bak
+*.tmp
+*.orig
+migrate_working_dir/
+
+# ─── Build artifacts ──────────────────────────────────────────────────────────
+*.class
+*.log
 app.*.symbols
-
-# Obfuscation related
 app.*.map.json
-
-# Android Studio will place build artifacts here
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# ─── Personal/Private ─────────────────────────────────────────────────────────
+personal/

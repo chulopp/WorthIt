@@ -1,0 +1,53 @@
+2026/05/16-02:34:11.141 86d6c Reusing MANIFEST /Users/wendi/Documents/worthit_backend/scraper_profile/alfagift/Default/Local Storage/leveldb/MANIFEST-000001
+2026/05/16-02:34:11.143 86d6c Recovering log #156
+2026/05/16-02:34:11.143 86d6c Level-0 table #159: started
+2026/05/16-02:34:11.144 86d6c Level-0 table #159: 14155 bytes OK
+2026/05/16-02:34:11.144 86d6c Recovering log #158
+2026/05/16-02:34:11.144 86d6c Level-0 table #160: started
+2026/05/16-02:34:11.145 86d6c Level-0 table #160: 14167 bytes OK
+2026/05/16-02:34:11.146 86d6c Delete type=0 #158
+2026/05/16-02:34:11.146 86d6c Delete type=0 #156
+2026/05/16-02:35:11.149 86d61 Level-0 table #163: started
+2026/05/16-02:35:11.152 86d61 Level-0 table #163: 14664 bytes OK
+2026/05/16-02:35:11.155 86d61 Delete type=0 #161
+2026/05/16-02:35:11.156 86d61 Compacting 4@0 + 1@1 files
+2026/05/16-02:35:11.158 86d61 Generated table #164@0: 5 keys, 14664 bytes
+2026/05/16-02:35:11.158 86d61 Compacted 4@0 + 1@1 files => 14664 bytes
+2026/05/16-02:35:11.159 86d61 compacted to: files[ 0 1 1 0 0 0 0 ]
+2026/05/16-02:35:11.159 86d61 Delete type=2 #160
+2026/05/16-02:35:11.159 86d61 Delete type=2 #163
+2026/05/16-02:35:11.159 86d61 Delete type=2 #159
+2026/05/16-02:35:11.160 86d61 Delete type=2 #155
+2026/05/16-02:35:11.160 86d61 Delete type=2 #157
+2026/05/16-02:36:11.337 86d61 Level-0 table #166: started
+2026/05/16-02:36:11.341 86d61 Level-0 table #166: 14210 bytes OK
+2026/05/16-02:36:11.344 86d61 Delete type=0 #162
+2026/05/16-02:37:11.338 86d61 Level-0 table #168: started
+2026/05/16-02:37:11.341 86d61 Level-0 table #168: 13935 bytes OK
+2026/05/16-02:37:11.343 86d61 Delete type=0 #165
+2026/05/16-02:38:11.338 86d61 Level-0 table #170: started
+2026/05/16-02:38:11.342 86d61 Level-0 table #170: 14083 bytes OK
+2026/05/16-02:38:11.344 86d61 Delete type=0 #167
+2026/05/16-02:39:11.339 86d61 Level-0 table #172: started
+2026/05/16-02:39:11.342 86d61 Level-0 table #172: 14151 bytes OK
+2026/05/16-02:39:11.344 86d61 Delete type=0 #169
+2026/05/16-02:39:11.344 86d61 Compacting 4@0 + 1@1 files
+2026/05/16-02:39:11.346 86d61 Generated table #173@0: 5 keys, 14183 bytes
+2026/05/16-02:39:11.346 86d61 Compacted 4@0 + 1@1 files => 14183 bytes
+2026/05/16-02:39:11.347 86d61 compacted to: files[ 0 1 1 0 0 0 0 ]
+2026/05/16-02:39:11.347 86d61 Delete type=2 #166
+2026/05/16-02:39:11.347 86d61 Delete type=2 #172
+2026/05/16-02:39:11.347 86d61 Delete type=2 #164
+2026/05/16-02:39:11.347 86d61 Delete type=2 #170
+2026/05/16-02:39:11.347 86d61 Delete type=2 #168
+2026/05/16-02:40:11.339 86d61 Level-0 table #175: started
+2026/05/16-02:40:11.341 86d61 Level-0 table #175: 14151 bytes OK
+2026/05/16-02:40:11.343 86d61 Delete type=0 #171
+2026/05/16-02:41:11.340 86d61 Level-0 table #177: started
+2026/05/16-02:41:11.344 86d61 Level-0 table #177: 14151 bytes OK
+2026/05/16-02:41:11.346 86d61 Delete type=0 #174
+2026/05/16-02:42:11.341 86d61 Level-0 table #179: started
+2026/05/16-02:42:11.344 86d61 Level-0 table #179: 14151 bytes OK
+2026/05/16-02:42:11.347 86d61 Delete type=0 #176
+2026/05/16-02:42:28.003 86d6c Level-0 table #181: started
+2026/05/16-02:42:28.016 86d6c Level-0 table #181: 14581 bytes OK
