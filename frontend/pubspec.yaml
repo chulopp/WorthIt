@@ -55,6 +55,7 @@ dependencies:
   supabase_flutter: ^2.10.3
   google_sign_in: ^6.3.0
   flutter_native_splash: ^2.4.1
+  cached_network_image: ^3.4.1
 
 dev_dependencies:
   flutter_test:

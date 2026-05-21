@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -324,10 +325,11 @@ class _AnalysisResultScreenState extends ConsumerState<AnalysisResultScreen> {
         width: double.infinity,
         color: Colors.grey.shade100,
         child: analysis.imageUrl != null && analysis.imageUrl!.isNotEmpty
-            ? Image.network(
-                analysis.imageUrl!,
+            ? CachedNetworkImage(
+                imageUrl: analysis.imageUrl!,
                 fit: BoxFit.contain,
-                errorBuilder: (_, __, ___) => _heroImageFallback(),
+                placeholder: (_, __) => _heroImageFallback(),
+                errorWidget: (_, __, ___) => _heroImageFallback(),
               )
             : Image.asset(
                 'assets/images/chitao_700x.webp',

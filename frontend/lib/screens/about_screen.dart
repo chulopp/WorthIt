@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -74,13 +75,13 @@ class AboutScreen extends StatelessWidget {
                   padding: const EdgeInsets.symmetric(horizontal: 24),
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(16),
-                    child: Image.network(
-                      'https://images.pexels.com/photos/5319558/pexels-photo-5319558.jpeg',
+                    child: CachedNetworkImage(
+                      imageUrl:
+                          'https://images.pexels.com/photos/5319558/pexels-photo-5319558.jpeg',
                       fit: BoxFit.cover,
                       height: 200,
                       width: double.infinity,
-                      loadingBuilder: (context, child, loadingProgress) {
-                        if (loadingProgress == null) return child;
+                      placeholder: (context, url) {
                         return Container(
                           height: 200,
                           decoration: BoxDecoration(
@@ -95,7 +96,7 @@ class AboutScreen extends StatelessWidget {
                           ),
                         );
                       },
-                      errorBuilder: (context, error, stackTrace) {
+                      errorWidget: (context, error, stackTrace) {
                         return Container(
                           height: 200,
                           decoration: BoxDecoration(
@@ -153,13 +154,13 @@ class AboutScreen extends StatelessWidget {
                       const SizedBox(height: 20),
                       ClipRRect(
                         borderRadius: BorderRadius.circular(16),
-                        child: Image.network(
-                          'https://images.pexels.com/photos/37234075/pexels-photo-37234075.jpeg',
+                        child: CachedNetworkImage(
+                          imageUrl:
+                              'https://images.pexels.com/photos/37234075/pexels-photo-37234075.jpeg',
                           fit: BoxFit.cover,
                           height: 220,
                           width: double.infinity,
-                          loadingBuilder: (context, child, loadingProgress) {
-                            if (loadingProgress == null) return child;
+                          placeholder: (context, url) {
                             return Container(
                               height: 220,
                               decoration: BoxDecoration(
@@ -174,7 +175,7 @@ class AboutScreen extends StatelessWidget {
                               ),
                             );
                           },
-                          errorBuilder: (context, error, stackTrace) {
+                          errorWidget: (context, error, stackTrace) {
                             return Container(
                               height: 220,
                               decoration: BoxDecoration(

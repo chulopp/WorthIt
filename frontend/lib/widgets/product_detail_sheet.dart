@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:shimmer/shimmer.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import '../controllers/favorite_controller.dart';
 import '../controllers/product_detail_controller.dart';
 import '../controllers/shopping_list_controller.dart';
@@ -662,10 +663,11 @@ class _ProductDetailSheetState extends ConsumerState<_ProductDetailSheet> {
       color: Colors.grey.shade50,
       child: imageUrl == null || imageUrl.isEmpty
           ? fallbackImage
-          : Image.network(
-              imageUrl,
+          : CachedNetworkImage(
+              imageUrl: imageUrl,
               fit: BoxFit.cover,
-              errorBuilder: (_, __, ___) => fallbackImage,
+              placeholder: (_, __) => fallbackImage,
+              errorWidget: (_, __, ___) => fallbackImage,
             ),
     );
   }

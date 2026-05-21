@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -2139,10 +2140,10 @@ class _ActivityTile extends StatelessWidget {
               ),
               clipBehavior: Clip.antiAlias,
               child: item.imageUrl != null && item.imageUrl!.isNotEmpty
-                  ? Image.network(
-                      item.imageUrl!,
+                  ? CachedNetworkImage(
+                      imageUrl: item.imageUrl!,
                       fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) {
+                      errorWidget: (context, error, stackTrace) {
                         return Center(
                           child: Icon(
                             _getItemIcon(item.name),
@@ -2151,17 +2152,12 @@ class _ActivityTile extends StatelessWidget {
                           ),
                         );
                       },
-                      loadingBuilder: (context, child, loadingProgress) {
-                        if (loadingProgress == null) return child;
+                      placeholder: (context, url) {
                         return Center(
                           child: SizedBox(
                             width: 20,
                             height: 20,
                             child: CircularProgressIndicator(
-                              value: loadingProgress.expectedTotalBytes != null
-                                  ? loadingProgress.cumulativeBytesLoaded /
-                                        loadingProgress.expectedTotalBytes!
-                                  : null,
                               strokeWidth: 2,
                               color: const Color(0xFF304423),
                             ),
@@ -2714,12 +2710,18 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                                   child:
                                       item.imageUrl != null &&
                                           item.imageUrl!.isNotEmpty
-                                      ? Image.network(
-                                          item.imageUrl!,
+                                      ? CachedNetworkImage(
+                                          imageUrl: item.imageUrl!,
                                           width: 48,
                                           height: 48,
                                           fit: BoxFit.cover,
-                                          errorBuilder: (_, __, ___) => Image.asset(
+                                          placeholder: (_, __) => Image.asset(
+                                            'assets/images/${(item.name.hashCode.abs() % 3) + 1}.jpg',
+                                            width: 48,
+                                            height: 48,
+                                            fit: BoxFit.cover,
+                                          ),
+                                          errorWidget: (_, __, ___) => Image.asset(
                                             'assets/images/${(item.name.hashCode.abs() % 3) + 1}.jpg',
                                             width: 48,
                                             height: 48,
@@ -3080,12 +3082,19 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                                     child:
                                         item.imageUrl != null &&
                                             item.imageUrl!.isNotEmpty
-                                        ? Image.network(
-                                            item.imageUrl!,
+                                        ? CachedNetworkImage(
+                                            imageUrl: item.imageUrl!,
                                             width: 48,
                                             height: 48,
                                             fit: BoxFit.cover,
-                                            errorBuilder: (_, __, ___) =>
+                                            placeholder: (_, __) =>
+                                                Image.asset(
+                                                  'assets/images/${(item.name.hashCode.abs() % 3) + 1}.jpg',
+                                                  width: 48,
+                                                  height: 48,
+                                                  fit: BoxFit.cover,
+                                                ),
+                                            errorWidget: (_, __, ___) =>
                                                 Image.asset(
                                                   'assets/images/${(item.name.hashCode.abs() % 3) + 1}.jpg',
                                                   width: 48,
@@ -3792,10 +3801,11 @@ class _StatisticsScreenState extends ConsumerState<StatisticsScreen> {
                                     ),
                                     clipBehavior: Clip.antiAlias,
                                     child: item['imageUrl'] != null
-                                        ? Image.network(
-                                            item['imageUrl'] as String,
+                                        ? CachedNetworkImage(
+                                            imageUrl:
+                                                item['imageUrl'] as String,
                                             fit: BoxFit.cover,
-                                            errorBuilder: (ctx, err, stack) =>
+                                            errorWidget: (ctx, err, stack) =>
                                                 Icon(
                                                   item['icon'] as IconData,
                                                   color: const Color(
@@ -3803,6 +3813,11 @@ class _StatisticsScreenState extends ConsumerState<StatisticsScreen> {
                                                   ),
                                                   size: 24,
                                                 ),
+                                            placeholder: (ctx, url) => Icon(
+                                              item['icon'] as IconData,
+                                              color: const Color(0xFF475569),
+                                              size: 24,
+                                            ),
                                           )
                                         : Icon(
                                             item['icon'] as IconData,

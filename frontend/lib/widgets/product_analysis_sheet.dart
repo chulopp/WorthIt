@@ -4,6 +4,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import '../controllers/dashboard_controller.dart';
 import '../controllers/favorite_controller.dart';
 import '../controllers/history_controller.dart';
@@ -704,10 +705,11 @@ class _ProductAnalysisSheetState extends ConsumerState<_ProductAnalysisSheet> {
         color: Colors.grey.shade100,
         child: imageUrl == null || imageUrl.isEmpty
             ? _heroImageFallback()
-            : Image.network(
-                imageUrl,
+            : CachedNetworkImage(
+                imageUrl: imageUrl,
                 fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => _heroImageFallback(),
+                placeholder: (_, __) => _heroImageFallback(),
+                errorWidget: (_, __, ___) => _heroImageFallback(),
               ),
       ),
     );

@@ -1,4 +1,5 @@
 import 'package:easy_localization/easy_localization.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -170,10 +171,11 @@ class RecentActivityCard extends StatelessWidget {
               clipBehavior: Clip.antiAlias,
               child: item.imageUrl == null || item.imageUrl!.isEmpty
                   ? _buildImagePlaceholder()
-                  : Image.network(
-                      item.imageUrl!,
+                  : CachedNetworkImage(
+                      imageUrl: item.imageUrl!,
                       fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) => _buildImagePlaceholder(),
+                      placeholder: (_, __) => _buildImagePlaceholder(),
+                      errorWidget: (_, __, ___) => _buildImagePlaceholder(),
                     ),
             ),
             const SizedBox(width: 16),
