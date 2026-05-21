@@ -8,6 +8,8 @@ import 'package:supabase_flutter/supabase_flutter.dart'
 import '../config/local_config.dart';
 import '../config/supabase_config.dart';
 import 'auth_service.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../controllers/auth_controller.dart';
 
 typedef AccessTokenProvider = FutureOr<String?> Function();
 typedef UnauthorizedHandler = FutureOr<void> Function();
@@ -386,3 +388,8 @@ class ApiClient {
     return path.startsWith('/') ? path : '/$path';
   }
 }
+
+final apiClientProvider = Provider<ApiClient>((ref) {
+  final authState = ref.watch(authProvider);
+  return ApiClient(accessTokenProvider: () => authState.session?.accessToken);
+});

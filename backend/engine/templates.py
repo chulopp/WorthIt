@@ -1,21 +1,11 @@
 """
 engine/templates.py
-Dynamic deterministic explanations untuk hasil analisis WorthIt.
+Structured deterministic explanations for WorthIt analysis results.
 
-Mode explanations ini sengaja teknis-edukatif: istilah seperti WMA,
-Support/Resistance, Price Anomaly, dan Shrinkflation tetap ditampilkan,
-tetapi selalu diberi konteks supaya bisa dipahami user umum.
+The API returns stable keys plus numeric parameters. The Flutter client renders
+the final text in the active locale, while older saved scan snapshots that only
+contain strings remain supported by the client-side fallback parser.
 """
-
-
-def _rupiah(value: float) -> str:
-    return f"Rp{value:,.0f}".replace(",", ".")
-
-
-def _pick(options: list[str], seed: int) -> str:
-    if not options:
-        return ""
-    return options[abs(seed) % len(options)]
 
 
 def build_explanations(
@@ -25,124 +15,124 @@ def build_explanations(
     urgency: int,
     analysis: dict,
     is_pro: bool,
-) -> list[str]:
-    explanations: list[str] = []
+) -> list[dict]:
+    explanations: list[dict] = []
     delta = analysis["price_delta_percent"]
-    seed = int(scanned_price + normal_price + urgency + analysis["score"])
     history_months = analysis.get("history_months", 6)
 
     if delta <= -5:
-        explanations.append(_pick([
-            "WMA menunjukkan harga normal {period} bulan terakhir sekitar {normal}. Harga scan {scan} lebih rendah, jadi nilainya sedang menarik.",
-            "Harga scan berada di bawah WMA {period} bulan terakhir. Artinya, harga sekarang lebih murah dari pola harga normal produk ini.",
-        ], seed).format(
-            period=history_months,
-            normal=_rupiah(normal_price),
-            scan=_rupiah(scanned_price),
-        ))
+        wma_key = "analysis.explanations.wma_below"
+        wma_tone = "positive"
     elif delta <= 5:
-        explanations.append(_pick([
-            "WMA menunjukkan harga normal {period} bulan terakhir sekitar {normal}. Harga scan {scan} masih dekat dengan angka itu, jadi masih tergolong wajar.",
-            "Harga scan hampir sejajar dengan WMA {period} bulan terakhir. Selisihnya kecil, sehingga belum ada tanda harga terlalu mahal.",
-        ], seed).format(
-            period=history_months,
-            normal=_rupiah(normal_price),
-            scan=_rupiah(scanned_price),
-        ))
+        wma_key = "analysis.explanations.wma_fair"
+        wma_tone = "positive"
     elif delta <= 15:
-        explanations.append(_pick([
-            "WMA menunjukkan harga normal {period} bulan terakhir sekitar {normal}. Harga scan {scan} sudah lebih tinggi, jadi pembelian perlu dipertimbangkan.",
-            "Harga scan mulai menjauh dari WMA {period} bulan terakhir. Ini belum ekstrem, tapi bukan kondisi harga terbaik.",
-        ], seed).format(
-            period=history_months,
-            normal=_rupiah(normal_price),
-            scan=_rupiah(scanned_price),
-        ))
+        wma_key = "analysis.explanations.wma_above"
+        wma_tone = "warning"
     else:
-        explanations.append(_pick([
-            "WMA menunjukkan harga normal {period} bulan terakhir sekitar {normal}. Harga scan {scan} jauh lebih tinggi, sehingga barang ini terlihat mahal.",
-            "Harga scan sudah jauh di atas WMA {period} bulan terakhir. Ini sinyal kuat untuk menunda pembelian jika barang tidak mendesak.",
-        ], seed).format(
-            period=history_months,
-            normal=_rupiah(normal_price),
-            scan=_rupiah(scanned_price),
-        ))
+        wma_key = "analysis.explanations.wma_expensive"
+        wma_tone = "negative"
+
+    explanations.append({
+        "title_key": "analysis.explanation_titles.wma",
+        "description_key": wma_key,
+        "tone": wma_tone,
+        "icon_type": "trend",
+        "params": {
+            "period": str(history_months),
+            "normal": f"{normal_price:.0f}",
+            "scan": f"{scanned_price:.0f}",
+            "delta": f"{abs(delta):.1f}",
+        },
+    })
 
     sr_position = analysis["sr_position"]
     support = analysis["support"]
     resistance = analysis["resistance"]
     if sr_position <= 25:
-        explanations.append(
-            "Support/Resistance menunjukkan harga scan dekat area Support "
-            f"{_rupiah(support)} dari {history_months} bulan terakhir. "
-            "Support adalah area harga rendah yang sering menjadi titik beli lebih aman."
-        )
+        sr_key = "analysis.explanations.sr_support"
+        sr_tone = "positive"
     elif sr_position >= 75:
-        explanations.append(
-            "Support/Resistance menunjukkan harga scan dekat area Resistance "
-            f"{_rupiah(resistance)} dari {history_months} bulan terakhir. "
-            "Resistance adalah area harga tinggi, jadi peluang harga terasa mahal lebih besar."
-        )
+        sr_key = "analysis.explanations.sr_resistance"
+        sr_tone = "negative"
     else:
-        explanations.append(
-            "Support/Resistance menempatkan harga scan di area tengah antara "
-            f"Support {_rupiah(support)} dan Resistance {_rupiah(resistance)} "
-            f"berdasarkan data {history_months} bulan terakhir."
-        )
+        sr_key = "analysis.explanations.sr_middle"
+        sr_tone = "warning"
+    explanations.append({
+        "title_key": "analysis.explanation_titles.sr",
+        "description_key": sr_key,
+        "tone": sr_tone,
+        "icon_type": "range",
+        "params": {
+            "period": str(history_months),
+            "support": f"{support:.0f}",
+            "resistance": f"{resistance:.0f}",
+        },
+    })
 
     decision_key = analysis.get("decision", "WorthIt").lower()
-    urgency_texts = {
-        1: {  # Urgensi Rendah (Kebutuhan Belum Mendesak / Buat Stok)
-            "worthit": "Mumpung harganya lagi bagus, boleh banget dibeli buat stok walaupun kamu belum terlalu butuh sekarang.",
-            "waspada": "Karena kamu belum terlalu butuh, mending ditunda dulu belinya. Harganya kurang spesial, siapa tahu nanti ada promo.",
-            "mahal": "Tunda aja dulu belinya! Selain kamu belum butuh mendesak, harganya juga lagi kelewat mahal."
-        },
-        2: {  # Urgensi Sedang (Kebutuhan Normal / Stok Mau Habis)
-            "worthit": "Pas banget! Kamu lumayan butuh barang ini dan harganya juga lagi bersahabat. Aman untuk dibeli sekarang.",
-            "waspada": "Harganya agak mepet batas wajar. Tapi kalau persediaan kamu memang sudah mau habis, masih oke kok buat dibeli.",
-            "mahal": "Harganya lagi lumayan mahal nih. Kalau kebutuhannya masih bisa ditunda beberapa hari, mending tunggu dulu aja."
-        },
-        3: {  # Urgensi Tinggi (Kebutuhan Mendesak / Harus Beli Sekarang)
-            "worthit": "Kondisinya pas banget! Kamu lagi butuh mendesak dan untungnya dapat harga yang sangat sepadan.",
-            "waspada": "Mengingat kamu lagi butuh banget, beli di harga segini masih wajar kok, yang penting harganya belum kelewat batas aman.",
-            "mahal": "Harganya memang lagi mahal banget. Tapi karena kondisinya sangat mendesak, saran kami beli secukupnya saja dulu untuk saat ini."
-        }
-    }
-
     mapped_urgency = urgency if urgency in [1, 2, 3] else 2
-    explanation_text = urgency_texts.get(mapped_urgency, {}).get(decision_key)
-    if explanation_text:
-        explanations.append(explanation_text)
+    if decision_key in {"worthit", "waspada", "mahal"}:
+        explanations.append({
+            "title_key": "analysis.explanation_titles.urgency",
+            "description_key": f"analysis.explanations.urgency_{mapped_urgency}_{decision_key}",
+            "tone": "negative" if decision_key == "mahal" else ("warning" if decision_key == "waspada" else "positive"),
+            "icon_type": "urgency",
+            "params": {},
+        })
 
     if is_pro:
         price_anomaly = analysis.get("price_anomaly") or {}
         shrinkflation = analysis.get("shrinkflation") or {}
 
         if price_anomaly.get("detected"):
-            explanations.append(
-                "Price Anomaly terdeteksi: harga scan melewati batas wajar "
-                f"{_rupiah(analysis['fair_upper_bound'])} yang dihitung dari pola naik-turun harga {history_months} bulan terakhir."
-            )
+            explanations.append({
+                "title_key": "analysis.explanation_titles.anomaly",
+                "description_key": "analysis.explanations.anomaly_detected",
+                "tone": "negative",
+                "icon_type": "anomaly",
+                "params": {
+                    "period": str(history_months),
+                    "fairUpper": f"{analysis['fair_upper_bound']:.0f}",
+                },
+            })
         else:
-            explanations.append(
-                "Price Anomaly tidak terdeteksi. Kenaikan harga masih berada dalam batas wajar berdasarkan pola naik-turun harga historis."
-            )
+            explanations.append({
+                "title_key": "analysis.explanation_titles.anomaly",
+                "description_key": "analysis.explanations.anomaly_clear",
+                "tone": "positive",
+                "icon_type": "anomaly",
+                "params": {},
+            })
 
         if shrinkflation.get("detected"):
             weight_drop = abs(shrinkflation.get("weight_delta_percent", 0))
             unit_rise = shrinkflation.get("unit_price_delta_percent", 0)
-            explanations.append(
-                f"Shrinkflation terdeteksi: ukuran turun sekitar {weight_drop:.1f}% "
-                f"dan harga per satuan naik sekitar {unit_rise:.1f}%. "
-                "Ini berarti isi berkurang, tetapi nilai belinya tidak ikut membaik."
-            )
+            explanations.append({
+                "title_key": "analysis.explanation_titles.shrinkflation",
+                "description_key": "analysis.explanations.shrinkflation_detected",
+                "tone": "negative",
+                "icon_type": "shrinkflation",
+                "params": {
+                    "weightDrop": f"{weight_drop:.1f}",
+                    "unitRise": f"{unit_rise:.1f}",
+                },
+            })
         else:
-            explanations.append(
-                "Shrinkflation tidak terdeteksi. Ukuran produk masih sesuai dengan varian historis dan harga per satuannya tidak menunjukkan penyusutan nilai."
-            )
+            explanations.append({
+                "title_key": "analysis.explanation_titles.shrinkflation",
+                "description_key": "analysis.explanations.shrinkflation_clear",
+                "tone": "positive",
+                "icon_type": "shrinkflation",
+                "params": {},
+            })
     else:
-        explanations.append(
-            "Price Anomaly dan Shrinkflation adalah analisis lanjutan Pro. Free tetap mendapat WMA dan Support/Resistance."
-        )
+        explanations.append({
+            "title_key": "analysis.explanation_titles.pro",
+            "description_key": "analysis.explanations.pro_locked",
+            "tone": "warning",
+            "icon_type": "lock",
+            "params": {},
+        })
 
     return explanations

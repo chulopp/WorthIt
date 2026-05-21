@@ -6,7 +6,7 @@ import '../services/auth_service.dart';
 
 class AuthRepository {
   AuthRepository({ApiClient? apiClient})
-      : _apiClient = apiClient ?? ApiClient.instance;
+    : _apiClient = apiClient ?? ApiClient.instance;
 
   final ApiClient _apiClient;
 
@@ -18,7 +18,9 @@ class AuthRepository {
   }
 
   Future<ApiResult<String?>> currentAccessToken() {
-    return _apiClient.run(() async => _client?.auth.currentSession?.accessToken);
+    return _apiClient.run(
+      () async => _client?.auth.currentSession?.accessToken,
+    );
   }
 
   Future<ApiResult<bool>> logout() {

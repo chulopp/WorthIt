@@ -65,6 +65,11 @@ def _month_label(value: str | None) -> str:
     return f"{INDONESIAN_MONTHS.get(dt.month, dt.strftime('%B'))} {dt.year}"
 
 
+def _month_key(value: str | None) -> str:
+    dt = _parse_datetime(value)
+    return dt.strftime("%Y-%m")
+
+
 def _product_from_join(row: dict) -> dict:
     return row.get("products") or row.get("product") or {}
 
@@ -81,6 +86,7 @@ def _fallback_scan_analysis(row: dict, product: dict) -> dict:
         "category": product.get("category", "Lainnya"),
         "urgency": row.get("urgency"),
         "weight_gram": row.get("weight_gram"),
+        "unit_label": product.get("unit_label"),
         "explanations": [],
         "metrics": {},
         "tier": {},
@@ -115,6 +121,7 @@ def _purchase_item(row: dict) -> PurchaseItemResponse:
         product_name=product.get("name", "Produk Tidak Diketahui"),
         image_url=product.get("image_url"),
         category=product.get("category"),
+        unit_label=product.get("unit_label"),
         purchased_price=purchased_price,
         quantity=quantity,
         total_price=purchased_price * quantity,
@@ -139,7 +146,7 @@ async def get_scan_history(
         .select(
             "id, product_id, decision, scanned_price, normal_price, scan_result_score, "
             "created_at, urgency, weight_gram, analysis_snapshot, "
-            "products(id, name, image_url, category)"
+            "products(id, name, image_url, category, unit_label)"
         ) \
         .eq("user_id", user_id) \
         .order("created_at", desc=True)
@@ -200,21 +207,22 @@ async def get_purchase_history(
     sb = get_supabase()
 
     res = _safe_execute(sb.table("purchase_history")
-        .select("id, product_id, purchased_price, quantity, purchased_at, products(id, name, image_url, category)")
+        .select("id, product_id, purchased_price, quantity, purchased_at, products(id, name, image_url, category, unit_label)")
         .eq("user_id", user_id)
         .order("purchased_at", desc=True))
 
     groups: OrderedDict[str, list[PurchaseItemResponse]] = OrderedDict()
     for row in res.data or []:
-        label = _month_label(row.get("purchased_at"))
-        groups.setdefault(label, []).append(_purchase_item(row))
+        key = _month_key(row.get("purchased_at"))
+        groups.setdefault(key, []).append(_purchase_item(row))
 
     data = [
         MonthlyPurchaseGroup(
-            month=month,
+            month=_month_label(items[0].purchased_at if items else None),
+            month_key=month_key,
             total_actual_spending=sum(item.total_price for item in items),
             items=items,
         )
-        for month, items in groups.items()
+        for month_key, items in groups.items()
     ]
     return MonthlyPurchaseHistoryResponse(data=data)

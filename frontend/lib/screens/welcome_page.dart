@@ -3,15 +3,27 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:easy_localization/easy_localization.dart';
-import 'loading_page.dart';
+import 'package:flutter_native_splash/flutter_native_splash.dart';
+import 'custom_splash_screen.dart';
 import '../services/auth_service.dart';
 
-class WelcomePage extends StatelessWidget {
+class WelcomePage extends StatefulWidget {
   const WelcomePage({Key? key}) : super(key: key);
+
+  @override
+  State<WelcomePage> createState() => _WelcomePageState();
+}
+
+class _WelcomePageState extends State<WelcomePage> {
+  bool _isLoading = false;
 
   @override
   Widget build(BuildContext context) {
     final paddingTop = MediaQuery.of(context).padding.top;
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      FlutterNativeSplash.remove();
+    });
 
     return ValueListenableBuilder<bool>(
       valueListenable: AuthService().isLoggedIn,
@@ -22,7 +34,7 @@ class WelcomePage extends StatelessWidget {
             Navigator.pushReplacement(
               context,
               MaterialPageRoute(
-                builder: (_) => const LoadingPage(isGuest: false),
+                builder: (_) => const CustomSplashScreen(isGuest: false),
               ),
             );
           });
@@ -79,9 +91,9 @@ class WelcomePage extends StatelessWidget {
                         Color(0xFF304423).withValues(
                           alpha: 0.6,
                         ), // Transisi halus di bagian tengah-atas
-                        Color(
-                          0xFF304423,
-                        ).withValues(alpha: 0.95), // Sangat pekat di belakang teks
+                        Color(0xFF304423).withValues(
+                          alpha: 0.95,
+                        ), // Sangat pekat di belakang teks
                         Color(
                           0xFF304423,
                         ), // 100% Solid Hijau Gelap di area tombol
@@ -224,30 +236,51 @@ class WelcomePage extends StatelessWidget {
 
                     // Tombol Mulai
                     ElevatedButton.icon(
-                      onPressed: () async {
-                        try {
-                          await AuthService().nativeGoogleSignIn();
-                        } catch (error) {
-                          if (!context.mounted) return;
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text(error.toString())),
-                          );
-                        }
-                      },
-                      icon: Image.asset(
-                        'assets/images/google_logo.png',
-                        height: 24,
-                      ),
-                      label: Text(
-                        'login_register'.tr(),
-                        style: GoogleFonts.outfit(
-                          color: const Color(0xFF304423),
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
+                      onPressed: _isLoading
+                          ? null
+                          : () async {
+                              setState(() => _isLoading = true);
+                              try {
+                                await AuthService().nativeGoogleSignIn();
+                              } catch (error) {
+                                if (!context.mounted) return;
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(content: Text(error.toString())),
+                                );
+                              } finally {
+                                if (mounted) {
+                                  setState(() => _isLoading = false);
+                                }
+                              }
+                            },
+                      icon: _isLoading
+                          ? const SizedBox(
+                              width: 24,
+                              height: 24,
+                              child: CircularProgressIndicator(
+                                color: Color(0xFF304423),
+                                strokeWidth: 2.5,
+                              ),
+                            )
+                          : Image.asset(
+                              'assets/images/google_logo.png',
+                              height: 24,
+                            ),
+                      label: _isLoading
+                          ? const SizedBox.shrink()
+                          : Text(
+                              'login_register'.tr(),
+                              style: GoogleFonts.outfit(
+                                color: const Color(0xFF304423),
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFFC9E88A),
+                        disabledBackgroundColor: const Color(
+                          0xFFC9E88A,
+                        ).withOpacity(0.6),
                         minimumSize: const Size(double.infinity, 56),
                         shape: const StadiumBorder(),
                         elevation: 0,
@@ -261,7 +294,8 @@ class WelcomePage extends StatelessWidget {
                         Navigator.pushReplacement(
                           context,
                           MaterialPageRoute(
-                            builder: (_) => const LoadingPage(isGuest: true),
+                            builder: (_) =>
+                                const CustomSplashScreen(isGuest: true),
                           ),
                         );
                       },

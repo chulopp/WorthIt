@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field
-from typing import List, Optional
+from typing import Any, Dict, List, Optional
 
 
 # ─── Sub-models ────────────────────────────────────────────────────────────────
@@ -52,7 +52,8 @@ class AnalyzeData(BaseModel):
     category: str
     urgency: int
     weight_gram: float
-    explanations: List[str]
+    unit_label: Optional[str] = None
+    explanations: List[Any]
     metrics: AnalyzeMetrics
     tier: AnalyzeTierData
 
@@ -65,11 +66,15 @@ class AnalyzeResponse(BaseModel):
 # ─── Dashboard ─────────────────────────────────────────────────────────────────
 
 class RecentActivityItem(BaseModel):
+    product_id: Optional[str] = None
     product_name: str
     price: float
     decision: str
     color: str
     timestamp: str
+    image_url: Optional[str] = None
+    category: Optional[str] = None
+    unit_label: Optional[str] = None
 
 
 class DashboardData(BaseModel):
@@ -77,6 +82,11 @@ class DashboardData(BaseModel):
     budget_remaining: float
     money_saved: float
     recent_activities: List[RecentActivityItem]
+    daily_expenses: List[float] = Field(default_factory=list)
+    expense_points: List[Dict[str, Any]] = Field(default_factory=list)
+    market_insight: str = ""
+    market_insight_key: Optional[str] = None
+    market_insight_params: Dict[str, str] = Field(default_factory=dict)
 
 
 class DashboardResponse(BaseModel):
@@ -148,6 +158,7 @@ class ProductData(BaseModel):
     brand: Optional[str] = None
     category: str
     base_weight_gram: float
+    unit_label: Optional[str] = None
     image_url: Optional[str] = None
     created_at: Optional[str] = None
     updated_at: Optional[str] = None

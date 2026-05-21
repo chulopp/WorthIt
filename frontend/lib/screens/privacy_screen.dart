@@ -11,22 +11,10 @@ class PrivacyScreen extends StatelessWidget {
     const Color bgScaffold = Color(0xFFF8F9FA);
 
     final List<Map<String, String>> sections = [
-      {
-        'title': 'privacy.s1_title'.tr(),
-        'body': 'privacy.s1_body'.tr(),
-      },
-      {
-        'title': 'privacy.s2_title'.tr(),
-        'body': 'privacy.s2_body'.tr(),
-      },
-      {
-        'title': 'privacy.s3_title'.tr(),
-        'body': 'privacy.s3_body'.tr(),
-      },
-      {
-        'title': 'privacy.s4_title'.tr(),
-        'body': 'privacy.s4_body'.tr(),
-      },
+      {'title': 'privacy.s1_title'.tr(), 'body': 'privacy.s1_body'.tr()},
+      {'title': 'privacy.s2_title'.tr(), 'body': 'privacy.s2_body'.tr()},
+      {'title': 'privacy.s3_title'.tr(), 'body': 'privacy.s3_body'.tr()},
+      {'title': 'privacy.s4_title'.tr(), 'body': 'privacy.s4_body'.tr()},
     ];
 
     return Scaffold(

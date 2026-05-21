@@ -33,6 +33,7 @@ class PurchaseItemResponse(BaseModel):
     product_name: str
     image_url: Optional[str] = None
     category: Optional[str] = None
+    unit_label: Optional[str] = None
     purchased_price: int
     quantity: int
     total_price: int
@@ -46,6 +47,7 @@ class PurchaseResponse(BaseModel):
 
 class MonthlyPurchaseGroup(BaseModel):
     month: str
+    month_key: str
     total_actual_spending: int
     items: List[PurchaseItemResponse]
 

@@ -52,7 +52,7 @@ class RecentActivityCard extends StatelessWidget {
   }
 
   String _formattedDate(BuildContext context) {
-    final parsedDate = DateTime.tryParse(item.date);
+    final parsedDate = DateTime.tryParse(item.date)?.toLocal();
     if (parsedDate == null) return item.date;
     return DateFormat(
       'E, d MMM HH:mm',
@@ -61,35 +61,7 @@ class RecentActivityCard extends StatelessWidget {
   }
 
   String _localizedCategory() {
-    if (officialProductCategories.contains(item.category)) return item.category;
-    switch (item.category) {
-      case 'groceries':
-      case 'cat_sembako':
-      case 'Sembako':
-        return 'groceries'.tr();
-      case 'snacks':
-      case 'cat_cemilan':
-      case 'Cemilan':
-        return 'snacks'.tr();
-      case 'filter_instant_noodle':
-      case 'Mie Instan':
-        return 'filter_instant_noodle'.tr();
-      case 'filter_milk':
-      case 'Susu':
-        return 'filter_milk'.tr();
-      case 'beverages':
-      case 'cat_minuman':
-      case 'Minuman':
-        return 'beverages'.tr();
-      case 'filter_toiletries':
-      case 'cat_alat_mandi':
-      case 'Alat Mandi':
-        return 'filter_toiletries'.tr();
-      case 'cat_lainnya':
-        return 'cat_lainnya'.tr();
-      default:
-        return item.category;
-    }
+    return displayProductCategory(item.category);
   }
 
   Widget _buildSubtitle(BuildContext context, String decisionCode) {
@@ -168,7 +140,9 @@ class RecentActivityCard extends StatelessWidget {
         'decisionCode': decisionCode,
         'category': item.category,
         'urgency': 'Tinggi',
-        'weight': '1 kg',
+        'weight': item.unitLabel ?? '',
+        'product_id': item.productId,
+        'imageUrl': item.imageUrl,
         'icon': _getItemIcon(item.name),
       },
     );

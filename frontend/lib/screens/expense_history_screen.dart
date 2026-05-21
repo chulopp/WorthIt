@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -9,9 +10,10 @@ import '../controllers/history_controller.dart';
 import '../models/dashboard_data.dart';
 import '../models/api/api_models.dart';
 import '../widgets/total_expenses_card.dart';
-import '../widgets/product_analysis_sheet.dart';
+import '../widgets/product_detail_sheet.dart';
 import '../widgets/decision_badge.dart';
 import '../widgets/empty_activity_state.dart';
+import '../services/notification_service.dart';
 import '../utils/pdf_generator.dart';
 import '../utils/date_helper.dart';
 
@@ -33,6 +35,15 @@ class _ExpenseHistoryScreenState extends ConsumerState<ExpenseHistoryScreen> {
       ref.read(historyControllerProvider.notifier).fetchScans();
       ref.read(dashboardControllerProvider.notifier).fetchDashboard();
     });
+  }
+
+  /// Pull-to-refresh: re-fetch expenses data from backend.
+  Future<void> _refreshExpenses() async {
+    await Future.wait([
+      ref.read(historyControllerProvider.notifier).fetchPurchases(),
+      ref.read(historyControllerProvider.notifier).fetchScans(),
+      ref.read(dashboardControllerProvider.notifier).fetchDashboard(),
+    ]);
   }
 
   /// Generates and opens the native PDF share/save dialog.
@@ -62,13 +73,16 @@ class _ExpenseHistoryScreenState extends ConsumerState<ExpenseHistoryScreen> {
           colDate: 'pdf_col_date'.tr(),
           colItemName: 'pdf_col_item_name'.tr(),
           colCategory: 'pdf_col_category'.tr(),
+          colQuantity: 'pdf_col_quantity'.tr(),
           colPrice: 'pdf_col_price'.tr(),
+          colTotalPrice: 'pdf_col_total_price'.tr(),
           footerText: 'pdf_footer'.tr(),
           categoryFallback: 'groceries'.tr(),
         );
       },
       name: 'WorthIt_Expense_Report',
     );
+    NotificationService().notifyPdfDownloadSuccess();
   }
 
   String _formatRp(double v) {
@@ -89,11 +103,16 @@ class _ExpenseHistoryScreenState extends ConsumerState<ExpenseHistoryScreen> {
         .expand((group) => group.items)
         .map(
           (item) => RecentActivity(
+            productId: item.productId,
             name: item.productName,
             price: item.totalPrice.toDouble(),
             color: 'green',
             date: item.purchasedAt,
             category: item.category ?? 'Lainnya',
+            imageUrl: item.imageUrl,
+            unitLabel: item.unitLabel,
+            quantity: item.quantity,
+            unitPrice: item.purchasedPrice.toDouble(),
           ),
         )
         .toList(growable: false);
@@ -154,65 +173,69 @@ class _ExpenseHistoryScreenState extends ConsumerState<ExpenseHistoryScreen> {
           ),
         ],
       ),
-      body: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Total Expenses Card
-            TotalExpensesCard(
-              amount: calculatedTotal,
-              savedAmount: _formatRp(calculatedSaved),
-              showCard: true,
-            ),
-
-            Padding(
-              padding: const EdgeInsets.fromLTRB(24, 8, 24, 16),
-              child: Text(
-                'shopping_activity'.tr(),
-                style: GoogleFonts.bricolageGrotesque(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: textPrimary,
-                ),
+      body: RefreshIndicator(
+        onRefresh: _refreshExpenses,
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Total Expenses Card
+              TotalExpensesCard(
+                amount: calculatedTotal,
+                savedAmount: calculatedSaved,
+                showCard: true,
               ),
-            ),
 
-            if (historyState.isLoading && filteredItems.isEmpty)
-              const Padding(
-                padding: EdgeInsets.symmetric(vertical: 48.0),
-                child: Center(child: CircularProgressIndicator()),
-              )
-            else if (shouldShowHistoryError)
               Padding(
-                padding: const EdgeInsets.symmetric(
-                  vertical: 48.0,
-                  horizontal: 24,
-                ),
-                child: Center(
-                  child: Text(
-                    historyErrorMessage!,
-                    textAlign: TextAlign.center,
-                    style: GoogleFonts.bricolageGrotesque(
-                      fontSize: 16,
-                      color: Colors.grey.shade600,
-                    ),
+                padding: const EdgeInsets.fromLTRB(24, 8, 24, 16),
+                child: Text(
+                  'shopping_activity'.tr(),
+                  style: GoogleFonts.bricolageGrotesque(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: textPrimary,
                   ),
                 ),
-              )
-            else if (filteredItems.isEmpty)
-              const EmptyActivityState()
-            else
-              ListView.builder(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                itemCount: filteredItems.length,
-                itemBuilder: (context, index) {
-                  final item = filteredItems[index];
-                  return _ActivityTile(item: item);
-                },
               ),
-            const SizedBox(height: 24),
-          ],
+
+              if (historyState.isLoading && filteredItems.isEmpty)
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 48.0),
+                  child: Center(child: CircularProgressIndicator()),
+                )
+              else if (shouldShowHistoryError)
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                    vertical: 48.0,
+                    horizontal: 24,
+                  ),
+                  child: Center(
+                    child: Text(
+                      historyErrorMessage!,
+                      textAlign: TextAlign.center,
+                      style: GoogleFonts.bricolageGrotesque(
+                        fontSize: 16,
+                        color: Colors.grey.shade600,
+                      ),
+                    ),
+                  ),
+                )
+              else if (filteredItems.isEmpty)
+                const EmptyActivityState()
+              else
+                ListView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: filteredItems.length,
+                  itemBuilder: (context, index) {
+                    final item = filteredItems[index];
+                    return _ActivityTile(item: item);
+                  },
+                ),
+              const SizedBox(height: 24),
+            ],
+          ),
         ),
       ),
     );
@@ -247,7 +270,7 @@ class _ActivityTile extends StatelessWidget {
   }
 
   String _formattedDate(BuildContext context) {
-    final parsedDate = DateTime.tryParse(item.date);
+    final parsedDate = DateTime.tryParse(item.date)?.toLocal();
     if (parsedDate == null) return item.date;
     return DateFormat(
       'E, d MMM HH:mm',
@@ -262,23 +285,15 @@ class _ActivityTile extends StatelessWidget {
 
     return InkWell(
       onTap: () {
-        showProductAnalysisSheet(
+        showProductDetailBottomSheet(
           context,
-          item: {
-            'name': item.name,
-            'price': item.price.toInt().toString(),
-            'status': item.color,
-            'score': decisionCode == kDecisionBuy
-                ? '85'
-                : decisionCode == kDecisionSubstitute
-                ? '65'
-                : '35',
-            'decisionCode': decisionCode,
-            'category': item.category,
-            'urgency': 'Tinggi',
-            'weight': '1 kg',
-            'icon': _getItemIcon(item.name),
-          },
+          productName: item.name,
+          productWeight: item.unitLabel ?? '',
+          productCategory: item.category,
+          currentPrice: item.unitPrice ?? item.price,
+          historicalAvgPrice: item.unitPrice ?? item.price,
+          imageUrl: item.imageUrl,
+          productId: item.productId,
         );
       },
       borderRadius: BorderRadius.circular(12),
@@ -294,10 +309,44 @@ class _ActivityTile extends StatelessWidget {
                 borderRadius: BorderRadius.circular(12),
               ),
               clipBehavior: Clip.antiAlias,
-              child: Image.asset(
-                'assets/images/${(item.name.hashCode.abs() % 3) + 1}.jpg',
-                fit: BoxFit.cover,
-              ),
+              child: item.imageUrl != null && item.imageUrl!.isNotEmpty
+                  ? Image.network(
+                      item.imageUrl!,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) {
+                        return Center(
+                          child: Icon(
+                            _getItemIcon(item.name),
+                            color: Colors.grey.shade400,
+                            size: 24,
+                          ),
+                        );
+                      },
+                      loadingBuilder: (context, child, loadingProgress) {
+                        if (loadingProgress == null) return child;
+                        return Center(
+                          child: SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              value: loadingProgress.expectedTotalBytes != null
+                                  ? loadingProgress.cumulativeBytesLoaded /
+                                        loadingProgress.expectedTotalBytes!
+                                  : null,
+                              strokeWidth: 2,
+                              color: const Color(0xFF304423),
+                            ),
+                          ),
+                        );
+                      },
+                    )
+                  : Center(
+                      child: Icon(
+                        _getItemIcon(item.name),
+                        color: Colors.grey.shade400,
+                        size: 24,
+                      ),
+                    ),
             ),
             const SizedBox(width: 16),
             Expanded(

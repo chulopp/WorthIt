@@ -54,10 +54,12 @@ dependencies:
   flutter_riverpod: ^3.3.1
   supabase_flutter: ^2.10.3
   google_sign_in: ^6.3.0
+  flutter_native_splash: ^2.4.1
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
+  flutter_launcher_icons: ^0.13.1
 
   # The "flutter_lints" package below contains a set of recommended lints to
   # encourage good coding practices. The lint set provided by the package is
@@ -108,3 +110,15 @@ flutter:
   #
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/to/font-from-package
+
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/images/ICONHP3.png"
+  adaptive_icon_background: "#304423"
+  adaptive_icon_foreground: "assets/images/ICONHP3.png"
+
+flutter_native_splash:
+  color: "#304423"
+  android_12:
+    color: "#304423"

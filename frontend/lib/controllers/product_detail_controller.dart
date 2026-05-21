@@ -110,11 +110,7 @@ class ProductDetailController extends Notifier<ProductDetailState> {
   }
 
   Future<void> loadProductDetail(String productId) async {
-    state = state.copyWith(
-      isLoading: true,
-      errorMessage: null,
-      data: null,
-    );
+    state = state.copyWith(isLoading: true, errorMessage: null, data: null);
     try {
       final result = await ref
           .read(productRepositoryProvider)

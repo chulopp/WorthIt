@@ -94,10 +94,12 @@ class _ScannerScreenState extends State<ScannerScreen>
   void initState() {
     super.initState();
     // Immersive status bar
-    SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
-      statusBarColor: Colors.transparent,
-      statusBarIconBrightness: Brightness.light,
-    ));
+    SystemChrome.setSystemUIOverlayStyle(
+      const SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness: Brightness.light,
+      ),
+    );
 
     _pulseController = AnimationController(
       vsync: this,
@@ -143,10 +145,12 @@ class _ScannerScreenState extends State<ScannerScreen>
     _cameraController?.dispose();
     _pulseController.dispose();
     _scanLineController.dispose();
-    SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
-      statusBarColor: Colors.transparent,
-      statusBarIconBrightness: Brightness.dark,
-    ));
+    SystemChrome.setSystemUIOverlayStyle(
+      const SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness: Brightness.dark,
+      ),
+    );
     super.dispose();
   }
 
@@ -162,7 +166,7 @@ class _ScannerScreenState extends State<ScannerScreen>
     setState(() {
       _isScanning = true;
       _isFrozen = true;
-      _scanStatusText = 'Membaca teks harga...';
+      _scanStatusText = 'scanner_reading_price_text'.tr();
     });
     _scanLineController.repeat();
 
@@ -198,7 +202,7 @@ class _ScannerScreenState extends State<ScannerScreen>
     setState(() {
       _isScanning = true;
       _isFrozen = true;
-      _scanStatusText = 'Membaca teks dari galeri...';
+      _scanStatusText = 'scanner_reading_gallery_text'.tr();
     });
 
     try {
@@ -309,8 +313,9 @@ class _ScannerScreenState extends State<ScannerScreen>
   }
 
   void _showProductAnalysisBottomSheet() {
-    final itemName =
-        _detectedItemName.isNotEmpty ? _detectedItemName : 'Produk';
+    final itemName = _detectedItemName.isNotEmpty
+        ? _detectedItemName
+        : 'Produk';
     final itemPrice = _detectedItemPrice ?? 0;
 
     showProductAnalysisSheet(
@@ -430,9 +435,7 @@ class _ScannerScreenState extends State<ScannerScreen>
                     child: child,
                   ),
                   child: Text(
-                    _isScanning
-                        ? _scanStatusText
-                        : 'point_camera_hint'.tr(),
+                    _isScanning ? _scanStatusText : 'point_camera_hint'.tr(),
                     style: GoogleFonts.urbanist(
                       fontSize: 16,
                       fontWeight: FontWeight.w700,
@@ -465,7 +468,8 @@ class _ScannerScreenState extends State<ScannerScreen>
                           AnimatedBuilder(
                             animation: _scanLineAnimation,
                             builder: (context, _) => Positioned(
-                              top: _scanLineAnimation.value *
+                              top:
+                                  _scanLineAnimation.value *
                                   (viewfinderSize - 4),
                               left: 20,
                               right: 20,
@@ -483,8 +487,9 @@ class _ScannerScreenState extends State<ScannerScreen>
                                   ),
                                   boxShadow: [
                                     BoxShadow(
-                                      color:
-                                          _accentGreen.withValues(alpha: 0.5),
+                                      color: _accentGreen.withValues(
+                                        alpha: 0.5,
+                                      ),
                                       blurRadius: 12,
                                       spreadRadius: 2,
                                     ),
@@ -534,9 +539,7 @@ class _ScannerScreenState extends State<ScannerScreen>
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       _buildSquareButton(
-                        icon: _isFlashOn
-                            ? Icons.flash_on
-                            : Icons.flash_off,
+                        icon: _isFlashOn ? Icons.flash_on : Icons.flash_off,
                         onTap: _toggleFlash,
                       ),
                       const SizedBox(width: 8),
@@ -613,7 +616,6 @@ class _ScannerScreenState extends State<ScannerScreen>
               ],
             ),
           ),
-
         ],
       ),
     );
@@ -628,13 +630,18 @@ class _ScannerScreenState extends State<ScannerScreen>
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(Icons.videocam_off_outlined,
-                  size: 48, color: Colors.white.withValues(alpha: 0.3)),
+              Icon(
+                Icons.videocam_off_outlined,
+                size: 48,
+                color: Colors.white.withValues(alpha: 0.3),
+              ),
               const SizedBox(height: 12),
               Text(
                 'camera_unavailable'.tr(),
                 style: GoogleFonts.urbanist(
-                    color: Colors.white38, fontSize: 14),
+                  color: Colors.white38,
+                  fontSize: 14,
+                ),
               ),
             ],
           ),
@@ -658,9 +665,11 @@ class _ScannerScreenState extends State<ScannerScreen>
               ),
               const SizedBox(height: 16),
               Text(
-                'Mempersiapkan kamera...',
+                'scanner_loading_camera'.tr(),
                 style: GoogleFonts.urbanist(
-                    color: Colors.white38, fontSize: 13),
+                  color: Colors.white38,
+                  fontSize: 13,
+                ),
               ),
             ],
           ),
@@ -676,9 +685,7 @@ class _ScannerScreenState extends State<ScannerScreen>
 
     return Transform.scale(
       scale: scale,
-      child: Center(
-        child: CameraPreview(camera),
-      ),
+      child: Center(child: CameraPreview(camera)),
     );
   }
 
@@ -690,10 +697,7 @@ class _ScannerScreenState extends State<ScannerScreen>
           gradient: RadialGradient(
             center: Alignment.center,
             radius: 0.85,
-            colors: [
-              Colors.transparent,
-              Colors.black.withValues(alpha: 0.4),
-            ],
+            colors: [Colors.transparent, Colors.black.withValues(alpha: 0.4)],
           ),
         ),
       ),
@@ -733,8 +737,7 @@ class _ScannerScreenState extends State<ScannerScreen>
     const color = _accentGreen;
 
     Widget corner(Alignment align) {
-      final isTop =
-          align == Alignment.topLeft || align == Alignment.topRight;
+      final isTop = align == Alignment.topLeft || align == Alignment.topRight;
       final isLeft =
           align == Alignment.topLeft || align == Alignment.bottomLeft;
       return Positioned(
@@ -954,11 +957,13 @@ class _ReviewBottomSheetState extends ConsumerState<_ReviewBottomSheet> {
     setState(() => _isAnalyzing = true);
     final scannedPrice = _parseNumber(_priceCtrl.text);
     final weightGram = _weightToGram(_parseNumber(_weightCtrl.text));
-    ref.read(analyzeControllerProvider.notifier).setManualScan(
-      productId: productId,
-      scannedPrice: scannedPrice,
-      weightGram: weightGram,
-    );
+    ref
+        .read(analyzeControllerProvider.notifier)
+        .setManualScan(
+          productId: productId,
+          scannedPrice: scannedPrice,
+          weightGram: weightGram,
+        );
     ref
         .read(analyzeControllerProvider.notifier)
         .setUrgency(_selectedUrgency + 1);
@@ -988,7 +993,10 @@ class _ReviewBottomSheetState extends ConsumerState<_ReviewBottomSheet> {
           weight: weightText,
           urgency: _urgencyLabels[_selectedUrgency],
           category:
-              widget.dbCategory ?? _selectedKategori ?? product?.category ?? 'Lainnya',
+              widget.dbCategory ??
+              _selectedKategori ??
+              product?.category ??
+              'Lainnya',
         ),
       ),
     );
@@ -1026,7 +1034,9 @@ class _ReviewBottomSheetState extends ConsumerState<_ReviewBottomSheet> {
       });
     }
 
-    await ref.read(productDetailControllerProvider.notifier).searchProducts(name);
+    await ref
+        .read(productDetailControllerProvider.notifier)
+        .searchProducts(name);
     if (!mounted || requestId != _verificationRequestId) return null;
 
     final results = ref.read(productDetailControllerProvider).searchResults;
@@ -1093,11 +1103,15 @@ class _ReviewBottomSheetState extends ConsumerState<_ReviewBottomSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final catalogOptions = ref.watch(productCatalogProvider).maybeWhen(
+    final catalogOptions = ref
+        .watch(productCatalogProvider)
+        .maybeWhen(
           data: (items) => items,
           orElse: () => const <ProductSummaryModel>[],
         );
-    final searchedOptions = ref.watch(productDetailControllerProvider).searchResults;
+    final searchedOptions = ref
+        .watch(productDetailControllerProvider)
+        .searchResults;
     final productOptionsById = <String, ProductSummaryModel>{};
     for (final product in [...catalogOptions, ...searchedOptions]) {
       productOptionsById[product.id] = product;
@@ -1117,324 +1131,355 @@ class _ReviewBottomSheetState extends ConsumerState<_ReviewBottomSheet> {
           child: Form(
             key: _formKey,
             child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Drag handle
-              Center(
-                child: Container(
-                  width: 40,
-                  height: 4,
-                  margin: const EdgeInsets.only(bottom: 20),
-                  decoration: BoxDecoration(
-                    color: Colors.grey.shade300,
-                    borderRadius: BorderRadius.circular(2),
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Drag handle
+                Center(
+                  child: Container(
+                    width: 40,
+                    height: 4,
+                    margin: const EdgeInsets.only(bottom: 20),
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade300,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
                   ),
                 ),
-              ),
 
-              // Header
-              Text(
-                'review_data'.tr(),
-                style: GoogleFonts.urbanist(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w800,
-                  color: const Color(0xFF1E293B),
+                // Header
+                Text(
+                  'review_data'.tr(),
+                  style: GoogleFonts.urbanist(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w800,
+                    color: const Color(0xFF1E293B),
+                  ),
                 ),
-              ),
-              const SizedBox(height: 24),
+                const SizedBox(height: 24),
 
-              // ── Field: Nama Barang (Autocomplete) ──
-              Autocomplete<ProductSummaryModel>(
-                initialValue: TextEditingValue(text: widget.prefillName),
-                displayStringForOption: (option) => option.name,
-                optionsBuilder: (TextEditingValue textEditingValue) {
-                  if (textEditingValue.text.isEmpty) {
-                    return const Iterable<ProductSummaryModel>.empty();
-                  }
-                  return productOptions.where(
-                        (p) => p.name.toLowerCase().contains(
-                          textEditingValue.text.toLowerCase(),
-                        ),
+                // ── Field: Nama Barang (Autocomplete) ──
+                Autocomplete<ProductSummaryModel>(
+                  initialValue: TextEditingValue(text: widget.prefillName),
+                  displayStringForOption: (option) => option.name,
+                  optionsBuilder: (TextEditingValue textEditingValue) {
+                    if (textEditingValue.text.isEmpty) {
+                      return const Iterable<ProductSummaryModel>.empty();
+                    }
+                    return productOptions.where(
+                      (p) => p.name.toLowerCase().contains(
+                        textEditingValue.text.toLowerCase(),
+                      ),
+                    );
+                  },
+                  onSelected: (ProductSummaryModel selection) {
+                    ++_verificationRequestId;
+                    _productVerificationDebounce?.cancel();
+                    _nameCtrl.text = selection.name;
+                    setState(() {
+                      _selectedProduct = selection;
+                      _itemNameError = null;
+                      _isVerifyingProduct = false;
+                      _selectedKategori = _categoryKeyFromBackend(
+                        selection.category ?? '',
                       );
-                },
-                onSelected: (ProductSummaryModel selection) {
-                  ++_verificationRequestId;
-                  _productVerificationDebounce?.cancel();
-                  _nameCtrl.text = selection.name;
-                  setState(() {
-                    _selectedProduct = selection;
-                    _itemNameError = null;
-                    _isVerifyingProduct = false;
-                    _selectedKategori = _categoryKeyFromBackend(
-                      selection.category ?? '',
-                    );
-                  });
-                },
-                fieldViewBuilder: (BuildContext context, TextEditingController fieldTextEditingController, FocusNode focusNode, VoidCallback onFieldSubmitted) {
-                    return TextFormField(
-                      controller: fieldTextEditingController,
-                      focusNode: focusNode,
-                      autofocus: widget.autoFocusName,
-                      style: GoogleFonts.urbanist(
-                        color: const Color(0xFF1E293B),
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500,
-                      ),
-                      decoration: _fieldDecoration('item_name'.tr(), Icons.label_outline).copyWith(
-                        errorText: _itemNameError,
-                        suffixIcon: fieldTextEditingController.text.isNotEmpty
-                            ? IconButton(
-                                icon: Icon(Icons.clear, size: 18, color: Colors.grey.shade400),
-                                onPressed: () {
-                                  ++_verificationRequestId;
-                                  _productVerificationDebounce?.cancel();
-                                  fieldTextEditingController.clear();
-                                  _nameCtrl.clear();
-                                  setState(() {
-                                    _itemNameError = null;
-                                    _selectedProduct = null;
-                                    _isVerifyingProduct = false;
-                                    _selectedKategori = null;
-                                  });
-                                },
-                              )
-                            : null,
-                      ),
-                      onChanged: (value) {
-                        _nameCtrl.text = value;
-                        _selectedProduct = null;
-                        if (_itemNameError != null) {
-                          setState(() {
-                            _itemNameError = null;
-                          });
-                        }
-                        ref
-                            .read(productDetailControllerProvider.notifier)
-                            .searchProducts(value);
-                        _scheduleProductVerification(value);
+                    });
+                  },
+                  fieldViewBuilder:
+                      (
+                        BuildContext context,
+                        TextEditingController fieldTextEditingController,
+                        FocusNode focusNode,
+                        VoidCallback onFieldSubmitted,
+                      ) {
+                        return TextFormField(
+                          controller: fieldTextEditingController,
+                          focusNode: focusNode,
+                          autofocus: widget.autoFocusName,
+                          style: GoogleFonts.urbanist(
+                            color: const Color(0xFF1E293B),
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                          ),
+                          decoration:
+                              _fieldDecoration(
+                                'item_name'.tr(),
+                                Icons.label_outline,
+                              ).copyWith(
+                                errorText: _itemNameError,
+                                suffixIcon:
+                                    fieldTextEditingController.text.isNotEmpty
+                                    ? IconButton(
+                                        icon: Icon(
+                                          Icons.clear,
+                                          size: 18,
+                                          color: Colors.grey.shade400,
+                                        ),
+                                        onPressed: () {
+                                          ++_verificationRequestId;
+                                          _productVerificationDebounce
+                                              ?.cancel();
+                                          fieldTextEditingController.clear();
+                                          _nameCtrl.clear();
+                                          setState(() {
+                                            _itemNameError = null;
+                                            _selectedProduct = null;
+                                            _isVerifyingProduct = false;
+                                            _selectedKategori = null;
+                                          });
+                                        },
+                                      )
+                                    : null,
+                              ),
+                          onChanged: (value) {
+                            _nameCtrl.text = value;
+                            _selectedProduct = null;
+                            if (_itemNameError != null) {
+                              setState(() {
+                                _itemNameError = null;
+                              });
+                            }
+                            ref
+                                .read(productDetailControllerProvider.notifier)
+                                .searchProducts(value);
+                            _scheduleProductVerification(value);
+                          },
+                        );
                       },
-                    );
-                },
-              ),
-              const SizedBox(height: 14),
-
-              // ── Field: Kategori ──
-              DropdownButtonFormField<String>(
-                value: _selectedKategori,
-                decoration: _fieldDecoration(
-                    'category'.tr(), Icons.category_outlined),
-                style: GoogleFonts.urbanist(
-                  color: const Color(0xFF1E293B),
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
                 ),
-                dropdownColor: Colors.white,
-                borderRadius: BorderRadius.circular(14),
-                icon: Icon(Icons.keyboard_arrow_down_rounded,
-                    color: Colors.grey.shade400),
-                items: _categoryKeys.map((key) {
-                  return DropdownMenuItem<String>(
-                    value: key,
-                    child: Text(key,
+                const SizedBox(height: 14),
+
+                // ── Field: Kategori ──
+                DropdownButtonFormField<String>(
+                  value: _selectedKategori,
+                  decoration: _fieldDecoration(
+                    'category'.tr(),
+                    Icons.category_outlined,
+                  ),
+                  style: GoogleFonts.urbanist(
+                    color: const Color(0xFF1E293B),
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                  ),
+                  dropdownColor: Colors.white,
+                  borderRadius: BorderRadius.circular(14),
+                  icon: Icon(
+                    Icons.keyboard_arrow_down_rounded,
+                    color: Colors.grey.shade400,
+                  ),
+                  items: _categoryKeys.map((key) {
+                    return DropdownMenuItem<String>(
+                      value: key,
+                      child: Text(
+                        displayProductCategory(key),
                         style: GoogleFonts.urbanist(
                           fontSize: 14,
                           fontWeight: FontWeight.w500,
                           color: const Color(0xFF1E293B),
-                        )),
-                  );
-                }).toList(),
-                onChanged: (val) => setState(() => _selectedKategori = val),
-              ),
-              const SizedBox(height: 14),
-
-              // ── Field: Harga Barang ──
-              TextFormField(
-                controller: _priceCtrl,
-                keyboardType: TextInputType.number,
-                inputFormatters: [
-                  FilteringTextInputFormatter.digitsOnly,
-                  _ThousandSeparatorFormatter(),
-                ],
-                style: GoogleFonts.urbanist(
-                  color: const Color(0xFF1E293B),
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    );
+                  }).toList(),
+                  onChanged: (val) => setState(() => _selectedKategori = val),
                 ),
-                decoration:
-                    _fieldDecoration('item_price'.tr(), Icons.attach_money).copyWith(
-                  prefixText: 'Rp ',
-                  prefixStyle: GoogleFonts.urbanist(
+                const SizedBox(height: 14),
+
+                // ── Field: Harga Barang ──
+                TextFormField(
+                  controller: _priceCtrl,
+                  keyboardType: TextInputType.number,
+                  inputFormatters: [
+                    FilteringTextInputFormatter.digitsOnly,
+                    _ThousandSeparatorFormatter(),
+                  ],
+                  style: GoogleFonts.urbanist(
                     color: const Color(0xFF1E293B),
                     fontSize: 14,
-                    fontWeight: FontWeight.w600,
+                    fontWeight: FontWeight.w500,
                   ),
-                ),
-              ),
-              const SizedBox(height: 14),
-
-              // ── Field: Berat/Volume ──
-              TextFormField(
-                controller: _weightCtrl,
-                keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                style: GoogleFonts.urbanist(
-                  color: const Color(0xFF1E293B),
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
-                ),
-                decoration: _fieldDecoration(
-                    'weight_volume'.tr(), Icons.scale_outlined).copyWith(
-                  suffixIcon: InkWell(
-                    borderRadius: BorderRadius.circular(8),
-                    onTap: () {
-                      setState(() {
-                        _weightUnitIndex =
-                            (_weightUnitIndex + 1) % _weightUnits.length;
-                      });
-                    },
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 14, vertical: 12),
-                      child: Text(
-                        _weightUnits[_weightUnitIndex],
-                        style: GoogleFonts.urbanist(
+                  decoration:
+                      _fieldDecoration(
+                        'item_price'.tr(),
+                        Icons.attach_money,
+                      ).copyWith(
+                        prefixText: 'Rp ',
+                        prefixStyle: GoogleFonts.urbanist(
+                          color: const Color(0xFF1E293B),
                           fontSize: 14,
-                          fontWeight: FontWeight.w700,
-                          color: _accentGreen,
+                          fontWeight: FontWeight.w600,
                         ),
                       ),
-                    ),
-                  ),
                 ),
-              ),
-              const SizedBox(height: 20),
+                const SizedBox(height: 14),
 
-              // ── Urgency Selector ──
-              Text(
-                'urgency_level'.tr(),
-                style: GoogleFonts.urbanist(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w700,
-                  color: const Color(0xFF475569),
-                ),
-              ),
-              const SizedBox(height: 10),
-              Row(
-                children: List.generate(3, (i) {
-                  final isSelected = _selectedUrgency == i;
-                  return Expanded(
-                    child: GestureDetector(
-                      onTap: () => setState(() => _selectedUrgency = i),
-                      child: AnimatedContainer(
-                        duration: const Duration(milliseconds: 200),
-                        margin: EdgeInsets.only(
-                          right: i < 2 ? 8 : 0,
-                        ),
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                        decoration: BoxDecoration(
-                          color: isSelected
-                              ? _urgencyBgColors[i]
-                              : const Color(0xFFF8FAFC),
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(
-                            color: isSelected
-                                ? _urgencyColors[i]
-                                : Colors.grey.shade200,
-                            width: isSelected ? 1.5 : 1,
+                // ── Field: Berat/Volume ──
+                TextFormField(
+                  controller: _weightCtrl,
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
+                  ),
+                  style: GoogleFonts.urbanist(
+                    color: const Color(0xFF1E293B),
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                  ),
+                  decoration:
+                      _fieldDecoration(
+                        'weight_volume'.tr(),
+                        Icons.scale_outlined,
+                      ).copyWith(
+                        suffixIcon: InkWell(
+                          borderRadius: BorderRadius.circular(8),
+                          onTap: () {
+                            setState(() {
+                              _weightUnitIndex =
+                                  (_weightUnitIndex + 1) % _weightUnits.length;
+                            });
+                          },
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 14,
+                              vertical: 12,
+                            ),
+                            child: Text(
+                              _weightUnits[_weightUnitIndex],
+                              style: GoogleFonts.urbanist(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w700,
+                                color: _accentGreen,
+                              ),
+                            ),
                           ),
                         ),
-                        child: Column(
-                          children: [
-                            Icon(
-                              i == 0
-                                  ? Icons.arrow_downward_rounded
-                                  : i == 1
-                                      ? Icons.remove_rounded
-                                      : Icons.priority_high_rounded,
-                              size: 18,
+                      ),
+                ),
+                const SizedBox(height: 20),
+
+                // ── Urgency Selector ──
+                Text(
+                  'urgency_level'.tr(),
+                  style: GoogleFonts.urbanist(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                    color: const Color(0xFF475569),
+                  ),
+                ),
+                const SizedBox(height: 10),
+                Row(
+                  children: List.generate(3, (i) {
+                    final isSelected = _selectedUrgency == i;
+                    return Expanded(
+                      child: GestureDetector(
+                        onTap: () => setState(() => _selectedUrgency = i),
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 200),
+                          margin: EdgeInsets.only(right: i < 2 ? 8 : 0),
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          decoration: BoxDecoration(
+                            color: isSelected
+                                ? _urgencyBgColors[i]
+                                : const Color(0xFFF8FAFC),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
                               color: isSelected
                                   ? _urgencyColors[i]
-                                  : Colors.grey.shade400,
+                                  : Colors.grey.shade200,
+                              width: isSelected ? 1.5 : 1,
                             ),
-                            const SizedBox(height: 4),
-                            Text(
-                              _urgencyLabels[i],
-                              style: GoogleFonts.urbanist(
-                                fontSize: 12,
-                                fontWeight: isSelected
-                                    ? FontWeight.w700
-                                    : FontWeight.w600,
+                          ),
+                          child: Column(
+                            children: [
+                              Icon(
+                                i == 0
+                                    ? Icons.arrow_downward_rounded
+                                    : i == 1
+                                    ? Icons.remove_rounded
+                                    : Icons.priority_high_rounded,
+                                size: 18,
                                 color: isSelected
-                                    ? _urgencyTextColors[i]
-                                    : const Color(0xFF4B5563),
+                                    ? _urgencyColors[i]
+                                    : Colors.grey.shade400,
                               ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  );
-                }),
-              ),
-              const SizedBox(height: 28),
-
-              // ── Analyze Button (Tugas 3) ──
-              SizedBox(
-                width: double.infinity,
-                height: 54,
-                child: ElevatedButton(
-                  onPressed:
-                      _isAnalyzing || _isVerifyingProduct || _selectedProduct == null
-                          ? null
-                          : _onAnalyze,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: _accentGreen,
-                    disabledBackgroundColor:
-                        const Color(0xFFE2E8F0),
-                    foregroundColor: Colors.white,
-                    elevation: 0,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  child: _isAnalyzing || _isVerifyingProduct
-                      ? Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            const SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                color: Colors.white,
+                              const SizedBox(height: 4),
+                              Text(
+                                _urgencyLabels[i],
+                                style: GoogleFonts.urbanist(
+                                  fontSize: 12,
+                                  fontWeight: isSelected
+                                      ? FontWeight.w700
+                                      : FontWeight.w600,
+                                  color: isSelected
+                                      ? _urgencyTextColors[i]
+                                      : const Color(0xFF4B5563),
+                                ),
                               ),
-                            ),
-                            const SizedBox(width: 12),
-                            Text(
-                              _isVerifyingProduct
-                                  ? 'Memeriksa produk...'
-                                  : 'Analyzing...',
-                              style: GoogleFonts.urbanist(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w700,
-                                color: Colors.white,
-                              ),
-                            ),
-                          ],
-                        )
-                      : Text(
-                          'analyze_now'.tr(),
-                          style: GoogleFonts.urbanist(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w700,
-                            color: Colors.white,
+                            ],
                           ),
                         ),
+                      ),
+                    );
+                  }),
                 ),
-              ),
-              const SizedBox(height: 8),
-            ],
-          ),
+                const SizedBox(height: 28),
+
+                // ── Analyze Button (Tugas 3) ──
+                SizedBox(
+                  width: double.infinity,
+                  height: 54,
+                  child: ElevatedButton(
+                    onPressed:
+                        _isAnalyzing ||
+                            _isVerifyingProduct ||
+                            _selectedProduct == null
+                        ? null
+                        : _onAnalyze,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: _accentGreen,
+                      disabledBackgroundColor: const Color(0xFFE2E8F0),
+                      foregroundColor: Colors.white,
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: _isAnalyzing || _isVerifyingProduct
+                        ? Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: Colors.white,
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Text(
+                                _isVerifyingProduct
+                                    ? 'scanner_checking_product'.tr()
+                                    : 'Analyzing...',
+                                style: GoogleFonts.urbanist(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w700,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ],
+                          )
+                        : Text(
+                            'analyze_now'.tr(),
+                            style: GoogleFonts.urbanist(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w700,
+                              color: Colors.white,
+                            ),
+                          ),
+                  ),
+                ),
+                const SizedBox(height: 8),
+              ],
+            ),
           ),
         ),
       ),

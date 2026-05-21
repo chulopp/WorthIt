@@ -4,7 +4,7 @@ import 'repository_helpers.dart';
 
 class ProductRepository {
   ProductRepository({ApiClient? apiClient})
-      : _apiClient = apiClient ?? ApiClient.instance;
+    : _apiClient = apiClient ?? ApiClient.instance;
 
   static const int productFetchLimit = 100;
 
@@ -26,9 +26,9 @@ class ProductRepository {
           'offset': offset,
         },
       );
-      return responseDataList(response)
-          .map(ProductSummaryModel.fromJson)
-          .toList(growable: false);
+      return responseDataList(
+        response,
+      ).map(ProductSummaryModel.fromJson).toList(growable: false);
     });
   }
 
@@ -44,9 +44,9 @@ class ProductRepository {
           'limit': _boundedLimit(limit),
         },
       );
-      return responseDataList(response)
-          .map(ProductSummaryModel.fromJson)
-          .toList(growable: false);
+      return responseDataList(
+        response,
+      ).map(ProductSummaryModel.fromJson).toList(growable: false);
     });
   }
 

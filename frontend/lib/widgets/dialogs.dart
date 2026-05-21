@@ -20,9 +20,7 @@ Future<bool?> showLogoutDialog(BuildContext context) {
     builder: (context) {
       return AlertDialog(
         backgroundColor: Colors.white,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(24),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
         contentPadding: const EdgeInsets.fromLTRB(28, 24, 28, 8),
         actionsPadding: const EdgeInsets.fromLTRB(28, 0, 28, 24),
 
@@ -138,9 +136,7 @@ Future<bool?> showDeleteAccountDialog(BuildContext context) {
     builder: (context) {
       return AlertDialog(
         backgroundColor: Colors.white,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(24),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
         contentPadding: const EdgeInsets.fromLTRB(28, 8, 28, 8),
         actionsPadding: const EdgeInsets.fromLTRB(28, 8, 28, 24),
 

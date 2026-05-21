@@ -53,20 +53,24 @@ void main() {
       );
     });
 
-    test('returns login-required failure when protected endpoint has no token',
-        () async {
-      final adapter = _FakeAdapter(
-        statusCode: 200,
-        body: <String, dynamic>{'status': 'success'},
-      );
-      final client = _client(adapter);
+    test(
+      'returns login-required failure when protected endpoint has no token',
+      () async {
+        final adapter = _FakeAdapter(
+          statusCode: 200,
+          body: <String, dynamic>{'status': 'success'},
+        );
+        final client = _client(adapter);
 
-      final result = await client.run(() => client.get('/v1/history/purchases'));
+        final result = await client.run(
+          () => client.get('/v1/history/purchases'),
+        );
 
-      expect(result.isFailure, isTrue);
-      expect(result.error?.code, equals('LOGIN_REQUIRED'));
-      expect(adapter.lastOptions, isNull);
-    });
+        expect(result.isFailure, isTrue);
+        expect(result.error?.code, equals('LOGIN_REQUIRED'));
+        expect(adapter.lastOptions, isNull);
+      },
+    );
 
     test('maps FastAPI standard error response', () async {
       final adapter = _FakeAdapter(
@@ -153,10 +157,7 @@ ApiClient _client(_FakeAdapter adapter, {String? token}) {
 }
 
 class _FakeAdapter implements HttpClientAdapter {
-  _FakeAdapter({
-    required this.statusCode,
-    required this.body,
-  });
+  _FakeAdapter({required this.statusCode, required this.body});
 
   final int statusCode;
   final Object body;

@@ -4,7 +4,7 @@ import 'repository_helpers.dart';
 
 class UserRepository {
   UserRepository({ApiClient? apiClient})
-      : _apiClient = apiClient ?? ApiClient.instance;
+    : _apiClient = apiClient ?? ApiClient.instance;
 
   final ApiClient _apiClient;
 
@@ -21,9 +21,9 @@ class UserRepository {
   Future<ApiResult<List<FavoriteModel>>> getFavorites() {
     return _apiClient.run(() async {
       final response = await _apiClient.get('/v1/favorites');
-      return responseDataList(response)
-          .map(FavoriteModel.fromJson)
-          .toList(growable: false);
+      return responseDataList(
+        response,
+      ).map(FavoriteModel.fromJson).toList(growable: false);
     });
   }
 

@@ -34,7 +34,9 @@ class PdfGenerator {
     required String colDate,
     required String colItemName,
     required String colCategory,
+    required String colQuantity,
     required String colPrice,
+    required String colTotalPrice,
     required String footerText,
     required String categoryFallback,
   }) async {
@@ -57,7 +59,9 @@ class PdfGenerator {
       colDate: colDate,
       colItemName: colItemName,
       colCategory: colCategory,
+      colQuantity: colQuantity,
       colPrice: colPrice,
+      colTotalPrice: colTotalPrice,
       footerText: footerText,
       categoryFallback: categoryFallback,
       dateFormatted: dateFormatted,
@@ -77,7 +81,9 @@ class PdfGenerator {
     required String colDate,
     required String colItemName,
     required String colCategory,
+    required String colQuantity,
     required String colPrice,
+    required String colTotalPrice,
     required String footerText,
     required String categoryFallback,
     required String dateFormatted,
@@ -117,7 +123,9 @@ class PdfGenerator {
             colDate: colDate,
             colItemName: colItemName,
             colCategory: colCategory,
+            colQuantity: colQuantity,
             colPrice: colPrice,
+            colTotalPrice: colTotalPrice,
             categoryFallback: categoryFallback,
           ),
         ],
@@ -276,20 +284,33 @@ class PdfGenerator {
     required String colDate,
     required String colItemName,
     required String colCategory,
+    required String colQuantity,
     required String colPrice,
+    required String colTotalPrice,
     required String categoryFallback,
   }) {
-    final headers = [colNo, colDate, colItemName, colCategory, colPrice];
+    final grouped = _groupItems(items);
+    final headers = [
+      colNo,
+      colDate,
+      colItemName,
+      colCategory,
+      colQuantity,
+      colPrice,
+      colTotalPrice,
+    ];
 
-    final data = List<List<String>>.generate(items.length, (i) {
-      final item = items[i];
+    final data = List<List<String>>.generate(grouped.length, (i) {
+      final item = grouped[i];
       final date = DateFormat('dd/MM/yyyy').format(DateTime.now());
       return [
         '${i + 1}',
         date,
         item.name,
-        categoryFallback,
-        _formatRp(item.price),
+        item.category.isEmpty ? categoryFallback : item.category,
+        item.quantity.toString(),
+        _formatRp(item.unitPrice),
+        _formatRp(item.totalPrice),
       ];
     });
 
@@ -314,15 +335,44 @@ class PdfGenerator {
       cellPadding: const pw.EdgeInsets.symmetric(horizontal: 10, vertical: 8),
       columnWidths: {
         0: const pw.FixedColumnWidth(36), // No
-        1: const pw.FixedColumnWidth(80), // Date
+        1: const pw.FixedColumnWidth(70), // Date
         2: const pw.FlexColumnWidth(3), // Item Name
-        3: const pw.FlexColumnWidth(2), // Category
-        4: const pw.FixedColumnWidth(100), // Price
+        3: const pw.FlexColumnWidth(1.6), // Category
+        4: const pw.FixedColumnWidth(48), // Quantity
+        5: const pw.FixedColumnWidth(82), // Unit Price
+        6: const pw.FixedColumnWidth(92), // Total Price
       },
       oddRowDecoration: pw.BoxDecoration(color: _lightGreenBg),
       headers: headers,
       data: data,
     );
+  }
+
+  static List<_PdfExpenseRow> _groupItems(List<RecentActivity> items) {
+    final grouped = <String, _PdfExpenseRow>{};
+    for (final item in items) {
+      final keySource = item.productId?.trim().isNotEmpty == true
+          ? item.productId!.trim()
+          : item.name.trim().toLowerCase();
+      final key = keySource.isEmpty ? item.name.toLowerCase() : keySource;
+      final quantity = item.quantity <= 0 ? 1 : item.quantity;
+      final unitPrice = item.unitPrice ?? (item.price / quantity);
+      final totalPrice = unitPrice * quantity;
+      final existing = grouped[key];
+      if (existing == null) {
+        grouped[key] = _PdfExpenseRow(
+          name: item.name,
+          category: item.category,
+          quantity: quantity,
+          unitPrice: unitPrice,
+          totalPrice: totalPrice,
+        );
+      } else {
+        existing.quantity += quantity;
+        existing.totalPrice += totalPrice;
+      }
+    }
+    return grouped.values.toList(growable: false);
   }
 
   // ═══════════════════════════════════════════════════════════════
@@ -371,4 +421,20 @@ class PdfGenerator {
     }
     return 'Rp $buf';
   }
+}
+
+class _PdfExpenseRow {
+  final String name;
+  final String category;
+  int quantity;
+  final double unitPrice;
+  double totalPrice;
+
+  _PdfExpenseRow({
+    required this.name,
+    required this.category,
+    required this.quantity,
+    required this.unitPrice,
+    required this.totalPrice,
+  });
 }

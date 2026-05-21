@@ -26,22 +26,20 @@ import 'package:easy_localization/easy_localization.dart';
 import '../services/auth_service.dart';
 import '../utils/snackbar_helper.dart';
 
-class ProfileScreen extends StatefulWidget {
+class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({Key? key}) : super(key: key);
 
   @override
-  State<ProfileScreen> createState() => _ProfileScreenState();
+  ConsumerState<ProfileScreen> createState() => _ProfileScreenState();
 }
 
-class _ProfileScreenState extends State<ProfileScreen> {
+class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   bool _isReminderOn = true;
   late bool isIndonesian;
-  String _username = 'imameeee_if';
 
   @override
   void initState() {
     super.initState();
-    _loadUsername();
     // Sync toggle with the actual active locale to prevent reset on re-enter
     isIndonesian = true; // will be corrected in didChangeDependencies
   }
@@ -51,14 +49,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     super.didChangeDependencies();
     // Read the real active locale so the toggle is always in sync
     isIndonesian = context.locale.languageCode == 'id';
-  }
-
-  Future<void> _loadUsername() async {
-    final prefs = await SharedPreferences.getInstance();
-    if (!mounted) return;
-    setState(() {
-      _username = prefs.getString('username') ?? 'imameeee_if';
-    });
   }
 
   User? _currentUserOrNull() {
@@ -136,6 +126,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ? 'U'
         : words.take(2).map((part) => part[0].toUpperCase()).join();
 
+    final usernameState = ref.watch(profileUsernameProvider);
+    final username = usernameState.maybeWhen(
+      data: (name) => name,
+      orElse: () => '...',
+    );
+
     return Scaffold(
       backgroundColor: bgScaffold,
       appBar: AppBar(
@@ -163,11 +159,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
             // Header / User Card
             GestureDetector(
               onTap: () async {
-                print(
-                  'INI TOKEN SAYA: ${Supabase.instance.client.auth.currentSession?.accessToken}',
+                await Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const AccountDetailsScreen(),
+                  ),
                 );
-                await Navigator.push(context, MaterialPageRoute(builder: (context) => const AccountDetailsScreen()));
-                _loadUsername();
               },
               child: Container(
                 padding: const EdgeInsets.all(16),
@@ -222,7 +219,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             children: [
                               Flexible(
                                 child: Text(
-                                  '@$_username',
+                                  '@$username',
                                   style: GoogleFonts.bricolageGrotesque(
                                     color: Colors.grey.shade600,
                                     fontSize: 13,
@@ -238,7 +235,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         ],
                       ),
                     ),
-                    const Icon(Icons.chevron_right, color: Colors.grey, size: 22),
+                    const Icon(
+                      Icons.chevron_right,
+                      color: Colors.grey,
+                      size: 22,
+                    ),
                   ],
                 ),
               ),
@@ -251,7 +252,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
               onTap: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => const SubscriptionScreen()),
+                  MaterialPageRoute(
+                    builder: (context) => const SubscriptionScreen(),
+                  ),
                 );
               },
               child: Container(
@@ -336,13 +339,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     onTap: () {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (context) => const BudgetSettingsScreen()),
+                        MaterialPageRoute(
+                          builder: (context) => const BudgetSettingsScreen(),
+                        ),
                       );
                     },
                   ),
-                  const Divider(height: 1, indent: 52, color: Color(0xFFF1F5F9)),
+                  const Divider(
+                    height: 1,
+                    indent: 52,
+                    color: Color(0xFFF1F5F9),
+                  ),
                   ListTile(
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 2),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 2,
+                    ),
                     leading: const Icon(
                       Icons.notifications_active_outlined,
                       color: Color(0xFF1E293B),
@@ -364,7 +376,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         });
                         SnackbarHelper.showTopSnackbar(
                           context,
-                          val ? 'reminder_activated_success'.tr() : 'reminder_deactivated'.tr(),
+                          val
+                              ? 'reminder_activated_success'.tr()
+                              : 'reminder_deactivated'.tr(),
                         );
                       },
                       activeColor: const Color(0xFF304423),
@@ -423,10 +437,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           ? 'Language successfully changed to English'
                           : 'Bahasa berhasil diubah ke Indonesia';
 
-                      SnackbarHelper.showTopSnackbar(
-                        context,
-                        message,
-                      );
+                      SnackbarHelper.showTopSnackbar(context, message);
                     },
                     child: AnimatedContainer(
                       duration: const Duration(milliseconds: 200),
@@ -434,19 +445,27 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       height: 30,
                       padding: const EdgeInsets.all(2),
                       decoration: BoxDecoration(
-                        color: isIndonesian ? const Color(0xFF304423) : const Color(0xFFC9E88A),
+                        color: isIndonesian
+                            ? const Color(0xFF304423)
+                            : const Color(0xFFC9E88A),
                         borderRadius: BorderRadius.circular(15),
                       ),
                       child: Stack(
                         children: [
                           Align(
-                            alignment: isIndonesian ? Alignment.centerLeft : Alignment.centerRight,
+                            alignment: isIndonesian
+                                ? Alignment.centerLeft
+                                : Alignment.centerRight,
                             child: Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8.0,
+                              ),
                               child: Text(
                                 isIndonesian ? 'ID' : 'EN',
                                 style: GoogleFonts.bricolageGrotesque(
-                                  color: isIndonesian ? Colors.white : const Color(0xFF304423),
+                                  color: isIndonesian
+                                      ? Colors.white
+                                      : const Color(0xFF304423),
                                   fontWeight: FontWeight.bold,
                                   fontSize: 12,
                                 ),
@@ -456,7 +475,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           AnimatedAlign(
                             duration: const Duration(milliseconds: 200),
                             curve: Curves.easeInOut,
-                            alignment: isIndonesian ? Alignment.centerRight : Alignment.centerLeft,
+                            alignment: isIndonesian
+                                ? Alignment.centerRight
+                                : Alignment.centerLeft,
                             child: Container(
                               width: 26,
                               height: 26,
@@ -468,7 +489,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                     color: Colors.black.withValues(alpha: 0.1),
                                     blurRadius: 2,
                                     offset: const Offset(0, 1),
-                                  )
+                                  ),
                                 ],
                               ),
                             ),
@@ -532,7 +553,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         onTap: () {
                           Navigator.push(
                             context,
-                            MaterialPageRoute(builder: (_) => const FaqScreen()),
+                            MaterialPageRoute(
+                              builder: (_) => const FaqScreen(),
+                            ),
                           );
                         },
                       ),
@@ -619,99 +642,104 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                           ),
                                           decoration: BoxDecoration(
                                             color: Colors.grey.shade300,
-                                            borderRadius:
-                                                BorderRadius.circular(2),
-                                          ),
-                                        ),
-                                      ),
-                                    SvgPicture.asset(
-                                      'assets/svg/ILUSTRASI.svg',
-                                      width: 180,
-                                    ),
-                                    const SizedBox(height: 24),
-                                    Text(
-                                      'logout_title'.tr(),
-                                      style: GoogleFonts.bricolageGrotesque(
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 20,
-                                        color: const Color(0xFF1E293B),
-                                      ),
-                                      textAlign: TextAlign.center,
-                                    ),
-                                    const SizedBox(height: 12),
-                                    Text(
-                                      'logout_desc'.tr(),
-                                      style: GoogleFonts.bricolageGrotesque(
-                                        fontSize: 14,
-                                        color: Colors.grey.shade600,
-                                      ),
-                                      textAlign: TextAlign.center,
-                                    ),
-                                    const SizedBox(height: 32),
-                                    Row(
-                                      children: [
-                                        Expanded(
-                                          child: ElevatedButton(
-                                            style: ElevatedButton.styleFrom(
-                                              backgroundColor: const Color(
-                                                0xFF304423,
-                                              ),
-                                              shape: RoundedRectangleBorder(
-                                                borderRadius:
-                                                    BorderRadius.circular(12),
-                                              ),
-                                              padding:
-                                                  const EdgeInsets.symmetric(
-                                                    vertical: 14,
-                                                  ),
-                                              elevation: 0,
-                                            ),
-                                            onPressed: () async {
-                                              Navigator.pop(context);
-                                              await _performLogout();
-                                            },
-                                            child: Text(
-                                              'btn_yes_logout'.tr(),
-                                              style: GoogleFonts.bricolageGrotesque(
-                                                color: Colors.white,
-                                                fontWeight: FontWeight.bold,
-                                              ),
+                                            borderRadius: BorderRadius.circular(
+                                              2,
                                             ),
                                           ),
                                         ),
-                                        const SizedBox(width: 12),
-                                        Expanded(
-                                          child: OutlinedButton(
-                                            style: OutlinedButton.styleFrom(
-                                              side: BorderSide(
-                                                color: Colors.grey.shade300,
-                                              ),
-                                              shape: RoundedRectangleBorder(
-                                                borderRadius:
-                                                    BorderRadius.circular(12),
-                                              ),
-                                              padding:
-                                                  const EdgeInsets.symmetric(
-                                                    vertical: 14,
-                                                  ),
-                                            ),
-                                            onPressed: () =>
-                                                Navigator.pop(context),
-                                            child: Text(
-                                              'btn_cancel'.tr(),
-                                              style: GoogleFonts.bricolageGrotesque(
-                                                color: const Color(
-                                                  0xFF1E293B,
+                                      ),
+                                      SvgPicture.asset(
+                                        'assets/svg/ILUSTRASI.svg',
+                                        width: 180,
+                                      ),
+                                      const SizedBox(height: 24),
+                                      Text(
+                                        'logout_title'.tr(),
+                                        style: GoogleFonts.bricolageGrotesque(
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 20,
+                                          color: const Color(0xFF1E293B),
+                                        ),
+                                        textAlign: TextAlign.center,
+                                      ),
+                                      const SizedBox(height: 12),
+                                      Text(
+                                        'logout_desc'.tr(),
+                                        style: GoogleFonts.bricolageGrotesque(
+                                          fontSize: 14,
+                                          color: Colors.grey.shade600,
+                                        ),
+                                        textAlign: TextAlign.center,
+                                      ),
+                                      const SizedBox(height: 32),
+                                      Row(
+                                        children: [
+                                          Expanded(
+                                            child: ElevatedButton(
+                                              style: ElevatedButton.styleFrom(
+                                                backgroundColor: const Color(
+                                                  0xFF304423,
                                                 ),
-                                                fontWeight: FontWeight.bold,
+                                                shape: RoundedRectangleBorder(
+                                                  borderRadius:
+                                                      BorderRadius.circular(12),
+                                                ),
+                                                padding:
+                                                    const EdgeInsets.symmetric(
+                                                      vertical: 14,
+                                                    ),
+                                                elevation: 0,
+                                              ),
+                                              onPressed: () async {
+                                                Navigator.pop(context);
+                                                await _performLogout();
+                                              },
+                                              child: Text(
+                                                'btn_yes_logout'.tr(),
+                                                style:
+                                                    GoogleFonts.bricolageGrotesque(
+                                                      color: Colors.white,
+                                                      fontWeight:
+                                                          FontWeight.bold,
+                                                    ),
                                               ),
                                             ),
                                           ),
-                                        ),
-                                      ],
-                                    ),
-                                  ],
-                                ),
+                                          const SizedBox(width: 12),
+                                          Expanded(
+                                            child: OutlinedButton(
+                                              style: OutlinedButton.styleFrom(
+                                                side: BorderSide(
+                                                  color: Colors.grey.shade300,
+                                                ),
+                                                shape: RoundedRectangleBorder(
+                                                  borderRadius:
+                                                      BorderRadius.circular(12),
+                                                ),
+                                                padding:
+                                                    const EdgeInsets.symmetric(
+                                                      vertical: 14,
+                                                    ),
+                                              ),
+                                              onPressed: () =>
+                                                  Navigator.pop(context),
+                                              child: Text(
+                                                'btn_cancel'.tr(),
+                                                style:
+                                                    GoogleFonts.bricolageGrotesque(
+                                                      color: const Color(
+                                                        0xFF1E293B,
+                                                      ),
+                                                      fontWeight:
+                                                          FontWeight.bold,
+                                                    ),
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
                                 ),
                               );
                             },

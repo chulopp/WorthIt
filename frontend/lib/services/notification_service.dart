@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../models/notification_generator.dart';
 import '../models/notification_model.dart';
 
 class NotificationService {
@@ -8,11 +9,26 @@ class NotificationService {
   factory NotificationService() => _instance;
   NotificationService._internal();
 
-  final ValueNotifier<List<NotificationModel>> notifications =
-      ValueNotifier(<NotificationModel>[]);
+  final ValueNotifier<List<NotificationModel>> notifications = ValueNotifier(
+    <NotificationModel>[],
+  );
 
   Future<void> init() async {
     await checkEndOfMonthReminders();
+  }
+
+  void loadMockNotifications({
+    bool replace = false,
+    String lastMonthName = 'February',
+    String twoMonthsAgoName = 'January',
+  }) {
+    final mocks = NotificationGenerator.mockNotifications(
+      lastMonthName: lastMonthName,
+      twoMonthsAgoName: twoMonthsAgoName,
+    );
+    notifications.value = replace
+        ? mocks
+        : <NotificationModel>[...notifications.value, ...mocks];
   }
 
   void addNotification(NotificationModel notification) {
@@ -29,48 +45,81 @@ class NotificationService {
     notifications.value = current;
   }
 
-  Future<void> checkEndOfMonthReminders() async {
+  Future<void> checkEndOfMonthReminders({int uncheckedItemCount = 1}) async {
+    if (uncheckedItemCount <= 0) return;
+
     final prefs = await SharedPreferences.getInstance();
     final now = DateTime.now();
-    final lastDayOfMonth = DateTime(now.year, now.month + 1, 0);
-    final daysUntilEnd = lastDayOfMonth.day - now.day;
+    final today = DateTime(now.year, now.month, now.day);
+    final firstDayOfNextMonth = DateTime(now.year, now.month + 1, 1);
+    final daysUntilReset = firstDayOfNextMonth.difference(today).inDays;
 
-    if (daysUntilEnd != 1 && daysUntilEnd != 3) return;
+    if (daysUntilReset < 1 || daysUntilReset > 3) return;
 
     final todayKey = 'eom_reminder_${now.year}_${now.month}_${now.day}';
     if (prefs.getBool(todayKey) ?? false) return;
 
     addNotification(
-      NotificationModel(
-        title: 'Pengingat Akhir Bulan',
-        message:
-            'Sudah mau akhir bulan! Jangan lupa cek barang belanjaan yang belum terbeli ya.',
-        dateTime:
-            '${now.day.toString().padLeft(2, '0')} ${_getMonthName(now.month)} ${now.year} '
-            '${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}',
-        type: NotificationType.reminder,
-        isUnread: true,
+      NotificationGenerator.shoppingListReminder(
+        uncheckedItemCount: uncheckedItemCount,
+        daysUntilReset: daysUntilReset,
+        createdAt: now,
       ),
     );
 
     await prefs.setBool(todayKey, true);
   }
 
-  String _getMonthName(int month) {
-    const months = [
-      'Jan',
-      'Feb',
-      'Mar',
-      'Apr',
-      'May',
-      'Jun',
-      'Jul',
-      'Agu',
-      'Sep',
-      'Okt',
-      'Nov',
-      'Des',
-    ];
-    return months[month - 1];
+  void notifyOverBudget({
+    required num totalSpending,
+    required num monthlyBudget,
+  }) {
+    if (monthlyBudget <= 0 || totalSpending < monthlyBudget) return;
+    addNotification(
+      NotificationGenerator.overBudget(
+        totalSpending: totalSpending,
+        monthlyBudget: monthlyBudget,
+      ),
+    );
+  }
+
+  void notifyProSubscriptionExpiring({required int daysLeft}) {
+    if (daysLeft != 7 && daysLeft != 3 && daysLeft != 1) return;
+    addNotification(
+      NotificationGenerator.proSubscriptionExpiring(daysLeft: daysLeft),
+    );
+  }
+
+  void notifyPdfDownloadSuccess() {
+    addNotification(NotificationGenerator.pdfDownloadSuccess());
+  }
+
+  void notifyFavoritePriceDrop({
+    required String productName,
+    required num dropPercent,
+  }) {
+    if (dropPercent <= 0) return;
+    addNotification(
+      NotificationGenerator.favoritePriceDrop(
+        productName: productName,
+        dropPercent: dropPercent,
+      ),
+    );
+  }
+
+  void notifyMonthlySpendingComparison({
+    required String lastMonthName,
+    required String twoMonthsAgoName,
+    required num lastMonthTotal,
+    required num twoMonthsAgoTotal,
+  }) {
+    addNotification(
+      NotificationGenerator.monthlySpendingComparison(
+        lastMonthName: lastMonthName,
+        twoMonthsAgoName: twoMonthsAgoName,
+        lastMonthTotal: lastMonthTotal,
+        twoMonthsAgoTotal: twoMonthsAgoTotal,
+      ),
+    );
   }
 }

@@ -7,7 +7,7 @@ import 'repository_helpers.dart';
 
 class ScannerRepository {
   ScannerRepository({ApiClient? apiClient})
-      : _apiClient = apiClient ?? ApiClient.instance;
+    : _apiClient = apiClient ?? ApiClient.instance;
 
   final ApiClient _apiClient;
 

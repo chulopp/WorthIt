@@ -429,6 +429,129 @@ def add_scan_record(
 
 # ─── Dashboard ────────────────────────────────────────────────────────────────
 
+def get_weekly_market_insight() -> dict:
+    sb = get_supabase()
+    now = datetime.now(timezone.utc).date()
+    this_month = now.replace(day=1)
+    last_month = (this_month - timedelta(days=1)).replace(day=1)
+    
+    try:
+        res = _safe_execute(
+            sb.table("price_history")
+            .select("product_id, price, recorded_at, products(name, category)")
+            .gte("recorded_at", last_month.isoformat())
+            .lt("recorded_at", (this_month.replace(day=28) + timedelta(days=4)).replace(day=1).isoformat())
+        )
+        rows = res.data or []
+        
+        product_prices = {}
+        for row in rows:
+            pid = row["product_id"]
+            if pid not in product_prices:
+                prod = row.get("products") or {}
+                product_prices[pid] = {
+                    "name": prod.get("name", "Unknown"),
+                    "category": prod.get("category", "Unknown"),
+                    "this_month": [],
+                    "last_month": []
+                }
+            
+            rec = str(row["recorded_at"] or "")[:10]
+            if rec >= this_month.isoformat():
+                product_prices[pid]["this_month"].append(float(row["price"] or 0))
+            else:
+                product_prices[pid]["last_month"].append(float(row["price"] or 0))
+                
+        product_deltas = []
+        category_deltas = {}
+        
+        for pid, data in product_prices.items():
+            if data["this_month"] and data["last_month"]:
+                avg_this = sum(data["this_month"]) / len(data["this_month"])
+                avg_last = sum(data["last_month"]) / len(data["last_month"])
+                delta_pct = (avg_this - avg_last) / avg_last * 100
+                product_deltas.append({
+                    "name": data["name"],
+                    "category": data["category"],
+                    "delta_pct": delta_pct
+                })
+                
+                cat = data["category"]
+                if cat not in category_deltas:
+                    category_deltas[cat] = []
+                category_deltas[cat].append(delta_pct)
+        
+        if not product_deltas:
+            raise ValueError("No data")
+            
+        highest_increase = max(product_deltas, key=lambda x: x["delta_pct"])
+        highest_decrease = min(product_deltas, key=lambda x: x["delta_pct"])
+        
+        cat_avg_deltas = []
+        for cat, deltas in category_deltas.items():
+            cat_avg_deltas.append({
+                "category": cat,
+                "delta_pct": sum(deltas) / len(deltas)
+            })
+            
+        cat_highest_increase = max(cat_avg_deltas, key=lambda x: x["delta_pct"])
+        cat_highest_decrease = min(cat_avg_deltas, key=lambda x: x["delta_pct"])
+        
+        insights = []
+        if highest_increase["delta_pct"] > 0:
+            insights.append({
+                "key": "dashboard.market_insight_messages.product_increase",
+                "params": {
+                    "product": str(highest_increase["name"]),
+                    "percent": f"{highest_increase['delta_pct']:.1f}",
+                },
+                "text": f"Waspada! Harga {highest_increase['name']} naik {highest_increase['delta_pct']:.1f}% bulan ini.",
+            })
+        if highest_decrease["delta_pct"] < 0:
+            insights.append({
+                "key": "dashboard.market_insight_messages.product_decrease",
+                "params": {
+                    "product": str(highest_decrease["name"]),
+                    "percent": f"{abs(highest_decrease['delta_pct']):.1f}",
+                },
+                "text": f"Mumpung murah! Harga {highest_decrease['name']} turun {abs(highest_decrease['delta_pct']):.1f}% bulan ini.",
+            })
+        if cat_highest_increase["delta_pct"] > 0:
+            insights.append({
+                "key": "dashboard.market_insight_messages.category_increase",
+                "params": {
+                    "category": str(cat_highest_increase["category"]),
+                    "percent": f"{cat_highest_increase['delta_pct']:.1f}",
+                },
+                "text": f"Kategori {cat_highest_increase['category']} sedang mengalami inflasi harga bulan ini.",
+            })
+        if cat_highest_decrease["delta_pct"] < 0:
+            insights.append({
+                "key": "dashboard.market_insight_messages.category_decrease",
+                "params": {
+                    "category": str(cat_highest_decrease["category"]),
+                    "percent": f"{abs(cat_highest_decrease['delta_pct']):.1f}",
+                },
+                "text": f"Kategori {cat_highest_decrease['category']} lagi banyak turun harga bulan ini!",
+            })
+        if not insights:
+            insights = [{
+                "key": "dashboard.market_insight_messages.stable",
+                "params": {},
+                "text": "Harga pasar stabil bulan ini, tidak ada fluktuasi signifikan.",
+            }]
+            
+    except Exception:
+        insights = [{
+            "key": "dashboard.market_insight_messages.stable",
+            "params": {},
+            "text": "Harga pasar stabil bulan ini, tidak ada fluktuasi signifikan.",
+        }]
+        
+    week_hash = hash(f"{now.year}-W{now.isocalendar()[1]}")
+    return insights[week_hash % len(insights)]
+
+
 def get_dashboard_data(user_id: str) -> dict:
     """
     Kumpulkan ringkasan dashboard dari purchase_history nyata.
@@ -437,29 +560,53 @@ def get_dashboard_data(user_id: str) -> dict:
     sb = get_supabase()
     user = get_user(user_id) or {}
     monthly_budget = float(user.get("monthly_budget") or 0)
-    start_of_month = datetime.now(timezone.utc).replace(
+    now = datetime.now(timezone.utc)
+    start_of_month = now.replace(
         day=1, hour=0, minute=0, second=0, microsecond=0
     ).isoformat()
+    
+    if now.month == 12:
+        days_in_month = 31
+    else:
+        days_in_month = (now.replace(month=now.month + 1, day=1) - timedelta(days=1)).day
+    daily_expenses = [0.0] * days_in_month
 
     total_spent = 0.0
     recent_items = []
+    expense_points = []
     try:
         purchase_res = _safe_execute(sb.table("purchase_history")
-            .select("id, product_id, purchased_price, quantity, purchased_at, products(id, name)")
+            .select("id, product_id, purchased_price, quantity, purchased_at, products(id, name, image_url, category, unit_label)")
             .eq("user_id", user_id)
             .gte("purchased_at", start_of_month)
             .order("purchased_at", desc=True))
         for row in purchase_res.data or []:
             price = (row.get("purchased_price") or 0) * (row.get("quantity") or 1)
             total_spent += price
+            expense_points.append({
+                "purchased_at": row.get("purchased_at", ""),
+                "amount": price,
+            })
+            
+            try:
+                day = int(row["purchased_at"][8:10])
+                if 1 <= day <= days_in_month:
+                    daily_expenses[day - 1] += price
+            except Exception:
+                pass
+
             if len(recent_items) < 5:
                 product = row.get("products") or {}
                 recent_items.append({
+                    "product_id":    row.get("product_id"),
                     "product_name": product.get("name", "Produk Tidak Diketahui"),
                     "price":        price,
                     "decision":     "BUY",
                     "color":        "green",
                     "timestamp":    row.get("purchased_at", ""),
+                    "image_url":    product.get("image_url"),
+                    "category":     product.get("category"),
+                    "unit_label":   product.get("unit_label"),
                 })
     except Exception:
         pass
@@ -479,12 +626,18 @@ def get_dashboard_data(user_id: str) -> dict:
         pass
 
     budget_remaining = max(0.0, monthly_budget - total_spent)
+    market_insight = get_weekly_market_insight()
 
     return {
         "monthly_budget":    monthly_budget,
         "budget_remaining":  budget_remaining,
         "money_saved":       money_saved,
         "recent_activities": recent_items,
+        "daily_expenses":    daily_expenses,
+        "expense_points":    list(reversed(expense_points)),
+        "market_insight":    market_insight.get("text", ""),
+        "market_insight_key": market_insight.get("key"),
+        "market_insight_params": market_insight.get("params", {}),
     }
 
 
@@ -562,7 +715,7 @@ def find_product_by_name(name: str) -> dict | None:
 
 # ─── Product Images ───────────────────────────────────────────────────────────
 
-PRODUCT_SELECT = "id, name, brand, category, base_weight_gram, image_url, created_at, updated_at"
+PRODUCT_SELECT = "id, name, brand, category, base_weight_gram, unit_label, image_url, created_at, updated_at"
 
 
 def _apply_product_category(query, category: str | None):

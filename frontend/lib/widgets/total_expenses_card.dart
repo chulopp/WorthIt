@@ -5,7 +5,8 @@ import '../services/privacy_service.dart';
 
 class TotalExpensesCard extends StatefulWidget {
   final double amount;
-  final String savedAmount;
+  final double savedAmount;
+
   /// Jika true, konten dibungkus Container hijau tua (untuk layar dengan background putih).
   /// Jika false (default), konten transparan langsung di atas background hijau dashboard.
   final bool showCard;
@@ -21,9 +22,14 @@ class TotalExpensesCard extends StatefulWidget {
 }
 
 class _TotalExpensesCardState extends State<TotalExpensesCard> {
-
   String _formatRp(double amount) {
     return 'Rp ${amount.toStringAsFixed(0).replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]}.')}';
+  }
+
+  double get _savedPercentage {
+    final double total = widget.amount + widget.savedAmount;
+    if (total == 0) return 0.0;
+    return (widget.savedAmount / total) * 100;
   }
 
   Widget _buildContent() {
@@ -35,7 +41,6 @@ class _TotalExpensesCardState extends State<TotalExpensesCard> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // ── Label "Total Expenses" ──
-
             Text(
               'dashboard.total_expenses'.tr(),
               style: GoogleFonts.bricolageGrotesque(
@@ -92,7 +97,10 @@ class _TotalExpensesCardState extends State<TotalExpensesCard> {
                   ),
                   splashRadius: 20,
                   padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+                  constraints: const BoxConstraints(
+                    minWidth: 36,
+                    minHeight: 36,
+                  ),
                 ),
               ],
             ),
@@ -119,7 +127,8 @@ class _TotalExpensesCardState extends State<TotalExpensesCard> {
                           ),
                         ),
                         TextSpan(
-                          text: widget.savedAmount,
+                          text:
+                              '${_formatRp(widget.savedAmount)} (${_savedPercentage.toStringAsFixed(0)}%)',
                           style: GoogleFonts.bricolageGrotesque(
                             fontSize: 14,
                             fontWeight: FontWeight.w400,

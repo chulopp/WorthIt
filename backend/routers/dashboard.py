@@ -25,11 +25,15 @@ async def get_dashboard(
 
     recent = [
         RecentActivityItem(
+            product_id=item.get("product_id"),
             product_name=item["product_name"],
             price=item["price"],
             decision=item["decision"],
             color=item["color"],
             timestamp=item["timestamp"],
+            image_url=item.get("image_url"),
+            category=item.get("category"),
+            unit_label=item.get("unit_label"),
         )
         for item in data["recent_activities"]
     ]
@@ -40,5 +44,10 @@ async def get_dashboard(
             budget_remaining=data["budget_remaining"],
             money_saved=data["money_saved"],
             recent_activities=recent,
+            daily_expenses=data.get("daily_expenses", []),
+            expense_points=data.get("expense_points", []),
+            market_insight=data.get("market_insight", ""),
+            market_insight_key=data.get("market_insight_key"),
+            market_insight_params=data.get("market_insight_params", {}),
         )
     )

@@ -7,6 +7,7 @@ import 'package:shimmer/shimmer.dart';
 import '../controllers/favorite_controller.dart';
 import '../controllers/product_detail_controller.dart';
 import '../controllers/shopping_list_controller.dart';
+import '../config/product_categories.dart';
 import '../models/api/api_models.dart';
 import '../services/auth_service.dart';
 import '../utils/snackbar_helper.dart';
@@ -63,6 +64,22 @@ void showProductDetailBottomSheet(
   );
 }
 
+class _PriceInsightData {
+  final String text;
+  final Color iconColor;
+  final Color iconBgColor;
+  final List<Color> bgGradient;
+  final Color borderColor;
+
+  const _PriceInsightData({
+    required this.text,
+    required this.iconColor,
+    required this.iconBgColor,
+    required this.bgGradient,
+    required this.borderColor,
+  });
+}
+
 // ═══════════════════════════════════════════════════════════════════════════════
 // MAIN WIDGET
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -108,6 +125,8 @@ class _ProductDetailSheetState extends ConsumerState<_ProductDetailSheet> {
 
   String get _displayName => _detail?.name ?? widget.productName;
   String get _displayCategory => _detail?.category ?? widget.productCategory;
+  String get _localizedDisplayCategory =>
+      displayProductCategory(_displayCategory);
   String get _displayWeight {
     final weight = _detail?.baseWeightGram ?? 0;
     if (weight <= 0) return widget.productWeight;
@@ -261,21 +280,55 @@ class _ProductDetailSheetState extends ConsumerState<_ProductDetailSheet> {
     return 'Rp$buf';
   }
 
-  String get _priceComparisonInsight {
+  _PriceInsightData get _priceComparisonInsightData {
     if (_displayHistoricalAvgPrice <= 0) {
-      return 'Harga pembanding belum tersedia';
+      return _PriceInsightData(
+        text: 'product_detail.insight_compare_unavailable'.tr(),
+        iconColor: const Color(0xFF64748B),
+        iconBgColor: const Color(0xFFF1F5F9),
+        bgGradient: const [Color(0xFFF8F9FA), Color(0xFFFFFFFF)],
+        borderColor: const Color(0xFFE2E8F0),
+      );
     }
     final diff =
         ((_displayCurrentPrice - _displayHistoricalAvgPrice) /
             _displayHistoricalAvgPrice) *
         100;
-    if (diff > 0) {
-      return '${diff.toStringAsFixed(0)}% lebih mahal dari biasanya';
+
+    if (diff >= -1.0 && diff <= 1.0) {
+      // KONDISI 2: STABIL / SAMA PERSIS
+      return _PriceInsightData(
+        text: 'product_detail.insight_stable'.tr(),
+        iconColor: const Color(0xFFD97706),
+        iconBgColor: const Color(0xFFFEF3C7),
+        bgGradient: const [Color(0xFFFFFBEB), Color(0xFFFFFFFF)],
+        borderColor: const Color(0xFFFDE68A),
+      );
+    } else if (diff < -1.0) {
+      // KONDISI 1: LEBIH MURAH
+      final pct = diff.abs().toStringAsFixed(0);
+      return _PriceInsightData(
+        text: 'product_detail.insight_cheaper'.tr(
+          namedArgs: {'percent': pct},
+        ),
+        iconColor: const Color(0xFF15803D),
+        iconBgColor: const Color(0xFFDCFCE7),
+        bgGradient: const [Color(0xFFF0FDF4), Color(0xFFFFFFFF)],
+        borderColor: const Color(0xFFBBF7D0),
+      );
+    } else {
+      // KONDISI 3: LEBIH MAHAL
+      final pct = diff.toStringAsFixed(0);
+      return _PriceInsightData(
+        text: 'product_detail.insight_expensive'.tr(
+          namedArgs: {'percent': pct},
+        ),
+        iconColor: Colors.red[700]!,
+        iconBgColor: Colors.red[100]!,
+        bgGradient: [Colors.red[50]!, Colors.white],
+        borderColor: Colors.red[300]!,
+      );
     }
-    if (diff < 0) {
-      return '${diff.abs().toStringAsFixed(0)}% lebih murah dari biasanya';
-    }
-    return 'Harga sama dengan biasanya';
   }
 
   @override
@@ -396,7 +449,7 @@ class _ProductDetailSheetState extends ConsumerState<_ProductDetailSheet> {
                                 ),
                               ),
                               Text(
-                                _displayCategory,
+                                _localizedDisplayCategory,
                                 style: GoogleFonts.urbanist(
                                   fontSize: 14,
                                   fontWeight: FontWeight.w500,
@@ -451,25 +504,15 @@ class _ProductDetailSheetState extends ConsumerState<_ProductDetailSheet> {
 
   Widget _buildLoadingSkeleton() {
     return Shimmer.fromColors(
-      baseColor: const Color(0xFFEAF2E3),
-      highlightColor: Colors.white,
+      baseColor: Colors.grey[300]!.withValues(alpha: 0.2),
+      highlightColor: Colors.grey[100]!.withValues(alpha: 0.1),
       period: const Duration(milliseconds: 1400),
       child: SingleChildScrollView(
         physics: const NeverScrollableScrollPhysics(),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Container(
-              height: 250,
-              width: double.infinity,
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [Color(0xFFFFFFFF), Color(0xFFF3F8EE)],
-                ),
-              ),
-            ),
+            Container(height: 250, width: double.infinity, color: Colors.white),
             const SizedBox(height: 20),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -721,21 +764,20 @@ class _ProductDetailSheetState extends ConsumerState<_ProductDetailSheet> {
   // GLOSSY INSIGHT BANNER
   // ═══════════════════════════════════════════════════════════════════════════
   Widget _buildGlossyInsightBanner() {
+    final insight = _priceComparisonInsightData;
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24),
       child: Container(
         padding: const EdgeInsets.all(18),
         decoration: BoxDecoration(
-          gradient: const LinearGradient(
+          gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [Color(0xFFFFF9E7), Color(0xFFFFFFFF)],
+            colors: insight.bgGradient,
           ),
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: Colors.white.withValues(alpha: 0.5),
-            width: 1.5,
-          ),
+          border: Border.all(color: insight.borderColor, width: 1.5),
           boxShadow: const [
             BoxShadow(
               color: Colors.black12,
@@ -751,12 +793,12 @@ class _ProductDetailSheetState extends ConsumerState<_ProductDetailSheet> {
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: const Color(0xFFFBBF24).withValues(alpha: 0.15),
+                color: insight.iconBgColor,
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.auto_awesome,
-                color: Color(0xFFFBBF24),
+                color: insight.iconColor,
                 size: 22,
               ),
             ),
@@ -764,7 +806,7 @@ class _ProductDetailSheetState extends ConsumerState<_ProductDetailSheet> {
             // Insight text
             Expanded(
               child: Text(
-                _priceComparisonInsight,
+                insight.text,
                 style: GoogleFonts.urbanist(
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
@@ -1044,7 +1086,9 @@ class _ProductDetailSheetState extends ConsumerState<_ProductDetailSheet> {
                         product: _currentProductSummary(productId),
                       );
                   if (!context.mounted) return;
-                  final shoppingState = ref.read(shoppingListControllerProvider);
+                  final shoppingState = ref.read(
+                    shoppingListControllerProvider,
+                  );
                   if (shoppingState.errorMessage != null) return;
                   SnackbarHelper.showTopSnackbar(
                     context,

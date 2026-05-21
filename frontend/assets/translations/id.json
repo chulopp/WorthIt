@@ -102,6 +102,10 @@
     "add_to_list": "Tambah ke Daftar Belanja",
     "remove_from_list": "Hapus dari Daftar Belanja",
     "image_unavailable": "Gambar tidak tersedia",
+    "insight_compare_unavailable": "Harga pembanding belum tersedia.",
+    "insight_stable": "Harga barang ini sedang stabil dan wajar, sesuai dengan rata-rata harga pasar dalam 6 bulan terakhir.",
+    "insight_cheaper": "Harga barang ini {percent}% lebih murah dari harga rata-rata 6 bulan terakhir. Ini kesempatan bagus untuk membelinya sekarang!",
+    "insight_expensive": "Harga barang ini {percent}% lebih mahal dari biasanya. Pertimbangkan untuk menunda pembelian jika kebutuhanmu belum mendesak.",
     "months": {
       "jan": "Jan",
       "feb": "Feb",
@@ -263,7 +267,14 @@
     "history": "Riwayat",
     "favorites": "Favorit",
     "shopping_activity": "Aktivitas Belanja",
-    "market_insight": "Insight Pasar"
+    "market_insight": "Insight Pasar",
+    "market_insight_messages": {
+      "product_increase": "{product} naik {percent}% bulan ini. Pertimbangkan alternatif sebelum membeli.",
+      "product_decrease": "{product} turun {percent}% bulan ini. Ini bisa jadi waktu yang baik untuk membeli.",
+      "category_increase": "Harga kategori {category} sedang naik bulan ini, sekitar {percent}%.",
+      "category_decrease": "Harga kategori {category} sedang turun bulan ini, sekitar {percent}%.",
+      "stable": "Harga pasar stabil bulan ini dan tidak ada pergerakan besar."
+    }
   },
   "smart_shopping": "Belanja Cerdas",
   "welcome_subtitle": "Scan label harga, analisis tren, dan simpan daftar belanja cerdasmu.",
@@ -280,6 +291,40 @@
   "notification_title": "Notifikasi",
   "no_notifications": "Tidak ada notifikasi",
   "read_all": "Baca Semua",
+  "notification_guest_desc": "Login untuk mendapatkan insight harga dan update belanja terbaru.",
+  "notification_empty_desc": "Update harga dan pengingat belanja akan muncul di sini.",
+  "notifications": {
+    "mock": {
+      "last_month": "Februari",
+      "two_months_ago": "Januari"
+    },
+    "shopping_list": {
+      "title": "Daftar belanjamu hampir reset",
+      "desc": "Masih ada {count} item yang belum dicentang. Selesaikan dalam {days} hari sebelum daftar bulan ini otomatis direset."
+    },
+    "over_budget": {
+      "title": "Anggaran bulan ini sudah tersentuh",
+      "desc": "Pengeluaranmu sudah {spent}, sementara batasmu {budget}. Yuk tahan dulu belanja impulsif dan prioritaskan kebutuhan utama."
+    },
+    "pro_expiring": {
+      "title": "Masa aktif PRO hampir habis",
+      "desc": "Benefit PRO kamu tinggal {days} hari lagi. Perpanjang agar ekspor PDF dan insight premium tetap siap dipakai."
+    },
+    "pdf_success": {
+      "title": "Laporan PDF berhasil dibuat",
+      "desc": "Riwayat belanja bulan ini sudah siap. Kamu bisa menyimpan atau membagikannya untuk evaluasi pengeluaran."
+    },
+    "favorite_price_drop": {
+      "title": "Barang favoritmu sedang turun harga",
+      "desc": "{product} turun sekitar {percent}% bulan ini. Momen bagus untuk cek stok sebelum harga bergerak lagi."
+    },
+    "monthly_comparison": {
+      "saving_title": "Kamu lebih hemat bulan lalu",
+      "saving_desc": "Pengeluaran {lastMonth} sebesar {lastTotal}, turun {difference} dibanding {twoMonthsAgo} ({previousTotal}). Ritmenya sudah bagus, pertahankan.",
+      "overspent_title": "Pengeluaran bulan lalu naik",
+      "overspent_desc": "Pengeluaran {lastMonth} mencapai {lastTotal}, naik {difference} dari {twoMonthsAgo} ({previousTotal}). Kita rapikan prioritas bulan ini pelan-pelan."
+    }
+  },
   "notif_price_drop_title": "Harga Beras Turun!",
   "notif_price_drop_desc": "Kabar gembira! Harga beras merk X di toko langgananmu turun 5%. Cek sekarang sebelum kehabisan.",
   "notif_shopping_reminder_title": "Pengingat Daftar Belanja",
@@ -402,16 +447,80 @@
   "success_purchased": "Berhasil dibeli!",
   "cat_sembako": "Sembako",
   "cat_cemilan": "Cemilan",
+  "cat_makanan_ringan": "Makanan Ringan",
+  "cat_bumbu_dapur": "Bumbu Dapur",
+  "cat_makanan_beku": "Makanan Beku",
+  "cat_kesehatan_kebersihan": "Kesehatan dan Kebersihan",
+  "cat_kebutuhan_rumah": "Kebutuhan Rumah",
   "cat_minuman": "Minuman",
   "cat_alat_mandi": "Alat Mandi",
   "cat_lainnya": "Lain-lain",
+  "Makanan Ringan": "Makanan Ringan",
+  "Bumbu Dapur": "Bumbu Dapur",
+  "Makanan Beku": "Makanan Beku",
+  "Kesehatan dan Kebersihan": "Kesehatan dan Kebersihan",
+  "Kebutuhan Rumah": "Kebutuhan Rumah",
+  "Minuman": "Minuman",
+  "Lainnya": "Lain-lain",
+  "shopping_list_total_price": "Total Harga",
+  "scanner_loading_camera": "Mempersiapkan kamera...",
+  "scanner_reading_price_text": "Membaca teks harga...",
+  "scanner_reading_gallery_text": "Membaca teks dari galeri...",
+  "scanner_checking_product": "Memeriksa produk...",
+  "product_not_ready_favorite": "Produk belum siap ditambahkan ke favorit.",
+  "product_not_found_database": "Produk belum ditemukan di database.",
+  "purchase_record_failed": "Gagal mencatat pembelian.",
   "pdf_header_title": "Laporan Pengeluaran Bulanan",
   "pdf_print_date": "Tanggal Cetak",
   "pdf_col_no": "No",
   "pdf_col_date": "Tanggal",
   "pdf_col_item_name": "Nama Barang",
   "pdf_col_category": "Kategori",
+  "pdf_col_quantity": "Jumlah",
   "pdf_col_price": "Harga",
+  "pdf_col_total_price": "Harga Akhir",
   "pdf_footer": "Dihasilkan secara otomatis oleh aplikasi WorthIt",
+  "statistics": {
+    "insight_stable": "Pengeluaran bulan ini masih terjaga. Tetap pantau ya.",
+    "insight_month_down": "Pengeluaran bulan ini turun {percent}% dari bulan kemarin. Pertahankan.",
+    "insight_month_up": "Pengeluaran bulan ini naik {percent}% dari bulan kemarin. Coba lebih ketat untuk pembelian berikutnya.",
+    "insight_category_down": "Pengeluaran kategori {category} turun {percent}% dari bulan kemarin.",
+    "insight_category_up": "Pengeluaran kategori {category} naik {percent}% dari bulan kemarin.",
+    "trend_highest_month": "Tren menunjukkan pengeluaran tertinggi ada pada bulan {month}.",
+    "trend_not_enough_data": "Belum ada data tren yang cukup untuk dianalisis."
+  },
+  "analysis": {
+    "explanation_titles": {
+      "wma": "Tren Harga",
+      "sr": "Rentang Historis",
+      "urgency": "Urgensi Pembelian",
+      "anomaly": "Anomali Harga",
+      "shrinkflation": "Cek Shrinkflation",
+      "pro": "Analisis Lanjutan"
+    },
+    "explanations": {
+      "wma_below": "Harga scan {scan} berada {delta}% di bawah harga normal {period} bulan sekitar {normal}, jadi nilainya menarik.",
+      "wma_fair": "Harga scan {scan} masih dekat dengan harga normal {period} bulan sekitar {normal}, jadi masih tergolong wajar.",
+      "wma_above": "Harga scan {scan} berada {delta}% di atas harga normal {period} bulan sekitar {normal}, jadi perlu dipertimbangkan.",
+      "wma_expensive": "Harga scan {scan} berada {delta}% di atas harga normal {period} bulan sekitar {normal}, ini sinyal kuat harga mahal.",
+      "sr_support": "Harga berada dekat area support {support}, area historis rendah dari {period} bulan terakhir.",
+      "sr_resistance": "Harga berada dekat area resistance {resistance}, area historis tinggi dari {period} bulan terakhir.",
+      "sr_middle": "Harga berada di tengah antara support {support} dan resistance {resistance} dari {period} bulan terakhir.",
+      "urgency_1_worthit": "Harga cukup bagus untuk dibeli sebagai stok meskipun belum terlalu dibutuhkan.",
+      "urgency_1_waspada": "Karena kebutuhan belum mendesak, menunda pembelian lebih aman kecuali memang ingin stok.",
+      "urgency_1_mahal": "Kebutuhan rendah dan harga tinggi, jadi pembelian sebaiknya ditunda.",
+      "urgency_2_worthit": "Kebutuhan sedang dan harga bersahabat, jadi pembelian sekarang masih masuk akal.",
+      "urgency_2_waspada": "Harga mendekati batas wajar. Beli hanya kalau stok memang sudah menipis.",
+      "urgency_2_mahal": "Harga sedang tinggi. Kalau kebutuhan masih bisa menunggu, lebih baik tunda beberapa hari.",
+      "urgency_3_worthit": "Kebutuhan mendesak dan harga masih bagus, jadi aman untuk dibeli sekarang.",
+      "urgency_3_waspada": "Kebutuhan mendesak, dan harga ini masih dalam batas yang bisa diterima.",
+      "urgency_3_mahal": "Harga tinggi, tapi jika kebutuhan sangat mendesak, beli secukupnya dulu.",
+      "anomaly_detected": "Anomali harga terdeteksi: harga scan melewati batas wajar {fairUpper} dari {period} bulan terakhir.",
+      "anomaly_clear": "Anomali harga tidak terdeteksi. Pergerakan masih dalam rentang historis normal.",
+      "shrinkflation_detected": "Shrinkflation terdeteksi: ukuran turun sekitar {weightDrop}% sementara harga per satuan naik sekitar {unitRise}%.",
+      "shrinkflation_clear": "Shrinkflation tidak terdeteksi. Ukuran dan nilai per satuan masih konsisten dengan varian historis.",
+      "pro_locked": "Anomali harga dan shrinkflation adalah pengecekan lanjutan Pro. Analisis Free tetap mencakup WMA dan rentang historis."
+    }
+  },
   "launch_target_unavailable": "Aplikasi tujuan tidak tersedia di perangkat ini."
 }

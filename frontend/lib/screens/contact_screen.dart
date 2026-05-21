@@ -16,10 +16,7 @@ class ContactScreen extends StatelessWidget {
       }),
     );
     if (await canLaunchUrl(emailLaunchUri)) {
-      await launchUrl(
-        emailLaunchUri,
-        mode: LaunchMode.externalApplication,
-      );
+      await launchUrl(emailLaunchUri, mode: LaunchMode.externalApplication);
       return;
     }
 
@@ -29,8 +26,10 @@ class ContactScreen extends StatelessWidget {
 
   String? _encodeQueryParameters(Map<String, String> params) {
     return params.entries
-        .map((MapEntry<String, String> e) =>
-            '${Uri.encodeComponent(e.key)}=${Uri.encodeComponent(e.value)}')
+        .map(
+          (MapEntry<String, String> e) =>
+              '${Uri.encodeComponent(e.key)}=${Uri.encodeComponent(e.value)}',
+        )
         .join('&');
   }
 
@@ -38,10 +37,7 @@ class ContactScreen extends StatelessWidget {
     final Uri webWhatsAppUri = Uri.parse('https://wa.me/6285865604599');
 
     if (await canLaunchUrl(webWhatsAppUri)) {
-      await launchUrl(
-        webWhatsAppUri,
-        mode: LaunchMode.externalApplication,
-      );
+      await launchUrl(webWhatsAppUri, mode: LaunchMode.externalApplication);
       return;
     }
 
@@ -95,11 +91,7 @@ class ContactScreen extends StatelessWidget {
                     color: worthItGreen.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: Icon(
-                    icon,
-                    color: worthItGreen,
-                    size: 22,
-                  ),
+                  child: Icon(icon, color: worthItGreen, size: 22),
                 ),
                 const SizedBox(width: 14),
                 Expanded(
@@ -136,10 +128,7 @@ class ContactScreen extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: 8),
-                Icon(
-                  Icons.chevron_right,
-                  color: Colors.grey.shade400,
-                ),
+                Icon(Icons.chevron_right, color: Colors.grey.shade400),
               ],
             ),
           ),

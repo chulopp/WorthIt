@@ -10,7 +10,8 @@ final dashboardControllerProvider =
       DashboardController.new,
     );
 
-class DashboardController extends Notifier<BaseControllerState<DashboardModel>> {
+class DashboardController
+    extends Notifier<BaseControllerState<DashboardModel>> {
   @override
   BaseControllerState<DashboardModel> build() {
     return const BaseControllerState<DashboardModel>();

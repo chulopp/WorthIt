@@ -4,7 +4,7 @@ import 'repository_helpers.dart';
 
 class ShoppingListRepository {
   ShoppingListRepository({ApiClient? apiClient})
-      : _apiClient = apiClient ?? ApiClient.instance;
+    : _apiClient = apiClient ?? ApiClient.instance;
 
   final ApiClient _apiClient;
 
@@ -22,10 +22,7 @@ class ShoppingListRepository {
     return _apiClient.run(() async {
       final response = await _apiClient.post(
         '/v1/shopping-list/current/items',
-        data: <String, dynamic>{
-          'product_id': productId,
-          'quantity': quantity,
-        },
+        data: <String, dynamic>{'product_id': productId, 'quantity': quantity},
       );
       return MonthlyShoppingListModel.fromJson(responseMap(response));
     });

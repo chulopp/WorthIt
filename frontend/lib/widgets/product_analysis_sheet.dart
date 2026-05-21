@@ -16,6 +16,7 @@ import '../services/auth_service.dart';
 import '../utils/snackbar_helper.dart';
 import 'decision_badge.dart';
 import 'skeleton_analysis_card.dart';
+import '../models/dashboard_data.dart';
 // ═══════════════════════════════════════════════════════════════════════════════
 // PUBLIC API — Call this to show the Product Analysis sheet
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -74,11 +75,43 @@ void showHistoryAnalysisSheet(
       'decision': decisionCode,
       'category': data.category ?? analysis.category,
       'urgency': analysis.urgency.toString(),
-      'weight': _formatHistoryWeight(analysis.weightGram),
+      'weight': _formatHistoryWeight(
+        analysis.weightGram,
+        unitLabel: analysis.unitLabel,
+        productName: analysis.productName,
+      ),
       'product_id': data.productId ?? analysis.productId,
       'imageUrl': data.imageUrl ?? analysis.imageUrl,
       'explanationItems': analysis.explanationItems,
       'explanations': analysis.explanations,
+    },
+  );
+}
+
+void showActivityAnalysisSheet(
+  BuildContext context, {
+  required RecentActivity data,
+}) {
+  final decisionCode = decisionCodeFromColor(data.color);
+  showProductAnalysisSheet(
+    context,
+    item: {
+      'name': data.name,
+      'price': data.price.toInt().toString(),
+      'status': data.color,
+      'score': decisionCode == kDecisionBuy
+          ? '85'
+          : decisionCode == kDecisionSubstitute
+          ? '65'
+          : '35',
+      'decisionCode': decisionCode,
+      'decision': decisionCode,
+      'category': data.category,
+      'urgency': 'Tinggi',
+      'weight': data.unitLabel ?? '',
+      'product_id': data.productId,
+      'imageUrl': data.imageUrl,
+      'explanationItems': const <AnalyzeExplanationModel>[],
     },
   );
 }
@@ -92,12 +125,38 @@ String _historyColorFromDecision(String? decision) {
   return 'green';
 }
 
-String _formatHistoryWeight(double weightGram) {
+String _formatHistoryWeight(
+  double weightGram, {
+  String? unitLabel,
+  String? productName,
+}) {
+  final explicit = unitLabel?.trim();
+  if (explicit != null && explicit.isNotEmpty) return explicit;
+  final fromName = _extractUnitLabel(productName);
+  if (fromName.isNotEmpty) return fromName;
   if (weightGram <= 0) return '';
   if (weightGram >= 1000 && weightGram % 1000 == 0) {
     return '${(weightGram / 1000).toStringAsFixed(0)} kg';
   }
   return '${weightGram.toStringAsFixed(0)} g';
+}
+
+String _extractUnitLabel(String? value) {
+  final match = RegExp(
+    r'(\d+(?:[.,]\d+)?)\s*(kg|g|gr|gram|ml|l|ltr|liter|pcs|pc|pack)\b',
+    caseSensitive: false,
+  ).firstMatch(value ?? '');
+  if (match == null) return '';
+  final amount = match.group(1) ?? '';
+  final rawUnit = (match.group(2) ?? '').toLowerCase();
+  final unit = switch (rawUnit) {
+    'gr' || 'gram' => 'g',
+    'ltr' || 'liter' => 'L',
+    'l' => 'L',
+    'pc' || 'pack' => 'pcs',
+    _ => rawUnit,
+  };
+  return '$amount $unit';
 }
 
 class _ProductAnalysisSheet extends ConsumerStatefulWidget {
@@ -125,35 +184,7 @@ class _ProductAnalysisSheetState extends ConsumerState<_ProductAnalysisSheet> {
   String? _productId;
 
   String _localizedCategory(String rawCategory) {
-    if (officialProductCategories.contains(rawCategory)) return rawCategory;
-    switch (rawCategory) {
-      case 'groceries':
-      case 'cat_sembako':
-      case 'Sembako':
-        return 'groceries'.tr();
-      case 'snacks':
-      case 'cat_cemilan':
-      case 'Cemilan':
-        return 'snacks'.tr();
-      case 'filter_instant_noodle':
-      case 'Mie Instan':
-        return 'filter_instant_noodle'.tr();
-      case 'filter_milk':
-      case 'Susu':
-        return 'filter_milk'.tr();
-      case 'beverages':
-      case 'cat_minuman':
-      case 'Minuman':
-        return 'beverages'.tr();
-      case 'filter_toiletries':
-      case 'cat_alat_mandi':
-      case 'Alat Mandi':
-        return 'filter_toiletries'.tr();
-      case 'cat_lainnya':
-        return 'cat_lainnya'.tr();
-      default:
-        return rawCategory;
-    }
+    return displayProductCategory(rawCategory);
   }
 
   String _localizedUrgency(String rawUrgency) {
@@ -173,13 +204,15 @@ class _ProductAnalysisSheetState extends ConsumerState<_ProductAnalysisSheet> {
   }
 
   List<AnalyzeExplanationModel> _explanationItems() {
-    final raw =
-        widget.item['explanationItems'] ?? widget.item['explanations'];
+    final raw = widget.item['explanationItems'] ?? widget.item['explanations'];
     if (raw is List<AnalyzeExplanationModel>) return raw;
     if (raw is List) {
       return raw
           .map(AnalyzeExplanationModel.fromDynamic)
-          .where((item) => item.description.isNotEmpty)
+          .where(
+            (item) =>
+                item.description.isNotEmpty || item.descriptionKey.isNotEmpty,
+          )
           .toList(growable: false);
     }
     return const <AnalyzeExplanationModel>[];
@@ -264,7 +297,7 @@ class _ProductAnalysisSheetState extends ConsumerState<_ProductAnalysisSheet> {
     if (productId == null || productId.isEmpty) {
       SnackbarHelper.showTopSnackbar(
         context,
-        'Produk belum ditemukan di database.',
+        'product_not_found_database'.tr(),
         isDarkContext: false,
         icon: Icons.warning_amber_rounded,
       );
@@ -279,6 +312,7 @@ class _ProductAnalysisSheetState extends ConsumerState<_ProductAnalysisSheet> {
             favoriteId: 'optimistic-$productId',
             productId: productId,
             productName: widget.productName,
+            imageUrl: widget.item['imageUrl']?.toString(),
             category: widget.item['category']?.toString(),
             currentPrice: double.tryParse(
               widget.item['price']?.toString() ?? '',
@@ -585,7 +619,7 @@ class _ProductAnalysisSheetState extends ConsumerState<_ProductAnalysisSheet> {
                             if (!widget.historyCtx.mounted) return;
                             SnackbarHelper.showTopSnackbar(
                               widget.historyCtx,
-                              'Produk belum ditemukan di database.',
+                              'product_not_found_database'.tr(),
                               icon: Icons.warning_amber_rounded,
                             );
                             return;
@@ -602,7 +636,8 @@ class _ProductAnalysisSheetState extends ConsumerState<_ProductAnalysisSheet> {
                           if (result.isFailure) {
                             SnackbarHelper.showTopSnackbar(
                               widget.historyCtx,
-                              result.error?.message ?? 'Gagal mencatat pembelian.',
+                              result.error?.message ??
+                                  'purchase_record_failed'.tr(),
                               icon: Icons.warning_amber_rounded,
                             );
                             return;
@@ -623,7 +658,7 @@ class _ProductAnalysisSheetState extends ConsumerState<_ProductAnalysisSheet> {
                           Navigator.pop(sheetCtx);
                           SnackbarHelper.showTopSnackbar(
                             widget.historyCtx,
-                            'Berhasil dibeli!',
+                            'success_purchased'.tr(),
                             backgroundColor: const Color(0xFFC9E88A),
                             textColor: const Color(0xFF304423),
                             iconColor: const Color(0xFF304423),
@@ -668,18 +703,25 @@ class _ProductAnalysisSheetState extends ConsumerState<_ProductAnalysisSheet> {
         width: double.infinity,
         color: Colors.grey.shade100,
         child: imageUrl == null || imageUrl.isEmpty
-            ? Image.asset(
-                'assets/images/${(widget.productName.hashCode.abs() % 3) + 1}.jpg',
-                fit: BoxFit.cover,
-              )
+            ? _heroImageFallback()
             : Image.network(
                 imageUrl,
                 fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => Image.asset(
-                  'assets/images/${(widget.productName.hashCode.abs() % 3) + 1}.jpg',
-                  fit: BoxFit.cover,
-                ),
+                errorBuilder: (_, __, ___) => _heroImageFallback(),
               ),
+      ),
+    );
+  }
+
+  Widget _heroImageFallback() {
+    return Container(
+      color: const Color(0xFFE2E8F0),
+      child: Center(
+        child: Icon(
+          Icons.image_outlined,
+          size: 56,
+          color: const Color(0xFF94A3B8).withValues(alpha: 0.7),
+        ),
       ),
     );
   }
@@ -766,10 +808,15 @@ class _ProductAnalysisSheetState extends ConsumerState<_ProductAnalysisSheet> {
 
   Widget _buildProductDetails() {
     final name = widget.item['name'] as String? ?? 'Produk';
-    final price = widget.item['price'] as String? ?? '0';
+    final rawPrice = widget.item['price'];
+    final price = rawPrice is num
+        ? rawPrice.round().toString()
+        : rawPrice?.toString().replaceAll(RegExp(r'[^0-9]'), '') ?? '0';
     final category = widget.item['category'] as String? ?? 'Umum';
     final urgency = widget.item['urgency'] as String? ?? 'Sedang';
-    final weight = widget.item['weight'] as String? ?? '';
+    final weight = (widget.item['weight'] as String? ?? '').trim().isNotEmpty
+        ? widget.item['weight'] as String
+        : _extractUnitLabel(name);
     final normalPrice =
         widget.item['normalPrice'] ?? widget.item['normal_price'] ?? price;
 
@@ -914,40 +961,38 @@ class _ProductAnalysisSheetState extends ConsumerState<_ProductAnalysisSheet> {
           ),
           const SizedBox(height: 18),
           if (explanationItems.isNotEmpty)
-            ...explanationItems.map(
-              (item) => Padding(
+            ...explanationItems.asMap().entries.map(
+              (entry) => Padding(
                 padding: const EdgeInsets.only(bottom: 14),
                 child: _insightTile(
-                  icon: Icons.insights_rounded,
-                  title: item.title.isEmpty
-                      ? 'analysis_explanation'.tr()
-                      : item.title,
-                  description: item.description,
-                  isPositive: true,
+                  icon: _iconForExplanation(entry.value, entry.key),
+                  title: _localizedExplanationTitle(entry.value, entry.key),
+                  description: _localizedExplanationDescription(entry.value),
+                  tone: entry.value.tone,
                 ),
               ),
             ),
           if (explanationItems.isEmpty) ...[
-          _insightTile(
-            icon: Icons.insights_rounded,
-            title: 'algorithm_future_trend'.tr(),
-            description: 'algorithm_future_desc'.tr(),
-            isPositive: true,
-          ),
-          const SizedBox(height: 14),
-          _insightTile(
-            icon: Icons.insights_rounded,
-            title: 'algorithm_history_compare'.tr(),
-            description: 'algorithm_history_desc'.tr(),
-            isPositive: true,
-          ),
-          const SizedBox(height: 14),
-          _insightTile(
-            icon: Icons.insights_rounded,
-            title: 'Shrinkflation Check',
-            description: 'shrinkflation_not_detected'.tr(),
-            isPositive: true,
-          ),
+            _insightTile(
+              icon: Icons.trending_up_rounded,
+              title: 'algorithm_future_trend'.tr(),
+              description: 'algorithm_future_desc'.tr(),
+              isPositive: true,
+            ),
+            const SizedBox(height: 14),
+            _insightTile(
+              icon: Icons.compare_arrows_rounded,
+              title: 'algorithm_history_compare'.tr(),
+              description: 'algorithm_history_desc'.tr(),
+              isPositive: true,
+            ),
+            const SizedBox(height: 14),
+            _insightTile(
+              icon: Icons.inventory_2_rounded,
+              title: 'analysis.explanation_titles.shrinkflation'.tr(),
+              description: 'shrinkflation_not_detected'.tr(),
+              isPositive: true,
+            ),
           ],
           const SizedBox(height: 24),
           Container(
@@ -989,9 +1034,16 @@ class _ProductAnalysisSheetState extends ConsumerState<_ProductAnalysisSheet> {
     required String title,
     required String description,
     bool isPositive = true,
+    String? tone,
   }) {
-    final indicatorColor = isPositive
+    final normalizedTone = (tone ?? (isPositive ? 'positive' : 'negative'))
+        .toLowerCase();
+    final bool positiveTone = normalizedTone == 'positive';
+    final bool warningTone = normalizedTone == 'warning';
+    final indicatorColor = positiveTone
         ? const Color(0xFF304423)
+        : warningTone
+        ? const Color(0xFFF59E0B)
         : const Color(0xFFEF4444);
     final bgColor = indicatorColor.withValues(alpha: 0.05);
     final tileIcon =
@@ -1039,9 +1091,11 @@ class _ProductAnalysisSheetState extends ConsumerState<_ProductAnalysisSheet> {
                       ),
                     ),
                     Icon(
-                      isPositive
+                      positiveTone
                           ? Icons.check_circle_rounded
-                          : Icons.warning_rounded,
+                          : warningTone
+                          ? Icons.warning_rounded
+                          : Icons.cancel_rounded,
                       size: 18,
                       color: indicatorColor,
                     ),
@@ -1063,5 +1117,85 @@ class _ProductAnalysisSheetState extends ConsumerState<_ProductAnalysisSheet> {
         ],
       ),
     );
+  }
+
+  String _localizedExplanationTitle(AnalyzeExplanationModel item, int index) {
+    if (item.titleKey.isNotEmpty) {
+      final translated = item.titleKey.tr();
+      if (translated != item.titleKey) {
+        return translated;
+      }
+    }
+    if (item.title.isNotEmpty) return item.title;
+    return switch (index) {
+      0 => 'analysis.explanation_titles.wma'.tr(),
+      1 => 'analysis.explanation_titles.sr'.tr(),
+      2 => 'analysis.explanation_titles.urgency'.tr(),
+      3 => 'analysis.explanation_titles.anomaly'.tr(),
+      _ => 'analysis.explanation_titles.shrinkflation'.tr(),
+    };
+  }
+
+  String _localizedExplanationDescription(AnalyzeExplanationModel item) {
+    if (item.descriptionKey.isNotEmpty) {
+      final translated = item.descriptionKey.tr(namedArgs: _formatExplanationParams(item));
+      if (translated != item.descriptionKey) {
+        return translated;
+      }
+    }
+    return item.description;
+  }
+
+  Map<String, String> _formatExplanationParams(AnalyzeExplanationModel item) {
+    return item.params.map((key, value) {
+      if (const {
+        'normal',
+        'scan',
+        'support',
+        'resistance',
+        'fairUpper',
+      }.contains(key)) {
+        final parsed = double.tryParse(value);
+        return MapEntry(
+          key,
+          parsed == null ? value : _formatPriceValue(parsed),
+        );
+      }
+      return MapEntry(key, value);
+    });
+  }
+
+  IconData _iconForExplanation(AnalyzeExplanationModel item, [int? index]) {
+    switch (item.iconType) {
+      case 'trend':
+        return Icons.trending_up_rounded;
+      case 'range':
+        return Icons.stacked_line_chart_rounded;
+      case 'urgency':
+        return Icons.schedule_rounded;
+      case 'anomaly':
+        return item.tone == 'negative'
+            ? Icons.cancel_rounded
+            : Icons.check_circle_rounded;
+      case 'shrinkflation':
+        return item.tone == 'negative'
+            ? Icons.remove_circle_rounded
+            : Icons.inventory_2_rounded;
+      case 'lock':
+        return Icons.lock_rounded;
+      default:
+        if (index != null) {
+          return switch (index) {
+            0 => Icons.trending_up_rounded,
+            1 => Icons.stacked_line_chart_rounded,
+            2 => Icons.schedule_rounded,
+            3 => Icons.price_check_rounded,
+            _ => Icons.inventory_2_rounded,
+          };
+        }
+        return item.tone == 'negative'
+            ? Icons.cancel_rounded
+            : Icons.check_circle_rounded;
+    }
   }
 }

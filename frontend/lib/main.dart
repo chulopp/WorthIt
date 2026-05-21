@@ -7,14 +7,17 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'config/supabase_config.dart';
 import 'screens/dashboard_screen.dart';
 import 'screens/welcome_page.dart';
-import 'screens/loading_page.dart';
+import 'package:flutter_native_splash/flutter_native_splash.dart';
+import 'screens/custom_splash_screen.dart';
 import 'screens/scanner_screen.dart';
 import 'services/notification_service.dart';
 import 'services/privacy_service.dart';
 import 'services/auth_service.dart';
+import 'screens/auth_route_guard.dart';
 
 void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
+  WidgetsBinding widgetsBinding = WidgetsFlutterBinding.ensureInitialized();
+  FlutterNativeSplash.preserve(widgetsBinding: widgetsBinding);
   SystemChrome.setSystemUIOverlayStyle(
     const SystemUiOverlayStyle(
       statusBarColor: Colors.transparent,
@@ -27,6 +30,11 @@ void main() async {
       url: SupabaseConfig.url,
       anonKey: SupabaseConfig.anonKey,
     );
+    try {
+      await Supabase.instance.client.auth.onAuthStateChange.first;
+    } catch (e) {
+      debugPrint('Error recovering Supabase session: $e');
+    }
   }
   await AuthService().init();
   await PrivacyService().init();
@@ -44,11 +52,11 @@ void main() async {
   );
 }
 
-class WorthItApp extends StatelessWidget {
+class WorthItApp extends ConsumerWidget {
   const WorthItApp({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     // ── New Design System Colors ─────────────────────────────────────
     const Color darkGreen = Color(0xFF304423);
     const Color lightGreen = Color(0xFFC9E88A);
@@ -126,11 +134,14 @@ class WorthItApp extends StatelessWidget {
       ),
 
       // ── Routing ──────────────────────────────────────────────────────
-      initialRoute: '/welcome',
+      home: Supabase.instance.client.auth.currentUser == null
+          ? const WelcomePage()
+          : const CustomSplashScreen(),
       routes: {
         '/welcome': (_) => const WelcomePage(),
-        '/loading': (_) => const LoadingPage(),
-        '/': (_) => const DashboardScreen(),
+        '/splash': (_) => const CustomSplashScreen(),
+        '/loading': (_) => const CustomSplashScreen(),
+        '/dashboard': (_) => const DashboardScreen(),
         '/scanner': (_) => const ScannerScreen(),
       },
     );

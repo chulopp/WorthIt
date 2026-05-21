@@ -7,8 +7,8 @@ import '../controllers/favorite_controller.dart';
 import '../models/dashboard_data.dart';
 import '../models/api/api_models.dart';
 import '../utils/snackbar_helper.dart';
-import '../widgets/product_detail_sheet.dart';
 import '../widgets/recent_activity_card.dart';
+import '../widgets/product_detail_sheet.dart';
 
 class FavoriteScreen extends ConsumerStatefulWidget {
   const FavoriteScreen({super.key});
@@ -42,6 +42,7 @@ class _FavoriteScreenState extends ConsumerState<FavoriteScreen> {
   RecentActivity _activityFromFavorite(FavoriteModel item) {
     return RecentActivity(
       name: item.productName,
+      productId: item.productId,
       price: item.currentPrice ?? 0,
       color: 'green',
       date: item.favoritedAt ?? DateTime.now().toIso8601String(),
@@ -85,7 +86,7 @@ class _FavoriteScreenState extends ConsumerState<FavoriteScreen> {
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
-          'Favorit',
+          'favorite_title'.tr(),
           style: GoogleFonts.bricolageGrotesque(
             color: textPrimary,
             fontWeight: FontWeight.bold,
@@ -93,108 +94,133 @@ class _FavoriteScreenState extends ConsumerState<FavoriteScreen> {
           ),
         ),
       ),
-      body: Builder(
-        builder: (context) {
-          final favoriteState = ref.watch(favoriteControllerProvider);
-          final favoriteProductsList =
-              favoriteState.data ?? const <FavoriteModel>[];
-          if (favoriteState.isLoading && favoriteProductsList.isEmpty) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          if (favoriteState.errorMessage != null &&
-              favoriteProductsList.isEmpty) {
-            return Center(
-              child: Padding(
-                padding: const EdgeInsets.all(24),
-                child: Text(
-                  favoriteState.errorMessage!,
-                  textAlign: TextAlign.center,
-                  style: GoogleFonts.bricolageGrotesque(
-                    fontSize: 16,
-                    color: const Color(0xFF64748B),
-                  ),
-                ),
-              ),
-            );
-          }
-          if (favoriteProductsList.isEmpty) {
-            return Center(
-              child: Padding(
-                padding: const EdgeInsets.all(24),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      Icons.star_border,
-                      size: 60,
-                      color: Colors.grey.shade400,
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      'Belum ada produk favorit yang disimpan.',
-                      textAlign: TextAlign.center,
-                      style: GoogleFonts.bricolageGrotesque(
-                        fontSize: 16,
-                        color: const Color(0xFF64748B),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            );
-          }
-
-          return ListView.builder(
-            padding: const EdgeInsets.symmetric(vertical: 12),
-            itemCount: favoriteProductsList.length,
-            itemBuilder: (context, index) {
-              final item = favoriteProductsList[index];
-              final activity = _activityFromFavorite(item);
-              return RecentActivityCard(
-                item: activity,
-                subtitleMode: RecentActivitySubtitleMode.categoryOnly,
-                onTap: () => showProductDetailBottomSheet(
-                  context,
-                  productName: item.productName,
-                  productCategory: item.category ?? 'Lainnya',
-                  currentPrice: item.currentPrice ?? 0,
-                  imageUrl: item.imageUrl,
-                  productId: item.productId,
-                ),
-                trailing: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    ConstrainedBox(
-                      constraints: const BoxConstraints(maxWidth: 88),
-                      child: Text(
-                        _formatRp(item.currentPrice ?? 0),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        textAlign: TextAlign.right,
-                        style: GoogleFonts.bricolageGrotesque(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: textPrimary,
+      body: RefreshIndicator(
+        color: const Color(0xFF304423),
+        onRefresh: () async {
+          await ref.read(favoriteControllerProvider.notifier).fetchFavorites();
+        },
+        child: Builder(
+          builder: (context) {
+            final favoriteState = ref.watch(favoriteControllerProvider);
+            final favoriteProductsList =
+                favoriteState.data ?? const <FavoriteModel>[];
+            if (favoriteState.isLoading && favoriteProductsList.isEmpty) {
+              return const Center(child: CircularProgressIndicator());
+            }
+            if (favoriteState.errorMessage != null &&
+                favoriteProductsList.isEmpty) {
+              return ListView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                children: [
+                  SizedBox(
+                    height: MediaQuery.of(context).size.height * 0.7,
+                    child: Center(
+                      child: Padding(
+                        padding: const EdgeInsets.all(24),
+                        child: Text(
+                          favoriteState.errorMessage!,
+                          textAlign: TextAlign.center,
+                          style: GoogleFonts.bricolageGrotesque(
+                            fontSize: 16,
+                            color: const Color(0xFF64748B),
+                          ),
                         ),
                       ),
                     ),
-                    const SizedBox(width: 4),
-                    IconButton(
-                      onPressed: () => _removeFavorite(item),
-                      icon: const Icon(
-                        Icons.star,
-                        color: Color(0xFFC9E88A),
-                        size: 22,
-                      ),
-                      splashRadius: 18,
-                      tooltip: 'Hapus dari favorit',
-                    ),
-                  ],
-                ),
+                  ),
+                ],
               );
-            },
-          );
-        },
+            }
+            if (favoriteProductsList.isEmpty) {
+              return ListView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                children: [
+                  SizedBox(
+                    height: MediaQuery.of(context).size.height * 0.7,
+                    child: Center(
+                      child: Padding(
+                        padding: const EdgeInsets.all(24),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.star_border,
+                              size: 60,
+                              color: Colors.grey.shade400,
+                            ),
+                            const SizedBox(height: 16),
+                            Text(
+                              'Belum ada produk favorit yang disimpan.',
+                              textAlign: TextAlign.center,
+                              style: GoogleFonts.bricolageGrotesque(
+                                fontSize: 16,
+                                color: const Color(0xFF64748B),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              );
+            }
+
+            return ListView.builder(
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: const EdgeInsets.symmetric(vertical: 12),
+              itemCount: favoriteProductsList.length,
+              itemBuilder: (context, index) {
+                final item = favoriteProductsList[index];
+                final activity = _activityFromFavorite(item);
+                return RecentActivityCard(
+                  item: activity,
+                  subtitleMode: RecentActivitySubtitleMode.categoryOnly,
+                  onTap: () {
+                    showProductDetailBottomSheet(
+                      context,
+                      productName: item.productName,
+                      currentPrice: item.currentPrice ?? 0,
+                      imageUrl: item.imageUrl,
+                      productId: item.productId,
+                      productCategory: item.category ?? 'Lainnya',
+                    );
+                  },
+                  trailing: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 88),
+                        child: Text(
+                          _formatRp(item.currentPrice ?? 0),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          textAlign: TextAlign.right,
+                          style: GoogleFonts.bricolageGrotesque(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: textPrimary,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      IconButton(
+                        onPressed: () => _removeFavorite(item),
+                        icon: const Icon(
+                          Icons.star,
+                          color: Color(0xFFC9E88A),
+                          size: 22,
+                        ),
+                        splashRadius: 18,
+                        tooltip: 'Hapus dari favorit',
+                      ),
+                    ],
+                  ),
+                );
+              },
+            );
+          },
+        ),
       ),
     );
   }

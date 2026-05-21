@@ -409,7 +409,10 @@ class AboutScreen extends StatelessWidget {
                       const SizedBox(height: 32),
 
                       // Divider
-                      Divider(color: Colors.white.withValues(alpha: 0.1), height: 1),
+                      Divider(
+                        color: Colors.white.withValues(alpha: 0.1),
+                        height: 1,
+                      ),
                       const SizedBox(height: 20),
 
                       // Copyright

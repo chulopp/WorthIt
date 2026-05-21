@@ -36,14 +36,8 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
     );
   }
 
-  void _showHistoryAnalysis(
-    BuildContext context,
-    ScanHistoryItemModel item,
-  ) {
-    showHistoryAnalysisSheet(
-      context,
-      data: item,
-    );
+  void _showHistoryAnalysis(BuildContext context, ScanHistoryItemModel item) {
+    showHistoryAnalysisSheet(context, data: item);
   }
 
   String _colorFromDecision(String? decision) {
@@ -77,61 +71,82 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
           ),
         ),
       ),
-      body: state.isLoading && items.isEmpty
-          ? const Center(child: CircularProgressIndicator())
-          : state.errorMessage != null
-          ? Center(
-              child: Padding(
-                padding: const EdgeInsets.all(24),
-                child: Text(
-                  state.errorMessage!,
-                  textAlign: TextAlign.center,
-                  style: GoogleFonts.bricolageGrotesque(
-                    fontSize: 16,
-                    color: const Color(0xFF64748B),
-                  ),
-                ),
-              ),
-            )
-          : items.isEmpty
-          ? Center(
-              child: Padding(
-                padding: const EdgeInsets.all(24),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      Icons.history,
-                      size: 60,
-                      color: Colors.grey.shade400,
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      'Belum ada riwayat scan barang',
-                      textAlign: TextAlign.center,
-                      style: GoogleFonts.bricolageGrotesque(
-                        fontSize: 16,
-                        color: const Color(0xFF64748B),
+      body: RefreshIndicator(
+        color: const Color(0xFF304423),
+        onRefresh: () async {
+          await ref.read(historyControllerProvider.notifier).fetchScans();
+        },
+        child: state.isLoading && items.isEmpty
+            ? const Center(child: CircularProgressIndicator())
+            : state.errorMessage != null
+            ? ListView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                children: [
+                  SizedBox(
+                    height: MediaQuery.of(context).size.height * 0.7,
+                    child: Center(
+                      child: Padding(
+                        padding: const EdgeInsets.all(24),
+                        child: Text(
+                          state.errorMessage!,
+                          textAlign: TextAlign.center,
+                          style: GoogleFonts.bricolageGrotesque(
+                            fontSize: 16,
+                            color: const Color(0xFF64748B),
+                          ),
+                        ),
                       ),
                     ),
-                  ],
-                ),
-              ),
-            )
-          : ListView.builder(
-              padding: const EdgeInsets.symmetric(vertical: 12),
-              itemCount: items.length,
-              itemBuilder: (context, index) {
-                return RecentActivityCard(
-                  item: items[index],
-                  subtitleMode: RecentActivitySubtitleMode.decisionBadgeOnly,
-                  onTap: () => _showHistoryAnalysis(
-                    context,
-                    state.data!.scans[index],
                   ),
-                );
-              },
-            ),
+                ],
+              )
+            : items.isEmpty
+            ? ListView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                children: [
+                  SizedBox(
+                    height: MediaQuery.of(context).size.height * 0.7,
+                    child: Center(
+                      child: Padding(
+                        padding: const EdgeInsets.all(24),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.history,
+                              size: 60,
+                              color: Colors.grey.shade400,
+                            ),
+                            const SizedBox(height: 16),
+                            Text(
+                              'Belum ada riwayat scan barang',
+                              textAlign: TextAlign.center,
+                              style: GoogleFonts.bricolageGrotesque(
+                                fontSize: 16,
+                                color: const Color(0xFF64748B),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              )
+            : ListView.builder(
+                physics: const AlwaysScrollableScrollPhysics(),
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                itemCount: items.length,
+                itemBuilder: (context, index) {
+                  return RecentActivityCard(
+                    item: items[index],
+                    subtitleMode: RecentActivitySubtitleMode.decisionBadgeOnly,
+                    onTap: () =>
+                        _showHistoryAnalysis(context, state.data!.scans[index]),
+                  );
+                },
+              ),
+      ),
     );
   }
 }

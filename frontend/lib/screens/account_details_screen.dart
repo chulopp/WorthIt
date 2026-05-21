@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../widgets/dialogs.dart';
 import '../widgets/subscription_badge.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -7,41 +8,35 @@ import 'package:easy_localization/easy_localization.dart';
 import '../utils/snackbar_helper.dart';
 import '../repositories/auth_repository.dart';
 import '../services/auth_service.dart';
+import '../controllers/profile_controller.dart';
 import 'welcome_page.dart';
 
-class AccountDetailsScreen extends StatefulWidget {
+class AccountDetailsScreen extends ConsumerStatefulWidget {
   const AccountDetailsScreen({Key? key}) : super(key: key);
 
   @override
-  State<AccountDetailsScreen> createState() => _AccountDetailsScreenState();
+  ConsumerState<AccountDetailsScreen> createState() =>
+      _AccountDetailsScreenState();
 }
 
-class _AccountDetailsScreenState extends State<AccountDetailsScreen> {
-  String _username = 'imameeee_if';
-
-  @override
-  void initState() {
-    super.initState();
-    _loadUsername();
-  }
-
-  Future<void> _loadUsername() async {
-    final prefs = await SharedPreferences.getInstance();
-    setState(() {
-      _username = prefs.getString('username') ?? 'imameeee_if';
-    });
-  }
-
-  void _showEditUsernameDialog() {
-    final TextEditingController editController = TextEditingController(text: _username);
+class _AccountDetailsScreenState extends ConsumerState<AccountDetailsScreen> {
+  void _showEditUsernameDialog(String currentUsername) {
+    final TextEditingController editController = TextEditingController(
+      text: currentUsername,
+    );
     showDialog(
       context: context,
       builder: (context) {
         return AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
           title: Text(
             'account.edit_username_title'.tr(),
-            style: GoogleFonts.bricolageGrotesque(fontWeight: FontWeight.bold, fontSize: 18),
+            style: GoogleFonts.bricolageGrotesque(
+              fontWeight: FontWeight.bold,
+              fontSize: 18,
+            ),
           ),
           content: SizedBox(
             width: MediaQuery.of(context).size.width * 0.8,
@@ -55,7 +50,10 @@ class _AccountDetailsScreenState extends State<AccountDetailsScreen> {
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: Color(0xFF304423), width: 2),
+                  borderSide: const BorderSide(
+                    color: Color(0xFF304423),
+                    width: 2,
+                  ),
                 ),
               ),
               style: GoogleFonts.bricolageGrotesque(),
@@ -66,17 +64,21 @@ class _AccountDetailsScreenState extends State<AccountDetailsScreen> {
               onPressed: () => Navigator.pop(context),
               child: Text(
                 'auth.cancel'.tr(),
-                style: GoogleFonts.bricolageGrotesque(color: Colors.grey.shade600, fontWeight: FontWeight.w600),
+                style: GoogleFonts.bricolageGrotesque(
+                  color: Colors.grey.shade600,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
             ),
             ElevatedButton(
               onPressed: () async {
-                final prefs = await SharedPreferences.getInstance();
-                await prefs.setString('username', editController.text);
+                final newUsername = editController.text.trim();
+                if (newUsername.isNotEmpty) {
+                  await ref
+                      .read(profileUsernameProvider.notifier)
+                      .updateUsername(newUsername);
+                }
                 if (!mounted) return;
-                setState(() {
-                  _username = editController.text;
-                });
                 Navigator.pop(context);
 
                 SnackbarHelper.showTopSnackbar(
@@ -86,12 +88,17 @@ class _AccountDetailsScreenState extends State<AccountDetailsScreen> {
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF304423),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
                 elevation: 0,
               ),
               child: Text(
                 'account.save'.tr(),
-                style: GoogleFonts.bricolageGrotesque(color: Colors.white, fontWeight: FontWeight.bold),
+                style: GoogleFonts.bricolageGrotesque(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
           ],
@@ -106,6 +113,12 @@ class _AccountDetailsScreenState extends State<AccountDetailsScreen> {
     final auth = AuthService();
     final displayName = auth.displayName ?? 'Pengguna WorthIt';
     final email = auth.currentUser?.email ?? '-';
+
+    final usernameState = ref.watch(profileUsernameProvider);
+    final username = usernameState.maybeWhen(
+      data: (name) => name,
+      orElse: () => '...',
+    );
 
     return Scaffold(
       resizeToAvoidBottomInset: false,
@@ -188,7 +201,7 @@ class _AccountDetailsScreenState extends State<AccountDetailsScreen> {
                     subtitle: Padding(
                       padding: const EdgeInsets.only(top: 6.0),
                       child: Text(
-                        _username,
+                        username,
                         style: GoogleFonts.bricolageGrotesque(
                           color: textPrimary,
                           fontSize: 16,
@@ -197,8 +210,12 @@ class _AccountDetailsScreenState extends State<AccountDetailsScreen> {
                       ),
                     ),
                     trailing: IconButton(
-                      icon: const Icon(Icons.edit_outlined, color: textPrimary, size: 20),
-                      onPressed: _showEditUsernameDialog,
+                      icon: const Icon(
+                        Icons.edit_outlined,
+                        color: textPrimary,
+                        size: 20,
+                      ),
+                      onPressed: () => _showEditUsernameDialog(username),
                     ),
                   ),
                   ListTile(
@@ -248,7 +265,9 @@ class _AccountDetailsScreenState extends State<AccountDetailsScreen> {
                   if (!context.mounted) return;
                   Navigator.pushAndRemoveUntil(
                     context,
-                    MaterialPageRoute(builder: (context) => const WelcomePage()),
+                    MaterialPageRoute(
+                      builder: (context) => const WelcomePage(),
+                    ),
                     (route) => false,
                   );
                 }

@@ -95,6 +95,10 @@
     "add_to_list": "Add to Shopping List",
     "remove_from_list": "Remove from Shopping List",
     "image_unavailable": "Image not available",
+    "insight_compare_unavailable": "Comparison price is not available yet.",
+    "insight_stable": "This product price is stable and fair compared with the 6-month market average.",
+    "insight_cheaper": "This product is {percent}% cheaper than the 6-month average. This is a good chance to buy it now!",
+    "insight_expensive": "This product is {percent}% more expensive than usual. Consider delaying the purchase if it is not urgent.",
     "months": {
       "jan": "Jan",
       "feb": "Feb",
@@ -249,7 +253,14 @@
     "history": "History",
     "favorites": "Favorites",
     "shopping_activity": "Shopping Activity",
-    "market_insight": "Market Insight"
+    "market_insight": "Market Insight",
+    "market_insight_messages": {
+      "product_increase": "{product} is up {percent}% this month. Consider comparing alternatives before buying.",
+      "product_decrease": "{product} is down {percent}% this month. It may be a good time to buy.",
+      "category_increase": "{category} prices are rising this month, up around {percent}%.",
+      "category_decrease": "{category} prices are easing this month, down around {percent}%.",
+      "stable": "Market prices are stable this month with no major movement."
+    }
   },
   "smart_shopping": "Smart Shopping",
   "welcome_subtitle": "Scan price tags, analyze trends, and save your smart shopping list.",
@@ -266,6 +277,40 @@
   "notification_title": "Notifications",
   "no_notifications": "No notifications",
   "read_all": "Read All",
+  "notification_guest_desc": "Log in to receive price insights and the latest shopping updates.",
+  "notification_empty_desc": "Price updates and shopping reminders will appear here.",
+  "notifications": {
+    "mock": {
+      "last_month": "February",
+      "two_months_ago": "January"
+    },
+    "shopping_list": {
+      "title": "Your shopping list is about to reset",
+      "desc": "You still have {count} unchecked items. Finish them within {days} days before this month's list resets automatically."
+    },
+    "over_budget": {
+      "title": "Your monthly budget has been reached",
+      "desc": "You've spent {spent}, while your limit is {budget}. Let's pause impulse buys and focus on the essentials."
+    },
+    "pro_expiring": {
+      "title": "Your PRO access is almost over",
+      "desc": "Your PRO benefits have {days} days left. Renew to keep PDF exports and premium insights ready."
+    },
+    "pdf_success": {
+      "title": "PDF report created",
+      "desc": "This month's shopping history is ready. You can save it or share it for spending review."
+    },
+    "favorite_price_drop": {
+      "title": "A favorite item just dropped in price",
+      "desc": "{product} is down by around {percent}% this month. Nice time to check stock before the price moves again."
+    },
+    "monthly_comparison": {
+      "saving_title": "You spent less last month",
+      "saving_desc": "{lastMonth} spending was {lastTotal}, down {difference} from {twoMonthsAgo} ({previousTotal}). Good rhythm, keep it going.",
+      "overspent_title": "Last month's spending went up",
+      "overspent_desc": "{lastMonth} spending reached {lastTotal}, up {difference} from {twoMonthsAgo} ({previousTotal}). Let's tighten this month's priorities step by step."
+    }
+  },
   "notif_price_drop_title": "Rice Price Dropped!",
   "notif_price_drop_desc": "Good news! The price of brand X rice at your favorite store dropped by 5%. Check it out before it runs out.",
   "notif_shopping_reminder_title": "Shopping List Reminder",
@@ -388,16 +433,80 @@
   "success_purchased": "Successfully purchased!",
   "cat_sembako": "Groceries",
   "cat_cemilan": "Snacks",
+  "cat_makanan_ringan": "Snacks",
+  "cat_bumbu_dapur": "Cooking Seasoning",
+  "cat_makanan_beku": "Frozen Food",
+  "cat_kesehatan_kebersihan": "Health & Hygiene",
+  "cat_kebutuhan_rumah": "Household Needs",
   "cat_minuman": "Beverages",
   "cat_alat_mandi": "Toiletries",
   "cat_lainnya": "Others",
+  "Makanan Ringan": "Snacks",
+  "Bumbu Dapur": "Cooking Seasoning",
+  "Makanan Beku": "Frozen Food",
+  "Kesehatan dan Kebersihan": "Health & Hygiene",
+  "Kebutuhan Rumah": "Household Needs",
+  "Minuman": "Beverages",
+  "Lainnya": "Others",
+  "shopping_list_total_price": "Total Price",
+  "scanner_loading_camera": "Preparing camera...",
+  "scanner_reading_price_text": "Reading price text...",
+  "scanner_reading_gallery_text": "Reading text from gallery...",
+  "scanner_checking_product": "Checking product...",
+  "product_not_ready_favorite": "Product is not ready to add to favorites.",
+  "product_not_found_database": "Product was not found in the database.",
+  "purchase_record_failed": "Failed to record purchase.",
   "pdf_header_title": "Monthly Expense Report",
   "pdf_print_date": "Print Date",
   "pdf_col_no": "No",
   "pdf_col_date": "Date",
   "pdf_col_item_name": "Item Name",
   "pdf_col_category": "Category",
+  "pdf_col_quantity": "Qty",
   "pdf_col_price": "Price",
+  "pdf_col_total_price": "Final Price",
   "pdf_footer": "Automatically generated by the WorthIt app",
+  "statistics": {
+    "insight_stable": "Your spending this month is still under control. Keep monitoring it.",
+    "insight_month_down": "This month's spending is down {percent}% from last month. Keep it up.",
+    "insight_month_up": "This month's spending is up {percent}% from last month. Try to tighten the next purchases.",
+    "insight_category_down": "{category} spending is down {percent}% from last month.",
+    "insight_category_up": "{category} spending is up {percent}% from last month.",
+    "trend_highest_month": "The trend shows your highest spending was in {month}.",
+    "trend_not_enough_data": "There is not enough trend data to analyze yet."
+  },
+  "analysis": {
+    "explanation_titles": {
+      "wma": "Price Trend",
+      "sr": "Historical Range",
+      "urgency": "Purchase Urgency",
+      "anomaly": "Price Anomaly",
+      "shrinkflation": "Shrinkflation Check",
+      "pro": "Advanced Analysis"
+    },
+    "explanations": {
+      "wma_below": "The scanned price {scan} is {delta}% below the {period}-month normal price around {normal}, so the value is attractive.",
+      "wma_fair": "The scanned price {scan} is close to the {period}-month normal price around {normal}, so it is still reasonable.",
+      "wma_above": "The scanned price {scan} is {delta}% above the {period}-month normal price around {normal}, so consider it carefully.",
+      "wma_expensive": "The scanned price {scan} is {delta}% above the {period}-month normal price around {normal}, which is a strong expensive signal.",
+      "sr_support": "The price is near support at {support}, a lower historical area from the last {period} months.",
+      "sr_resistance": "The price is near resistance at {resistance}, a higher historical area from the last {period} months.",
+      "sr_middle": "The price sits between support {support} and resistance {resistance} from the last {period} months.",
+      "urgency_1_worthit": "The price is good enough to buy for stock even if you do not need it urgently.",
+      "urgency_1_waspada": "Because the need is not urgent, delaying is safer unless you specifically want to stock up.",
+      "urgency_1_mahal": "The need is low and the price is high, so delaying the purchase is recommended.",
+      "urgency_2_worthit": "The need is moderate and the price is friendly, so buying now is reasonable.",
+      "urgency_2_waspada": "The price is close to the fair limit. Buy only if your stock is running low.",
+      "urgency_2_mahal": "The price is high. If the need can wait, delaying for a few days is better.",
+      "urgency_3_worthit": "The need is urgent and the price is still good, so buying now is safe.",
+      "urgency_3_waspada": "The need is urgent, and this price is still within an acceptable limit.",
+      "urgency_3_mahal": "The price is high, but if the need is urgent, buy only enough for now.",
+      "anomaly_detected": "Price anomaly detected: the scanned price exceeds the fair upper bound {fairUpper} from the last {period} months.",
+      "anomaly_clear": "No price anomaly detected. The movement is still within a normal historical range.",
+      "shrinkflation_detected": "Shrinkflation detected: size is down about {weightDrop}% while unit price is up about {unitRise}%.",
+      "shrinkflation_clear": "No shrinkflation detected. The size and unit value are still consistent with historical variants.",
+      "pro_locked": "Price anomaly and shrinkflation are advanced Pro checks. Free analysis still includes WMA and historical range."
+    }
+  },
   "launch_target_unavailable": "The target app is not available on this device."
 }

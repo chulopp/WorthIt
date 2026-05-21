@@ -183,6 +183,7 @@ async def analyze_product(
         category=product.get("category", "Lainnya"),
         urgency=body.urgency,
         weight_gram=body.weight_gram,
+        unit_label=product.get("unit_label"),
         explanations=explanations,
         metrics=AnalyzeMetrics(
             wma_price=analysis["wma_price"],

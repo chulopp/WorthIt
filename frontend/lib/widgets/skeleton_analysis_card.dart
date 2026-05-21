@@ -7,8 +7,8 @@ class SkeletonAnalysisCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Shimmer.fromColors(
-      baseColor: Colors.grey[300]!,
-      highlightColor: Colors.grey[100]!,
+      baseColor: Colors.grey[300]!.withValues(alpha: 0.2),
+      highlightColor: Colors.grey[100]!.withValues(alpha: 0.1),
       child: SingleChildScrollView(
         physics: const NeverScrollableScrollPhysics(),
         child: Column(
@@ -27,7 +27,7 @@ class SkeletonAnalysisCard extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 20),
-            
+
             // Score Banner Skeleton
             Container(
               margin: const EdgeInsets.symmetric(horizontal: 24),
@@ -38,7 +38,7 @@ class SkeletonAnalysisCard extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 28),
-            
+
             // Product Details Skeleton
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -75,14 +75,18 @@ class SkeletonAnalysisCard extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 32),
-            
+
             // Brain Insights Skeleton
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Container(width: double.infinity, height: 1, color: Colors.white),
+                  Container(
+                    width: double.infinity,
+                    height: 1,
+                    color: Colors.white,
+                  ),
                   const SizedBox(height: 24),
                   Container(
                     width: 180,

@@ -219,6 +219,7 @@ class PurchaseItemModel {
   final String productName;
   final String? imageUrl;
   final String? category;
+  final String? unitLabel;
   final int purchasedPrice;
   final int quantity;
   final int totalPrice;
@@ -230,6 +231,7 @@ class PurchaseItemModel {
     required this.productName,
     this.imageUrl,
     this.category,
+    this.unitLabel,
     required this.purchasedPrice,
     required this.quantity,
     required this.totalPrice,
@@ -243,6 +245,7 @@ class PurchaseItemModel {
       productName: _stringValue(json['product_name']),
       imageUrl: _nullableString(json['image_url']),
       category: _nullableString(json['category']),
+      unitLabel: _nullableString(json['unit_label']),
       purchasedPrice: _intValue(json['purchased_price']),
       quantity: _intValue(json['quantity'], fallback: 1),
       totalPrice: _intValue(json['total_price']),
@@ -256,6 +259,7 @@ class PurchaseItemModel {
     'product_name': productName,
     'image_url': imageUrl,
     'category': category,
+    'unit_label': unitLabel,
     'purchased_price': purchasedPrice,
     'quantity': quantity,
     'total_price': totalPrice,
@@ -265,11 +269,13 @@ class PurchaseItemModel {
 
 class PurchaseHistoryModel {
   final String month;
+  final String monthKey;
   final int totalActualSpending;
   final List<PurchaseItemModel> items;
 
   const PurchaseHistoryModel({
     required this.month,
+    this.monthKey = '',
     required this.totalActualSpending,
     required this.items,
   });
@@ -277,6 +283,7 @@ class PurchaseHistoryModel {
   factory PurchaseHistoryModel.fromJson(JsonMap json) {
     return PurchaseHistoryModel(
       month: _stringValue(json['month']),
+      monthKey: _stringValue(json['month_key']),
       totalActualSpending: _intValue(json['total_actual_spending']),
       items: _jsonList(
         json['items'],
@@ -286,6 +293,7 @@ class PurchaseHistoryModel {
 
   JsonMap toJson() => <String, dynamic>{
     'month': month,
+    'month_key': monthKey,
     'total_actual_spending': totalActualSpending,
     'items': items.map((item) => item.toJson()).toList(),
   };
@@ -463,6 +471,7 @@ class AnalyzeResponseModel {
   final String category;
   final int urgency;
   final double weightGram;
+  final String? unitLabel;
   final List<String> explanations;
   final List<AnalyzeExplanationModel> explanationItems;
   final AnalyzeMetricsModel metrics;
@@ -479,6 +488,7 @@ class AnalyzeResponseModel {
     required this.category,
     required this.urgency,
     required this.weightGram,
+    this.unitLabel,
     required this.explanations,
     this.explanationItems = const <AnalyzeExplanationModel>[],
     required this.metrics,
@@ -494,7 +504,10 @@ class AnalyzeResponseModel {
         : <dynamic>[];
     final explanationItems = rawExplanationList
         .map(AnalyzeExplanationModel.fromDynamic)
-        .where((item) => item.description.isNotEmpty)
+        .where(
+          (item) =>
+              item.description.isNotEmpty || item.descriptionKey.isNotEmpty,
+        )
         .toList(growable: false);
     return AnalyzeResponseModel(
       productId: _stringValue(json['product_id']),
@@ -507,6 +520,7 @@ class AnalyzeResponseModel {
       category: _stringValue(json['category']),
       urgency: _intValue(json['urgency']),
       weightGram: _doubleValue(json['weight_gram']),
+      unitLabel: _nullableString(json['unit_label']),
       explanations: explanationItems
           .map((item) => item.description)
           .toList(growable: false),
@@ -533,6 +547,7 @@ class AnalyzeResponseModel {
     'category': category,
     'urgency': urgency,
     'weight_gram': weightGram,
+    'unit_label': unitLabel,
     'explanations': explanationItems.isEmpty
         ? explanations
         : explanationItems.map((item) => item.toJson()).toList(growable: false),
@@ -543,11 +558,21 @@ class AnalyzeResponseModel {
 
 class AnalyzeExplanationModel {
   final String title;
+  final String titleKey;
   final String description;
+  final String descriptionKey;
+  final String tone;
+  final String iconType;
+  final Map<String, String> params;
 
   const AnalyzeExplanationModel({
     required this.title,
+    this.titleKey = '',
     required this.description,
+    this.descriptionKey = '',
+    this.tone = 'positive',
+    this.iconType = 'insight',
+    this.params = const <String, String>{},
   });
 
   factory AnalyzeExplanationModel.fromDynamic(dynamic value) {
@@ -560,6 +585,12 @@ class AnalyzeExplanationModel {
           _nullableString(json['type']) ??
           _nullableString(json['label']) ??
           '';
+      final rawParams = json['params'];
+      final params = rawParams is Map
+          ? rawParams.map(
+              (key, value) => MapEntry(key.toString(), value.toString()),
+            )
+          : <String, String>{};
       final description =
           _nullableString(json['description']) ??
           _nullableString(json['message']) ??
@@ -569,7 +600,12 @@ class AnalyzeExplanationModel {
           '';
       return AnalyzeExplanationModel(
         title: title,
+        titleKey: _stringValue(json['title_key']),
         description: description,
+        descriptionKey: _stringValue(json['description_key']),
+        tone: _stringValue(json['tone'], fallback: 'positive'),
+        iconType: _stringValue(json['icon_type'], fallback: 'insight'),
+        params: params,
       );
     }
     return AnalyzeExplanationModel(
@@ -580,7 +616,12 @@ class AnalyzeExplanationModel {
 
   JsonMap toJson() => <String, dynamic>{
     'title': title,
+    'title_key': titleKey,
     'description': description,
+    'description_key': descriptionKey,
+    'tone': tone,
+    'icon_type': iconType,
+    'params': params,
   };
 }
 
@@ -696,36 +737,71 @@ class FavoriteModel {
 }
 
 class RecentActivityModel {
+  final String? productId;
   final String productName;
   final double price;
   final String decision;
   final String color;
   final String timestamp;
+  final String? imageUrl;
+  final String? category;
+  final String? unitLabel;
 
   const RecentActivityModel({
+    this.productId,
     required this.productName,
     required this.price,
     required this.decision,
     required this.color,
     required this.timestamp,
+    this.imageUrl,
+    this.category,
+    this.unitLabel,
   });
 
   factory RecentActivityModel.fromJson(JsonMap json) {
     return RecentActivityModel(
+      productId: _nullableString(json['product_id']),
       productName: _stringValue(json['product_name']),
       price: _doubleValue(json['price']),
       decision: _stringValue(json['decision']),
       color: _stringValue(json['color'], fallback: 'green'),
       timestamp: _stringValue(json['timestamp']),
+      imageUrl: _nullableString(json['image_url']),
+      category: _nullableString(json['category']),
+      unitLabel: _nullableString(json['unit_label']),
     );
   }
 
   JsonMap toJson() => <String, dynamic>{
+    'product_id': productId,
     'product_name': productName,
     'price': price,
     'decision': decision,
     'color': color,
     'timestamp': timestamp,
+    'image_url': imageUrl,
+    'category': category,
+    'unit_label': unitLabel,
+  };
+}
+
+class ExpensePointModel {
+  final String purchasedAt;
+  final double amount;
+
+  const ExpensePointModel({required this.purchasedAt, required this.amount});
+
+  factory ExpensePointModel.fromJson(JsonMap json) {
+    return ExpensePointModel(
+      purchasedAt: _stringValue(json['purchased_at']),
+      amount: _doubleValue(json['amount']),
+    );
+  }
+
+  JsonMap toJson() => <String, dynamic>{
+    'purchased_at': purchasedAt,
+    'amount': amount,
   };
 }
 
@@ -734,22 +810,50 @@ class DashboardModel {
   final double budgetRemaining;
   final double moneySaved;
   final List<RecentActivityModel> recentActivities;
+  final List<double> dailyExpenses;
+  final List<ExpensePointModel> expensePoints;
+  final String marketInsight;
+  final String? marketInsightKey;
+  final Map<String, String> marketInsightParams;
 
   const DashboardModel({
     required this.monthlyBudget,
     required this.budgetRemaining,
     required this.moneySaved,
     required this.recentActivities,
+    this.dailyExpenses = const [],
+    this.expensePoints = const <ExpensePointModel>[],
+    this.marketInsight = '',
+    this.marketInsightKey,
+    this.marketInsightParams = const <String, String>{},
   });
 
   factory DashboardModel.fromJson(JsonMap json) {
+    final dailyExpensesRaw = json['daily_expenses'];
+    final dailyExpensesList = dailyExpensesRaw is List
+        ? dailyExpensesRaw.map((e) => _doubleValue(e)).toList(growable: false)
+        : <double>[];
+    final rawMarketParams = json['market_insight_params'];
+    final marketInsightParams = rawMarketParams is Map
+        ? rawMarketParams.map(
+            (key, value) => MapEntry(key.toString(), value.toString()),
+          )
+        : <String, String>{};
+
     return DashboardModel(
       monthlyBudget: _doubleValue(json['monthly_budget']),
       budgetRemaining: _doubleValue(json['budget_remaining']),
       moneySaved: _doubleValue(json['money_saved']),
-      recentActivities: _jsonList(json['recent_activities'])
-          .map(RecentActivityModel.fromJson)
-          .toList(growable: false),
+      recentActivities: _jsonList(
+        json['recent_activities'],
+      ).map(RecentActivityModel.fromJson).toList(growable: false),
+      dailyExpenses: dailyExpensesList,
+      expensePoints: _jsonList(
+        json['expense_points'],
+      ).map(ExpensePointModel.fromJson).toList(growable: false),
+      marketInsight: _stringValue(json['market_insight']),
+      marketInsightKey: _nullableString(json['market_insight_key']),
+      marketInsightParams: marketInsightParams,
     );
   }
 
@@ -760,6 +864,13 @@ class DashboardModel {
     'recent_activities': recentActivities
         .map((item) => item.toJson())
         .toList(growable: false),
+    'daily_expenses': dailyExpenses,
+    'expense_points': expensePoints
+        .map((item) => item.toJson())
+        .toList(growable: false),
+    'market_insight': marketInsight,
+    'market_insight_key': marketInsightKey,
+    'market_insight_params': marketInsightParams,
   };
 }
 
@@ -845,12 +956,12 @@ class TrackerModel {
       totalSpent: _doubleValue(json['total_spent']),
       totalItems: _intValue(json['total_items']),
       avgPerItem: _doubleValue(json['avg_per_item']),
-      byCategory: _jsonList(json['by_category'])
-          .map(CategorySpendModel.fromJson)
-          .toList(growable: false),
-      items: _jsonList(json['items'])
-          .map(TrackerItemModel.fromJson)
-          .toList(growable: false),
+      byCategory: _jsonList(
+        json['by_category'],
+      ).map(CategorySpendModel.fromJson).toList(growable: false),
+      items: _jsonList(
+        json['items'],
+      ).map(TrackerItemModel.fromJson).toList(growable: false),
     );
   }
 

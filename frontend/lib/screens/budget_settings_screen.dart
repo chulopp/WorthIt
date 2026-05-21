@@ -7,10 +7,16 @@ import '../utils/snackbar_helper.dart';
 
 class CurrencyInputFormatter extends TextInputFormatter {
   @override
-  TextEditingValue formatEditUpdate(TextEditingValue oldValue, TextEditingValue newValue) {
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
     if (newValue.text.isEmpty) return newValue;
     String numbers = newValue.text.replaceAll(RegExp(r'[^0-9]'), '');
-    String formatted = numbers.replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]}.');
+    String formatted = numbers.replaceAllMapped(
+      RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
+      (Match m) => '${m[1]}.',
+    );
     return TextEditingValue(
       text: formatted,
       selection: TextSelection.collapsed(offset: formatted.length),
@@ -39,7 +45,10 @@ class _BudgetSettingsScreenState extends State<BudgetSettingsScreen> {
     final budget = prefs.getInt('monthly_budget') ?? 0;
     if (budget > 0) {
       String budgetStr = budget.toString();
-      String formatted = budgetStr.replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]}.');
+      String formatted = budgetStr.replaceAllMapped(
+        RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
+        (Match m) => '${m[1]}.',
+      );
       setState(() {
         _controller.text = formatted;
       });
@@ -116,7 +125,10 @@ class _BudgetSettingsScreenState extends State<BudgetSettingsScreen> {
                     fontWeight: FontWeight.bold,
                     fontSize: 16,
                   ),
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 16,
+                  ),
                 ),
               ),
               const Spacer(),
@@ -126,12 +138,15 @@ class _BudgetSettingsScreenState extends State<BudgetSettingsScreen> {
                 child: ElevatedButton(
                   onPressed: () async {
                     final prefs = await SharedPreferences.getInstance();
-                    String raw = _controller.text.replaceAll(RegExp(r'[^0-9]'), '');
+                    String raw = _controller.text.replaceAll(
+                      RegExp(r'[^0-9]'),
+                      '',
+                    );
                     int budget = int.tryParse(raw) ?? 0;
                     await prefs.setInt('monthly_budget', budget);
-                    
+
                     if (!mounted) return;
-                    
+
                     final successMessage = 'budget_save_success'.tr();
                     SnackbarHelper.showTopSnackbar(context, successMessage);
 

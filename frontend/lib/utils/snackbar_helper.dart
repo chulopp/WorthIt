@@ -13,8 +13,7 @@ class SnackbarHelper {
     Color? iconColor,
     IconData icon = Icons.check_circle_rounded,
   }) {
-    final resolvedBackgroundColor =
-        backgroundColor ?? const Color(0xFFC9E88A);
+    final resolvedBackgroundColor = backgroundColor ?? const Color(0xFFC9E88A);
     final resolvedForegroundColor = textColor ?? const Color(0xFF304423);
 
     TopNotification.show(
@@ -35,11 +34,7 @@ class SnackbarHelper {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.start,
           children: [
-            Icon(
-              icon,
-              color: iconColor ?? resolvedForegroundColor,
-              size: 22,
-            ),
+            Icon(icon, color: iconColor ?? resolvedForegroundColor, size: 22),
             const SizedBox(width: 12),
             Flexible(
               child: Text(

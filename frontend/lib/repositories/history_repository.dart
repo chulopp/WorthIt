@@ -4,7 +4,7 @@ import 'repository_helpers.dart';
 
 class HistoryRepository {
   HistoryRepository({ApiClient? apiClient})
-      : _apiClient = apiClient ?? ApiClient.instance;
+    : _apiClient = apiClient ?? ApiClient.instance;
 
   final ApiClient _apiClient;
 
@@ -18,18 +18,18 @@ class HistoryRepository {
             ? null
             : <String, dynamic>{'product_id': productId},
       );
-      return responseDataList(response)
-          .map(ScanHistoryItemModel.fromJson)
-          .toList(growable: false);
+      return responseDataList(
+        response,
+      ).map(ScanHistoryItemModel.fromJson).toList(growable: false);
     });
   }
 
   Future<ApiResult<List<PurchaseHistoryModel>>> getPurchaseHistory() {
     return _apiClient.run(() async {
       final response = await _apiClient.get('/v1/history/purchases');
-      return responseDataList(response)
-          .map(PurchaseHistoryModel.fromJson)
-          .toList(growable: false);
+      return responseDataList(
+        response,
+      ).map(PurchaseHistoryModel.fromJson).toList(growable: false);
     });
   }
 

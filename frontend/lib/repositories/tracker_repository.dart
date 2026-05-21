@@ -12,7 +12,9 @@ class TrackerRepository {
     return _apiClient.run(() async {
       final response = await _apiClient.get(
         '/v1/tracker',
-        queryParameters: month == null ? null : <String, dynamic>{'month': month},
+        queryParameters: month == null
+            ? null
+            : <String, dynamic>{'month': month},
       );
       return TrackerModel.fromJson(responseDataMap(response));
     });

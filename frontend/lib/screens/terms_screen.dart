@@ -11,22 +11,10 @@ class TermsScreen extends StatelessWidget {
     const Color bgScaffold = Color(0xFFF8F9FA);
 
     final List<Map<String, String>> sections = [
-      {
-        'title': 'terms.s1_title'.tr(),
-        'body': 'terms.s1_body'.tr(),
-      },
-      {
-        'title': 'terms.s2_title'.tr(),
-        'body': 'terms.s2_body'.tr(),
-      },
-      {
-        'title': 'terms.s3_title'.tr(),
-        'body': 'terms.s3_body'.tr(),
-      },
-      {
-        'title': 'terms.s4_title'.tr(),
-        'body': 'terms.s4_body'.tr(),
-      },
+      {'title': 'terms.s1_title'.tr(), 'body': 'terms.s1_body'.tr()},
+      {'title': 'terms.s2_title'.tr(), 'body': 'terms.s2_body'.tr()},
+      {'title': 'terms.s3_title'.tr(), 'body': 'terms.s3_body'.tr()},
+      {'title': 'terms.s4_title'.tr(), 'body': 'terms.s4_body'.tr()},
     ];
 
     return Scaffold(

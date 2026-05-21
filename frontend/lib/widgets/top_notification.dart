@@ -1,10 +1,7 @@
 import 'package:flutter/material.dart';
 
 class TopNotification {
-  static void show({
-    required BuildContext context,
-    required Widget child,
-  }) {
+  static void show({required BuildContext context, required Widget child}) {
     final overlay = Overlay.of(context, rootOverlay: true);
     late OverlayEntry overlayEntry;
 

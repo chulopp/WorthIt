@@ -187,7 +187,10 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                       children: [
                         Container(
                           width: double.infinity,
-                          padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 20),
+                          padding: const EdgeInsets.symmetric(
+                            vertical: 24,
+                            horizontal: 20,
+                          ),
                           decoration: BoxDecoration(
                             color: _isPro ? darkGreen : Colors.grey.shade50,
                             borderRadius: BorderRadius.circular(20),
@@ -247,15 +250,23 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                             top: -12,
                             right: 16,
                             child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 6,
+                              ),
                               decoration: BoxDecoration(
                                 gradient: const LinearGradient(
-                                  colors: [Color(0xFFFF9800), Color(0xFFFFC107)],
+                                  colors: [
+                                    Color(0xFFFF9800),
+                                    Color(0xFFFFC107),
+                                  ],
                                 ),
                                 borderRadius: BorderRadius.circular(20),
                                 boxShadow: [
                                   BoxShadow(
-                                    color: const Color(0xFFFF9800).withValues(alpha: 0.3),
+                                    color: const Color(
+                                      0xFFFF9800,
+                                    ).withValues(alpha: 0.3),
                                     blurRadius: 8,
                                     offset: const Offset(0, 2),
                                   ),
@@ -264,7 +275,11 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                               child: Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  const Icon(Icons.local_fire_department, color: Colors.white, size: 14),
+                                  const Icon(
+                                    Icons.local_fire_department,
+                                    color: Colors.white,
+                                    size: 14,
+                                  ),
                                   const SizedBox(width: 4),
                                   Text(
                                     'best_seller'.tr(),
@@ -298,7 +313,10 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                     if (_isPro) ...[
                       _buildBenefitItem('unlimited_scan'.tr(), true),
                       _buildBenefitItem('premium_ai_analysis'.tr(), true),
-                      _buildBenefitItem('smart_product_recommendation'.tr(), true),
+                      _buildBenefitItem(
+                        'smart_product_recommendation'.tr(),
+                        true,
+                      ),
                       _buildBenefitItem('export_pdf_report'.tr(), true),
                       _buildBenefitItem('priority_access'.tr(), true),
                     ] else ...[
@@ -392,7 +410,9 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                   if (icon != null) ...[
                     Icon(
                       icon,
-                      color: isSelected ? const Color(0xFFC9E88A) : Colors.grey.shade500,
+                      color: isSelected
+                          ? const Color(0xFFC9E88A)
+                          : Colors.grey.shade500,
                       size: 18,
                     ),
                     const SizedBox(width: 6),
@@ -408,7 +428,10 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                   if (badge != null) ...[
                     const SizedBox(width: 4),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 5,
+                        vertical: 2,
+                      ),
                       decoration: BoxDecoration(
                         color: isSelected
                             ? const Color(0xFFC9E88A).withValues(alpha: 0.2)
@@ -418,7 +441,9 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                       child: Text(
                         badge,
                         style: GoogleFonts.outfit(
-                          color: isSelected ? const Color(0xFFC9E88A) : Colors.grey.shade500,
+                          color: isSelected
+                              ? const Color(0xFFC9E88A)
+                              : Colors.grey.shade500,
                           fontWeight: FontWeight.w700,
                           fontSize: 8.5,
                         ),
