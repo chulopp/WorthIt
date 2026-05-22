@@ -4,12 +4,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../services/auth_service.dart';
 import 'dashboard_screen.dart';
+import 'welcome_page.dart';
 
 /// Premium Custom Splash Screen with animated blurred glowing blobs.
 ///
-/// Automatically transitions to the DashboardScreen after 2 seconds.
+/// Checks Supabase auth after the animation and routes to the right entry page.
 class CustomSplashScreen extends StatefulWidget {
   final bool isGuest;
   const CustomSplashScreen({Key? key, this.isGuest = false}) : super(key: key);
@@ -66,7 +68,6 @@ class _CustomSplashScreenState extends State<CustomSplashScreen>
     // Pastikan native splash dihapus agar UI Flutter digambarkan sepenuhnya.
     FlutterNativeSplash.remove();
 
-    // Initialize guest or user state
     if (widget.isGuest) {
       AuthService().loginAsGuest();
     } else {
@@ -119,14 +120,20 @@ class _CustomSplashScreenState extends State<CustomSplashScreen>
       if (mounted) _logoController.forward();
     });
 
-    // TUGAS 1: PERBAIKI CUSTOM SPLASH SCREEN (ATASI STUCK)
-    // Menjalankan Future.delayed selama 2 detik untuk animasi, lalu pindah ke DashboardPage.
+    // Keep the animation visible briefly, then make the auth decision from
+    // Supabase currentUser. Only the explicit guest CTA may continue without it.
     Future.delayed(const Duration(milliseconds: 2000), () {
       if (mounted) {
+        final currentUser = Supabase.instance.client.auth.currentUser;
         Navigator.pushAndRemoveUntil(
           context,
           PageRouteBuilder(
-            pageBuilder: (_, __, ___) => const DashboardScreen(),
+            pageBuilder: (_, __, ___) {
+              if (widget.isGuest) return const DashboardScreen();
+              return currentUser == null
+                  ? const WelcomePage()
+                  : const DashboardScreen();
+            },
             transitionsBuilder: (_, animation, __, child) =>
                 FadeTransition(opacity: animation, child: child),
             transitionDuration: const Duration(milliseconds: 500),

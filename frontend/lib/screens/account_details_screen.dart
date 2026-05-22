@@ -5,6 +5,7 @@ import '../widgets/subscription_badge.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:easy_localization/easy_localization.dart';
+import 'package:shimmer/shimmer.dart';
 import '../utils/snackbar_helper.dart';
 import '../repositories/auth_repository.dart';
 import '../services/auth_service.dart';
@@ -111,14 +112,12 @@ class _AccountDetailsScreenState extends ConsumerState<AccountDetailsScreen> {
   Widget build(BuildContext context) {
     const Color textPrimary = Color(0xFF1E293B);
     final auth = AuthService();
-    final displayName = auth.displayName ?? 'Pengguna WorthIt';
+    final displayName = userNameFromAuth(auth.currentUser);
     final email = auth.currentUser?.email ?? '-';
 
     final usernameState = ref.watch(profileUsernameProvider);
-    final username = usernameState.maybeWhen(
-      data: (name) => name,
-      orElse: () => '...',
-    );
+    final username = usernameState.value ?? '';
+    final isUsernameLoading = usernameState.isLoading;
 
     return Scaffold(
       resizeToAvoidBottomInset: false,
@@ -168,7 +167,7 @@ class _AccountDetailsScreenState extends ConsumerState<AccountDetailsScreen> {
             const SizedBox(height: 24),
             // Name
             Text(
-              displayName,
+              displayName.isEmpty ? '-' : displayName,
               style: GoogleFonts.bricolageGrotesque(
                 color: textPrimary,
                 fontWeight: FontWeight.bold,
@@ -200,14 +199,16 @@ class _AccountDetailsScreenState extends ConsumerState<AccountDetailsScreen> {
                     ),
                     subtitle: Padding(
                       padding: const EdgeInsets.only(top: 6.0),
-                      child: Text(
-                        username,
-                        style: GoogleFonts.bricolageGrotesque(
-                          color: textPrimary,
-                          fontSize: 16,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
+                      child: isUsernameLoading
+                          ? _buildTextSkeleton(width: 120, height: 18)
+                          : Text(
+                              username.isEmpty ? '-' : username,
+                              style: GoogleFonts.bricolageGrotesque(
+                                color: textPrimary,
+                                fontSize: 16,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
                     ),
                     trailing: IconButton(
                       icon: const Icon(
@@ -215,7 +216,9 @@ class _AccountDetailsScreenState extends ConsumerState<AccountDetailsScreen> {
                         color: textPrimary,
                         size: 20,
                       ),
-                      onPressed: () => _showEditUsernameDialog(username),
+                      onPressed: isUsernameLoading
+                          ? null
+                          : () => _showEditUsernameDialog(username),
                     ),
                   ),
                   ListTile(
@@ -283,6 +286,21 @@ class _AccountDetailsScreenState extends ConsumerState<AccountDetailsScreen> {
             ),
             const SizedBox(height: 24),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTextSkeleton({required double width, required double height}) {
+    return Shimmer.fromColors(
+      baseColor: const Color(0xFFE2E8F0),
+      highlightColor: const Color(0xFFF8FAFC),
+      child: Container(
+        width: width,
+        height: height,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(6),
         ),
       ),
     );

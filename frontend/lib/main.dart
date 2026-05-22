@@ -5,7 +5,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'config/supabase_config.dart';
-import 'screens/dashboard_screen.dart';
 import 'screens/welcome_page.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'screens/custom_splash_screen.dart';
@@ -134,14 +133,12 @@ class WorthItApp extends ConsumerWidget {
       ),
 
       // ── Routing ──────────────────────────────────────────────────────
-      home: Supabase.instance.client.auth.currentUser == null
-          ? const WelcomePage()
-          : const CustomSplashScreen(),
+      home: const CustomSplashScreen(),
       routes: {
         '/welcome': (_) => const WelcomePage(),
         '/splash': (_) => const CustomSplashScreen(),
         '/loading': (_) => const CustomSplashScreen(),
-        '/dashboard': (_) => const DashboardScreen(),
+        '/dashboard': (_) => const AuthRouteGuard(),
         '/scanner': (_) => const ScannerScreen(),
       },
     );

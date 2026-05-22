@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:easy_localization/easy_localization.dart';
-import '../screens/dashboard_screen.dart';
+import '../screens/custom_splash_screen.dart';
 import '../services/auth_service.dart';
 
 /// Shows a standardized Guest Login Bottom Sheet.
@@ -134,13 +134,14 @@ class _GuestLoginSheet extends StatelessWidget {
               onPressed: () async {
                 try {
                   await AuthService().nativeGoogleSignIn();
-                  if (!context.mounted || !AuthService().isLoggedIn.value) {
+                  if (!context.mounted ||
+                      AuthService().currentUser == null) {
                     return;
                   }
                   Navigator.pushAndRemoveUntil(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => const DashboardScreen(),
+                      builder: (context) => const CustomSplashScreen(),
                     ),
                     (route) => false,
                   );

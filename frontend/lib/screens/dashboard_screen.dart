@@ -2715,24 +2715,15 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                                           width: 48,
                                           height: 48,
                                           fit: BoxFit.cover,
-                                          placeholder: (_, __) => Image.asset(
-                                            'assets/images/${(item.name.hashCode.abs() % 3) + 1}.jpg',
-                                            width: 48,
-                                            height: 48,
-                                            fit: BoxFit.cover,
-                                          ),
-                                          errorWidget: (_, __, ___) => Image.asset(
-                                            'assets/images/${(item.name.hashCode.abs() % 3) + 1}.jpg',
-                                            width: 48,
-                                            height: 48,
-                                            fit: BoxFit.cover,
-                                          ),
+                                          placeholder: (_, __) =>
+                                              _buildCatalogImageSkeleton(),
+                                          errorWidget: (_, __, ___) =>
+                                              _buildCatalogImageUnavailable(
+                                                item.icon,
+                                              ),
                                         )
-                                      : Image.asset(
-                                          'assets/images/${(item.name.hashCode.abs() % 3) + 1}.jpg',
-                                          width: 48,
-                                          height: 48,
-                                          fit: BoxFit.cover,
+                                      : _buildCatalogImageUnavailable(
+                                          item.icon,
                                         ),
                                 ),
                                 const SizedBox(width: 16),
@@ -3088,25 +3079,14 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                                             height: 48,
                                             fit: BoxFit.cover,
                                             placeholder: (_, __) =>
-                                                Image.asset(
-                                                  'assets/images/${(item.name.hashCode.abs() % 3) + 1}.jpg',
-                                                  width: 48,
-                                                  height: 48,
-                                                  fit: BoxFit.cover,
-                                                ),
+                                                _buildCatalogImageSkeleton(),
                                             errorWidget: (_, __, ___) =>
-                                                Image.asset(
-                                                  'assets/images/${(item.name.hashCode.abs() % 3) + 1}.jpg',
-                                                  width: 48,
-                                                  height: 48,
-                                                  fit: BoxFit.cover,
+                                                _buildCatalogImageUnavailable(
+                                                  item.icon,
                                                 ),
                                           )
-                                        : Image.asset(
-                                            'assets/images/${(item.name.hashCode.abs() % 3) + 1}.jpg',
-                                            width: 48,
-                                            height: 48,
-                                            fit: BoxFit.cover,
+                                        : _buildCatalogImageUnavailable(
+                                            item.icon,
                                           ),
                                   ),
                                   const SizedBox(width: 16),
@@ -3882,6 +3862,31 @@ class _StatisticsScreenState extends ConsumerState<StatisticsScreen> {
       ),
     );
   }
+}
+
+Widget _buildCatalogImageSkeleton({double size = 48}) {
+  return Shimmer.fromColors(
+    baseColor: const Color(0xFFE2E8F0),
+    highlightColor: const Color(0xFFF8FAFC),
+    child: Container(
+      width: size,
+      height: size,
+      color: Colors.white,
+    ),
+  );
+}
+
+Widget _buildCatalogImageUnavailable(IconData icon, {double size = 48}) {
+  return Container(
+    width: size,
+    height: size,
+    color: const Color(0xFFF1F5F9),
+    child: Icon(
+      icon,
+      size: 22,
+      color: const Color(0xFF94A3B8),
+    ),
+  );
 }
 
 class ExpenseCategory {

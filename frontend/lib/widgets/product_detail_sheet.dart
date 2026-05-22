@@ -651,24 +651,27 @@ class _ProductDetailSheetState extends ConsumerState<_ProductDetailSheet> {
   // ═══════════════════════════════════════════════════════════════════════════
   Widget _buildHeroImage() {
     final imageUrl = _detail?.imageUrl ?? widget.imageUrl;
-    final fallbackImage = Image.asset(
-      'assets/images/${(_displayName.hashCode.abs() % 3) + 1}.jpg',
-      fit: BoxFit.cover,
-      errorBuilder: (_, __, ___) => _buildHeroImageFallback(),
-    );
 
     return Container(
       height: 250,
       width: double.infinity,
       color: Colors.grey.shade50,
       child: imageUrl == null || imageUrl.isEmpty
-          ? fallbackImage
+          ? _buildHeroImageFallback()
           : CachedNetworkImage(
               imageUrl: imageUrl,
               fit: BoxFit.cover,
-              placeholder: (_, __) => fallbackImage,
-              errorWidget: (_, __, ___) => fallbackImage,
+              placeholder: (_, __) => _buildHeroImageSkeleton(),
+              errorWidget: (_, __, ___) => _buildHeroImageFallback(),
             ),
+    );
+  }
+
+  Widget _buildHeroImageSkeleton() {
+    return Shimmer.fromColors(
+      baseColor: const Color(0xFFE2E8F0),
+      highlightColor: const Color(0xFFF8FAFC),
+      child: Container(color: Colors.white),
     );
   }
 

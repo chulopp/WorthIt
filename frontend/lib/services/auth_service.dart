@@ -81,7 +81,10 @@ class AuthService {
 
   void refreshAuthState() => _syncSession(_client?.auth.currentSession);
 
-  void loginAsGuest() => isLoggedIn.value = false;
+  void loginAsGuest() {
+    isLoggedIn.value = false;
+    userEmail.value = null;
+  }
 
   Future<void> logout() async {
     try {
@@ -124,7 +127,8 @@ class AuthService {
   }
 
   void _syncSession(Session? session) {
-    isLoggedIn.value = session != null;
-    userEmail.value = session?.user.email;
+    final user = _client?.auth.currentUser;
+    isLoggedIn.value = user != null;
+    userEmail.value = user?.email;
   }
 }

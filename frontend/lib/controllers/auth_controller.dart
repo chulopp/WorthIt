@@ -27,11 +27,11 @@ class AuthNotifier extends Notifier<AppAuthState> {
     // Listen to Supabase auth state changes in real-time
     Supabase.instance.client.auth.onAuthStateChange.listen((data) {
       final session = data.session;
-      final user = data.session?.user;
+      final user = Supabase.instance.client.auth.currentUser;
 
       // Sync with legacy AuthService to maintain backward compatibility
-      AuthService().isLoggedIn.value = session != null;
-      AuthService().userEmail.value = session?.user.email;
+      AuthService().isLoggedIn.value = user != null;
+      AuthService().userEmail.value = user?.email;
 
       if (session != null && user != null) {
         state = AppAuthState(
@@ -46,10 +46,11 @@ class AuthNotifier extends Notifier<AppAuthState> {
 
     // Check immediately if we already have a session
     final currentSession = Supabase.instance.client.auth.currentSession;
-    if (currentSession != null) {
+    final currentUser = Supabase.instance.client.auth.currentUser;
+    if (currentSession != null && currentUser != null) {
       state = AppAuthState(
         status: AuthStatus.authenticated,
-        user: currentSession.user,
+        user: currentUser,
         session: currentSession,
       );
     } else {

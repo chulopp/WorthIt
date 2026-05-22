@@ -8,6 +8,27 @@ import 'controller_helpers.dart';
 import 'controller_state.dart';
 import 'repository_providers.dart';
 
+String? _nonEmptyString(Object? value) {
+  final text = value?.toString().trim();
+  return text == null || text.isEmpty ? null : text;
+}
+
+String extractNameFromEmail(String? email) {
+  final value = email?.trim();
+  if (value == null || value.isEmpty) return '';
+  final atIndex = value.indexOf('@');
+  final name = atIndex > 0 ? value.substring(0, atIndex) : value;
+  return name.trim();
+}
+
+String userNameFromAuth(User? user) {
+  if (user == null) return '';
+  final metadata = user.userMetadata;
+  return _nonEmptyString(metadata?['name']) ??
+      _nonEmptyString(metadata?['full_name']) ??
+      extractNameFromEmail(user.email);
+}
+
 final profileControllerProvider =
     NotifierProvider<ProfileController, BaseControllerState<BudgetUpdateModel>>(
       ProfileController.new,
@@ -61,51 +82,22 @@ class ProfileUsernameNotifier extends AsyncNotifier<String> {
 
   Future<String> fetchUsername() async {
     final user = Supabase.instance.client.auth.currentUser;
-    if (user == null) return 'imameeee_if';
+    if (user == null) return '';
 
-    try {
-      final data = await Supabase.instance.client
-          .from('users')
-          .select('full_name')
-          .eq('id', user.id)
-          .maybeSingle();
-
-      final dbName = data?['full_name'] as String?;
-      if (dbName != null && dbName.trim().isNotEmpty) {
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.setString('username', dbName.trim());
-        return dbName.trim();
-      }
-    } catch (_) {}
-
-    // Fallback 1: Google metadata
-    final googleName =
-        user.userMetadata?['full_name'] ?? user.userMetadata?['name'];
-    if (googleName != null && googleName.toString().trim().isNotEmpty) {
-      final name = googleName.toString().trim();
+    final authName = userNameFromAuth(user);
+    if (authName.isNotEmpty) {
       final prefs = await SharedPreferences.getInstance();
-      await prefs.setString('username', name);
+      await prefs.setString('username', authName);
       try {
         await Supabase.instance.client
             .from('users')
-            .update({'full_name': name})
+            .update({'full_name': authName})
             .eq('id', user.id);
       } catch (_) {}
-      return name;
+      return authName;
     }
 
-    // Fallback 2: SharedPreferences
-    final prefs = await SharedPreferences.getInstance();
-    final savedName = prefs.getString('username');
-    if (savedName != null && savedName.trim().isNotEmpty) {
-      return savedName.trim();
-    }
-
-    // Fallback 3: Email prefix
-    final emailName = user.email?.split('@').first;
-    final finalFallback = emailName ?? 'imameeee_if';
-    await prefs.setString('username', finalFallback);
-    return finalFallback;
+    return '';
   }
 
   Future<void> updateUsername(String newName) async {

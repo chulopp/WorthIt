@@ -34,7 +34,7 @@ class _WelcomePageState extends State<WelcomePage> {
             Navigator.pushReplacement(
               context,
               MaterialPageRoute(
-                builder: (_) => const CustomSplashScreen(isGuest: false),
+                builder: (_) => const CustomSplashScreen(),
               ),
             );
           });
