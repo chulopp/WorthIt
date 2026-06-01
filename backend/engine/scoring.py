@@ -90,49 +90,53 @@ def _volatility_percent(prices: list[float], normal_price: float) -> float:
 
 def compute_wma_score(price_delta_percent: float) -> int:
     """
-    Hitung komponen WMA Score (0–60 poin) berdasarkan deviasi harga scan
+    Hitung komponen WMA Score (0-60 poin) berdasarkan deviasi harga scan
     terhadap normal price (WMA historis 6 bulan terakhir).
 
-    Tabel mapping deviasi → skor:
-      ≤ -10%  → 60 poin  (harga sangat murah, beli sekarang)
-      ≤  -5%  → 56 poin  (harga di bawah normal)
-      ≤  +5%  → 52 poin  (harga wajar, dalam toleransi)
-      ≤ +10%  → 42 poin  (sedikit di atas normal)
-      ≤ +15%  → 34 poin  (cukup mahal)
-      ≤ +25%  → 20 poin  (mahal)
-      > +25%  →  8 poin  (sangat mahal, kemungkinan anomali)
+    Tabel mapping deviasi -> skor:
+      <= -10%  -> 60 poin  (harga sangat murah, beli sekarang)
+      <=  -5%  -> 50 poin  (harga di bawah normal)
+      <=  +5%  -> 40 poin  (harga wajar, dalam toleransi)
+      <= +10%  -> 30 poin  (sedikit di atas normal)
+      <= +15%  -> 20 poin  (cukup mahal)
+      <= +25%  -> 10 poin  (mahal)
+      >  +25%  ->  0 poin  (sangat mahal, kemungkinan anomali)
 
     Bobot 60% dari total skor menjadikan komponen ini sebagai sinyal utama.
+    Skor dibuat sebagai tangga monoton berpola dengan interval 10 poin agar
+    setiap kenaikan zona risiko memiliki penalti yang konsisten.
     """
     if price_delta_percent <= -10: return 60
-    if price_delta_percent <=  -5: return 56
-    if price_delta_percent <=   5: return 52
-    if price_delta_percent <=  10: return 42
-    if price_delta_percent <=  15: return 34
-    if price_delta_percent <=  25: return 20
-    return 8
+    if price_delta_percent <=  -5: return 50
+    if price_delta_percent <=   5: return 40
+    if price_delta_percent <=  10: return 30
+    if price_delta_percent <=  15: return 20
+    if price_delta_percent <=  25: return 10
+    return 0
 
 
 def compute_sr_score(sr_position: float) -> int:
     """
-    Hitung komponen S/R Score (0–25 poin) berdasarkan posisi harga
+    Hitung komponen S/R Score (0-25 poin) berdasarkan posisi harga
     relatif terhadap Support dan Resistance level historis.
 
-    sr_position = 0%   → harga tepat di Support (paling murah secara historis)
-    sr_position = 100% → harga tepat di Resistance (paling mahal secara historis)
+    sr_position = 0%   -> harga tepat di Support (paling murah secara historis)
+    sr_position = 100% -> harga tepat di Resistance (paling mahal secara historis)
 
-    Tabel mapping posisi S/R → skor:
-      ≤ 15%  → 25 poin  (mendekati support, kesempatan beli)
-      ≤ 35%  → 22 poin  (di bawah midpoint, harga relatif baik)
-      ≤ 60%  → 17 poin  (di midpoint, harga normal)
-      ≤ 80%  → 10 poin  (mendekati resistance, harga tinggi)
-      > 80%  →  3 poin  (di zona resistance, harga puncak)
+    Tabel mapping posisi S/R -> skor:
+      <= 15%  -> 25 poin  (mendekati support, kesempatan beli)
+      <= 35%  -> 20 poin  (di bawah midpoint, harga relatif baik)
+      <= 60%  -> 15 poin  (di midpoint, harga normal)
+      <= 80%  -> 10 poin  (mendekati resistance, harga tinggi)
+      >  80%  ->  5 poin  (di zona resistance, harga puncak)
+
+    Skor dibuat sebagai tangga monoton berpola dengan interval 5 poin.
     """
     if sr_position <= 15: return 25
-    if sr_position <= 35: return 22
-    if sr_position <= 60: return 17
+    if sr_position <= 35: return 20
+    if sr_position <= 60: return 15
     if sr_position <= 80: return 10
-    return 3
+    return 5
 
 
 def compute_urgency_score(urgency: int, price_delta_percent: float) -> int:

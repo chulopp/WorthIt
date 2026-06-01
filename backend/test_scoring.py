@@ -1,6 +1,6 @@
 import unittest
 
-from engine.scoring import run_analysis
+from engine.scoring import compute_sr_score, compute_wma_score, run_analysis
 
 
 BUCKETS = [
@@ -14,6 +14,32 @@ BUCKETS = [
 
 
 class ScoringTest(unittest.TestCase):
+    def test_wma_score_uses_regular_ten_point_ladder(self):
+        cases = [
+            (-10, 60),
+            (-5, 50),
+            (5, 40),
+            (10, 30),
+            (15, 20),
+            (25, 10),
+            (25.1, 0),
+        ]
+        for delta, expected in cases:
+            with self.subTest(delta=delta):
+                self.assertEqual(compute_wma_score(delta), expected)
+
+    def test_sr_score_uses_regular_five_point_ladder(self):
+        cases = [
+            (15, 25),
+            (35, 20),
+            (60, 15),
+            (80, 10),
+            (80.1, 5),
+        ]
+        for position, expected in cases:
+            with self.subTest(position=position):
+                self.assertEqual(compute_sr_score(position), expected)
+
     def test_price_below_wma_is_worthit(self):
         result = run_analysis(9500, 100, 2, BUCKETS, "FREE")
         self.assertEqual(result["decision"], "WorthIt")
