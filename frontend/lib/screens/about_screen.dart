@@ -340,7 +340,7 @@ class AboutScreen extends StatelessWidget {
                             Expanded(
                               child: _buildTeamMember(
                                 svgPath: 'assets/svg/WENDI.svg',
-                                name: 'Wendi Adi Ardiansyah',
+                                name: 'Wendi Adi Ardiansah',
                                 role: 'Co-Founder & COO',
                               ),
                             ),
@@ -354,7 +354,7 @@ class AboutScreen extends StatelessWidget {
                             Expanded(
                               child: _buildTeamMember(
                                 svgPath: 'assets/svg/JOVAN.svg',
-                                name: 'Jovan Amadeo Hutaluhung',
+                                name: 'Jovan Amadeo Hutagalung',
                                 role: 'Co-Founder & CTO',
                               ),
                             ),
