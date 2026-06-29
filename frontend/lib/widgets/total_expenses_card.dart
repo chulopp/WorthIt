@@ -5,15 +5,22 @@ import '../services/privacy_service.dart';
 
 class TotalExpensesCard extends StatefulWidget {
   final double amount;
-  final double savedAmount;
+
+  /// Jumlah belanja di bawah harga normal bulan ini (menggantikan savedAmount lama).
+  final double totalBelowNormalPrice;
+
+  /// Pesan kosong saat totalBelowNormalPrice == 0 (ditampilkan sebagai hint).
+  final String totalBelowNormalMessage;
 
   /// Jika true, konten dibungkus Container hijau tua (untuk layar dengan background putih).
   /// Jika false (default), konten transparan langsung di atas background hijau dashboard.
   final bool showCard;
+
   const TotalExpensesCard({
     super.key,
     required this.amount,
-    required this.savedAmount,
+    required this.totalBelowNormalPrice,
+    this.totalBelowNormalMessage = '',
     this.showCard = false,
   });
 
@@ -26,17 +33,13 @@ class _TotalExpensesCardState extends State<TotalExpensesCard> {
     return 'Rp ${amount.toStringAsFixed(0).replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]}.')}';
   }
 
-  double get _savedPercentage {
-    final double total = widget.amount + widget.savedAmount;
-    if (total == 0) return 0.0;
-    return (widget.savedAmount / total) * 100;
-  }
-
   Widget _buildContent() {
     return ValueListenableBuilder<bool>(
       valueListenable: PrivacyService().isExpenseObscured,
       builder: (context, isObscured, child) {
         final bool isBudgetVisible = !isObscured;
+        final bool hasBelowNormal = widget.totalBelowNormalPrice > 0;
+
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -70,7 +73,6 @@ class _TotalExpensesCardState extends State<TotalExpensesCard> {
                           ),
                         ),
                       TextSpan(
-                        // Tampilkan angka atau bullet sesuai state
                         text: isBudgetVisible
                             ? _formatRp(widget.amount).replaceFirst('Rp ', '')
                             : '*********',
@@ -105,39 +107,57 @@ class _TotalExpensesCardState extends State<TotalExpensesCard> {
               ],
             ),
 
-            // ── Saved Expenses: AnimatedSize untuk efek slide-up smooth ──
+            // ── Total Belanja di Bawah Harga Normal ──
             AnimatedSize(
               duration: const Duration(milliseconds: 300),
               curve: Curves.easeInOut,
               alignment: Alignment.topCenter,
               child: SizedBox(
-                // Saat hidden → tinggi 0, elemen di bawah "tertarik naik"
                 height: isBudgetVisible ? null : 0,
                 child: Padding(
                   padding: const EdgeInsets.only(top: 8),
-                  child: RichText(
-                    text: TextSpan(
-                      children: [
-                        TextSpan(
-                          text: '${'saved_expenses'.tr()}: ',
+                  child: hasBelowNormal
+                      ? RichText(
+                          text: TextSpan(
+                            children: [
+                              WidgetSpan(
+                                alignment: PlaceholderAlignment.middle,
+                                child: const Icon(
+                                  Icons.trending_down_rounded,
+                                  color: Color(0xFFC9E88A),
+                                  size: 16,
+                                ),
+                              ),
+                              const WidgetSpan(child: SizedBox(width: 4)),
+                              TextSpan(
+                                text: '${'total_below_normal_price'.tr()}: ',
+                                style: GoogleFonts.bricolageGrotesque(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w400,
+                                  color: Colors.white70,
+                                ),
+                              ),
+                              TextSpan(
+                                text: _formatRp(widget.totalBelowNormalPrice),
+                                style: GoogleFonts.bricolageGrotesque(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w600,
+                                  color: const Color(0xFFC9E88A),
+                                ),
+                              ),
+                            ],
+                          ),
+                        )
+                      : Text(
+                          widget.totalBelowNormalMessage.isNotEmpty
+                              ? widget.totalBelowNormalMessage
+                              : 'total_below_normal_price_empty'.tr(),
                           style: GoogleFonts.bricolageGrotesque(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w400,
-                            color: Colors.white70,
+                            fontSize: 13,
+                            fontStyle: FontStyle.italic,
+                            color: Colors.white38,
                           ),
                         ),
-                        TextSpan(
-                          text:
-                              '${_formatRp(widget.savedAmount)} (${_savedPercentage.toStringAsFixed(0)}%)',
-                          style: GoogleFonts.bricolageGrotesque(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w400,
-                            color: const Color(0xFFC9E88A),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
                 ),
               ),
             ),

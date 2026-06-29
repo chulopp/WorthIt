@@ -16,6 +16,19 @@ class SubstitutionResponse(BaseModel):
     savings_percent: float
 
 
+class SubstituteItem(BaseModel):
+    """Produk substitusi yang lebih hemat — ditambahkan ke AnalyzeData."""
+    product_id: str
+    name: str
+    brand: Optional[str] = None
+    category: str
+    price: float
+    weight: float
+    price_per_unit: float
+    image_url: Optional[str] = None
+    savings_percent: float
+
+
 class AnalyzeMetrics(BaseModel):
     wma_price: float
     support: float
@@ -56,6 +69,7 @@ class AnalyzeData(BaseModel):
     explanations: List[Any]
     metrics: AnalyzeMetrics
     tier: AnalyzeTierData
+    substitutes: List[SubstituteItem] = Field(default_factory=list)
 
 
 class AnalyzeResponse(BaseModel):
@@ -80,7 +94,8 @@ class RecentActivityItem(BaseModel):
 class DashboardData(BaseModel):
     monthly_budget: float
     budget_remaining: float
-    money_saved: float
+    total_below_normal_price: float = 0.0
+    total_below_normal_message: str = ""
     recent_activities: List[RecentActivityItem]
     daily_expenses: List[float] = Field(default_factory=list)
     expense_points: List[Dict[str, Any]] = Field(default_factory=list)

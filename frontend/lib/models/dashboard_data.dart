@@ -34,7 +34,8 @@ class ExpensePoint {
 class DashboardData {
   final double monthlyBudget;
   final double budgetRemaining;
-  final double moneySaved;
+  final double totalBelowNormalPrice;
+  final String totalBelowNormalMessage;
   final List<RecentActivity> recentItems;
   final List<double> dailyExpenses;
   final List<ExpensePoint> expensePoints;
@@ -45,7 +46,8 @@ class DashboardData {
   DashboardData({
     required this.monthlyBudget,
     required this.budgetRemaining,
-    required this.moneySaved,
+    required this.totalBelowNormalPrice,
+    this.totalBelowNormalMessage = '',
     required this.recentItems,
     this.dailyExpenses = const [],
     this.expensePoints = const [],

@@ -145,7 +145,9 @@
     "q7": "Will my shopping data be automatically deleted?",
     "a7": "Yes. To maintain app performance, your shopping data and lists are saved monthly and will be automatically reset/deleted at the beginning of each new month.",
     "q8": "How many scan results can I save?",
-    "a8": "WorthIt saves up to 20 of your last product scanning histories. This makes it easy for you to review our smart analysis results on items you've encountered before without needing to scan again."
+    "a8": "WorthIt saves up to 20 of your last product scanning histories. This makes it easy for you to review our smart analysis results on items you've encountered before without needing to scan again.",
+    "q9": "What is Below Normal Price Savings?",
+    "a9": "The amount of money you've saved this month by purchasing products below their historical average price. For example, if the normal price of 5kg rice is Rp75,000 and you bought it at Rp70,000 \u2192 you saved Rp5,000."
   },
   "terms": {
     "app_bar_title": "T & C",
@@ -309,6 +311,14 @@
       "saving_desc": "{lastMonth} spending was {lastTotal}, down {difference} from {twoMonthsAgo} ({previousTotal}). Good rhythm, keep it going.",
       "overspent_title": "Last month's spending went up",
       "overspent_desc": "{lastMonth} spending reached {lastTotal}, up {difference} from {twoMonthsAgo} ({previousTotal}). Let's tighten this month's priorities step by step."
+    },
+    "budget_20_percent": {
+      "title": "20% budget remaining",
+      "desc": "You've spent {spent} out of your {budget} limit. Let's be more frugal for the rest of this month."
+    },
+    "weekly_insight": {
+      "title": "Weekly shopping insight",
+      "desc": "Check the latest market insights to help you save this week."
     }
   },
   "notif_price_drop_title": "Rice Price Dropped!",
@@ -325,6 +335,13 @@
   "snacks": "Snacks",
   "cancel": "Cancel",
   "saved_expenses": "Saved Expenses",
+  "total_below_normal_price": "Below Normal Price Savings",
+  "total_below_normal_price_empty": "No below-normal-price purchases this month",
+  "substitute": {
+    "title": "More Affordable Alternatives",
+    "empty": "No more affordable alternatives found for this product",
+    "save_percent": "Save {percent}%"
+  },
   "market_insight_title": "Market Insight",
   "search_in_list": "Search in list...",
   "delete_all": "Delete All",

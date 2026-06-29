@@ -97,6 +97,7 @@ async def search_product_catalog(
     q: Optional[str] = Query(default=None, min_length=1, include_in_schema=False),
     category: Optional[str] = Query(default=None, description="Salah satu dari 7 kategori resmi."),
     limit: int = Query(default=20, ge=1, le=100),
+    offset: int = Query(default=0, ge=0, description="Offset untuk pagination."),
 ):
     search_keyword = keyword or q
     if not search_keyword:
@@ -113,6 +114,7 @@ async def search_product_catalog(
         q=search_keyword,
         category=_validate_category(category),
         limit=limit,
+        offset=offset,
     )
     return ProductSearchResponse(data=_product_summaries(products))
 

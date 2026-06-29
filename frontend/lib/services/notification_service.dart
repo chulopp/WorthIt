@@ -1,4 +1,7 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/notification_generator.dart';
@@ -13,8 +16,72 @@ class NotificationService {
     <NotificationModel>[],
   );
 
+
+  final FlutterLocalNotificationsPlugin _localNotifications = FlutterLocalNotificationsPlugin();
+
   Future<void> init() async {
+    // 1. Initialize local notifications settings
+    const AndroidInitializationSettings initializationSettingsAndroid =
+        AndroidInitializationSettings('@mipmap/ic_launcher');
+
+    const DarwinInitializationSettings initializationSettingsDarwin =
+        DarwinInitializationSettings(
+      requestAlertPermission: false,
+      requestBadgePermission: false,
+      requestSoundPermission: false,
+    );
+
+    const InitializationSettings initializationSettings = InitializationSettings(
+      android: initializationSettingsAndroid,
+      iOS: initializationSettingsDarwin,
+    );
+
+    try {
+      await _localNotifications.initialize(initializationSettings);
+    } catch (_) {}
+
+    // 2. Request permission (Android 13+)
+    await requestNotificationPermission();
+
+    // 3. Check for EOM reminders
     await checkEndOfMonthReminders();
+  }
+
+  Future<void> requestNotificationPermission() async {
+    if (await Permission.notification.isDenied) {
+      await Permission.notification.request();
+    }
+  }
+
+  Future<void> showLocalNotification(String title, String body) async {
+    const AndroidNotificationDetails androidDetails = AndroidNotificationDetails(
+      'worthit_alerts',
+      'WorthIt Alerts',
+      channelDescription: 'System warnings and shopping list notifications from WorthIt',
+      importance: Importance.max,
+      priority: Priority.high,
+      showWhen: true,
+    );
+
+    const DarwinNotificationDetails iosDetails = DarwinNotificationDetails(
+      presentAlert: true,
+      presentBadge: true,
+      presentSound: true,
+    );
+
+    const NotificationDetails platformDetails = NotificationDetails(
+      android: androidDetails,
+      iOS: iosDetails,
+    );
+
+    try {
+      await _localNotifications.show(
+        DateTime.now().millisecond,
+        title,
+        body,
+        platformDetails,
+      );
+    } catch (_) {}
   }
 
   void loadMockNotifications({
@@ -35,7 +102,13 @@ class NotificationService {
     final current = List<NotificationModel>.from(notifications.value);
     current.insert(0, notification);
     notifications.value = current;
+
+    // Translate before triggering actual system notification
+    final translatedTitle = notification.title.tr(namedArgs: notification.titleArgs);
+    final translatedMessage = notification.message.tr(namedArgs: notification.messageArgs);
+    showLocalNotification(translatedTitle, translatedMessage);
   }
+
 
   void markAllAsRead() {
     final current = List<NotificationModel>.from(notifications.value);

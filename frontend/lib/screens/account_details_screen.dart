@@ -74,11 +74,17 @@ class _AccountDetailsScreenState extends ConsumerState<AccountDetailsScreen> {
             ElevatedButton(
               onPressed: () async {
                 final newUsername = editController.text.trim();
-                if (newUsername.isNotEmpty) {
-                  await ref
-                      .read(profileUsernameProvider.notifier)
-                      .updateUsername(newUsername);
+                if (newUsername.isEmpty) {
+                  SnackbarHelper.showTopSnackbar(
+                    context,
+                    'Nama tidak boleh kosong.',
+                    icon: Icons.error_outline,
+                  );
+                  return;
                 }
+                await ref
+                    .read(profileUsernameProvider.notifier)
+                    .updateUsername(newUsername);
                 if (!mounted) return;
                 Navigator.pop(context);
 
@@ -87,6 +93,7 @@ class _AccountDetailsScreenState extends ConsumerState<AccountDetailsScreen> {
                   'account.username_changed_success'.tr(),
                 );
               },
+
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF304423),
                 shape: RoundedRectangleBorder(

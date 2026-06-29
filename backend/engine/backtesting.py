@@ -48,12 +48,37 @@ def calculate_hit_rate(
     return round((correct / total) * 100, 2)
 
 
+def calculate_hit_rate_v2(predictions: Iterable[Prediction], actuals: Iterable[ActualOutcome], decisions: list[str]) -> float:
+    """
+    Hit rate hanya untuk decision yang diberikan.
+    decisions = ["WorthIt", "Mahal"] → skip Waspada
+    """
+    pred_list = list(predictions)
+    act_list = list(actuals)
+    total = min(len(pred_list), len(act_list))
+    if total == 0:
+        return 0.0
+
+    evaluable = 0
+    correct = 0
+    for pred, actual in zip(pred_list[:total], act_list[:total]):
+        if pred.decision not in decisions:
+            continue
+        evaluable += 1
+        if pred.decision == "WorthIt" and actual.future_price >= actual.current_price:
+            correct += 1
+        elif pred.decision == "Mahal" and actual.future_price < actual.current_price:
+            correct += 1
+
+    return round((correct / evaluable) * 100, 2) if evaluable > 0 else 0.0
+
+
 def calculate_cost_savings(recommendations: Iterable[Prediction]) -> float:
     """
     PRD cost-savings metric.
 
     Baseline is buying every scanned item at current price. WorthIt outcome is:
-    BUY -> current price, SUBSTITUTE -> substitute price, DONT_BUY -> zero spend.
+    BUY / WorthIt -> current price, SUBSTITUTE / Waspada -> substitute price, DONT_BUY / Mahal -> zero spend.
     """
     recs = list(recommendations)
     total_without_worthit = sum(r.current_price for r in recs)
@@ -63,9 +88,9 @@ def calculate_cost_savings(recommendations: Iterable[Prediction]) -> float:
     total_with_worthit = 0.0
     for rec in recs:
         decision = rec.decision.upper()
-        if decision == "BUY":
+        if decision in ("BUY", "WORTHIT"):
             total_with_worthit += rec.current_price
-        elif decision == "SUBSTITUTE":
+        elif decision in ("SUBSTITUTE", "WASPADA"):
             total_with_worthit += rec.substitute_price or rec.current_price
 
     savings = total_without_worthit - total_with_worthit

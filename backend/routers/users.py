@@ -6,10 +6,48 @@ Endpoint user profile/settings yang dibutuhkan frontend.
 from fastapi import APIRouter, Depends, HTTPException
 
 from core.security import get_current_user
-from models.users import BudgetUpdateRequest, BudgetUpdateResponse
-from utils.supabase_client import delete_user_account, get_user, update_user_monthly_budget
+from models.users import (
+    BudgetUpdateRequest,
+    BudgetUpdateResponse,
+    UsernameUpdateRequest,
+    UserProfileResponse,
+)
+from utils.supabase_client import (
+    delete_user_account,
+    get_user,
+    update_user_monthly_budget,
+    update_user_display_name,
+)
 
 router = APIRouter(prefix="/v1/users", tags=["Users"])
+
+
+@router.get(
+    "/me",
+    response_model=UserProfileResponse,
+    summary="Get Current User Profile",
+    description="Ambil profil user yang sedang login, termasuk display_name.",
+)
+async def get_my_profile(
+    user_id: str = Depends(get_current_user),
+):
+    user = get_user(user_id)
+    if not user:
+        raise HTTPException(
+            status_code=404,
+            detail={
+                "code": "USER_NOT_FOUND",
+                "message": "User tidak ditemukan.",
+                "suggestion": "Login ulang dengan Google lalu coba lagi.",
+            },
+        )
+
+    return UserProfileResponse(
+        user_id=user_id,
+        email=user.get("email") or "",
+        display_name=user.get("display_name") or user.get("full_name") or "",
+        monthly_budget=int(user.get("monthly_budget") or 0),
+    )
 
 
 @router.patch(
@@ -47,6 +85,46 @@ async def update_my_budget(
         user_id=user["id"],
         monthly_budget=int(user["monthly_budget"] or 0),
     )
+
+
+@router.patch(
+    "/me/username",
+    summary="Update Display Name",
+    description="Update display_name (username kustom) user yang sedang login.",
+)
+async def update_my_username(
+    body: UsernameUpdateRequest,
+    user_id: str = Depends(get_current_user),
+):
+    if not get_user(user_id):
+        raise HTTPException(
+            status_code=404,
+            detail={
+                "code": "USER_NOT_FOUND",
+                "message": "User tidak ditemukan.",
+                "suggestion": "Login ulang dengan Google lalu coba lagi.",
+            },
+        )
+
+    display_name = body.display_name.strip()
+    if not display_name:
+        raise HTTPException(
+            status_code=422,
+            detail={
+                "code": "INVALID_DISPLAY_NAME",
+                "message": "Display name tidak boleh kosong.",
+                "suggestion": "Isi nama tampilan yang valid.",
+            },
+        )
+
+    updated = update_user_display_name(user_id, display_name)
+    return {
+        "status": "success",
+        "data": {
+            "user_id": user_id,
+            "display_name": display_name,
+        },
+    }
 
 
 @router.delete(

@@ -30,6 +30,8 @@ import '../widgets/empty_activity_state.dart';
 import '../utils/dialog_helper.dart';
 import '../utils/date_helper.dart';
 import '../services/privacy_service.dart';
+import '../widgets/skeleton_dashboard_card.dart';
+
 
 class DashboardScreen extends ConsumerStatefulWidget {
   const DashboardScreen({super.key});
@@ -170,7 +172,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       return DashboardData(
         monthlyBudget: 0,
         budgetRemaining: 0,
-        moneySaved: 0,
+        totalBelowNormalPrice: 0,
+        totalBelowNormalMessage: '',
         recentItems: const <RecentActivity>[],
         dailyExpenses: const <double>[],
         expensePoints: const <ExpensePoint>[],
@@ -181,7 +184,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     return DashboardData(
       monthlyBudget: model.monthlyBudget,
       budgetRemaining: model.budgetRemaining,
-      moneySaved: model.moneySaved,
+      totalBelowNormalPrice: model.totalBelowNormalPrice,
+      totalBelowNormalMessage: model.totalBelowNormalMessage,
       dailyExpenses: model.dailyExpenses,
       expensePoints: model.expensePoints
           .map(
@@ -195,6 +199,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       marketInsightKey: model.marketInsightKey,
       marketInsightParams: model.marketInsightParams,
       recentItems: model.recentActivities
+
           .map(
             (item) => RecentActivity(
               productId: item.productId,
@@ -1029,10 +1034,11 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     final dashboardTotalPengeluaran = _totalCurrentMonthPurchases(
       historyState.data?.purchases ?? const <PurchaseHistoryModel>[],
     );
-    final totalPengeluaranTersimpan =
-        historyState.data?.totalPengeluaranTersimpan ?? data.moneySaved;
+    final totalBelowNormalPrice = data.totalBelowNormalPrice;
+    final totalBelowNormalMessage = data.totalBelowNormalMessage;
 
     const Color accentGreen = Color(0xFFC9E88A);
+
     const Color textPrimary = Color(0xFF1E293B);
     const Color textSecondary = Color(0xFF64748B);
     const Color sheetWhite = Color(0xFFFFFFFF);
@@ -1392,8 +1398,10 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                                   else
                                     TotalExpensesCard(
                                       amount: dashboardTotalPengeluaran,
-                                      savedAmount: totalPengeluaranTersimpan,
+                                      totalBelowNormalPrice: totalBelowNormalPrice,
+                                      totalBelowNormalMessage: totalBelowNormalMessage,
                                     ),
+
 
                                   // ── 3. LINE CHART (Pure Line) ──
                                   AnimatedSwitcher(
@@ -1829,78 +1837,17 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                           builder: (context) {
                             if (dashboardState.isLoading ||
                                 historyState.isLoading) {
-                              return ListView.separated(
+                              return ListView.builder(
                                 shrinkWrap: true,
                                 physics: const NeverScrollableScrollPhysics(),
                                 padding: const EdgeInsets.symmetric(
-                                  horizontal: 24,
                                   vertical: 8,
                                 ).copyWith(bottom: 120),
                                 itemCount: 4,
-                                separatorBuilder: (_, __) =>
-                                    const SizedBox(height: 16),
-                                itemBuilder: (_, __) => Shimmer.fromColors(
-                                  baseColor: Colors.grey.shade300.withValues(
-                                    alpha: 0.2,
-                                  ),
-                                  highlightColor: Colors.grey.shade100
-                                      .withValues(alpha: 0.1),
-                                  child: Row(
-                                    children: [
-                                      Container(
-                                        width: 48,
-                                        height: 48,
-                                        decoration: BoxDecoration(
-                                          color: Colors.white,
-                                          borderRadius: BorderRadius.circular(
-                                            12,
-                                          ),
-                                        ),
-                                      ),
-                                      const SizedBox(width: 16),
-                                      Expanded(
-                                        child: Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          children: [
-                                            Container(
-                                              height: 14,
-                                              width: double.infinity,
-                                              decoration: BoxDecoration(
-                                                color: Colors.white,
-                                                borderRadius:
-                                                    BorderRadius.circular(6),
-                                              ),
-                                            ),
-                                            const SizedBox(height: 8),
-                                            Container(
-                                              height: 12,
-                                              width: 100,
-                                              decoration: BoxDecoration(
-                                                color: Colors.white,
-                                                borderRadius:
-                                                    BorderRadius.circular(6),
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                      const SizedBox(width: 16),
-                                      Container(
-                                        height: 16,
-                                        width: 60,
-                                        decoration: BoxDecoration(
-                                          color: Colors.white,
-                                          borderRadius: BorderRadius.circular(
-                                            6,
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
+                                itemBuilder: (_, __) => const SkeletonDashboardCard(),
                               );
                             }
+
 
                             final isGuest = !AuthService().isLoggedIn.value;
                             final aktivitasList = data.recentItems
@@ -2447,6 +2394,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
   String searchQuery = '';
   String selectedCategory = 'Semua';
   final TextEditingController _searchController = TextEditingController();
+  final ScrollController _scrollController = ScrollController();
 
   final List<String> categories = const [
     allProductCategoryLabel,
@@ -2466,12 +2414,26 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
   @override
   void initState() {
     super.initState();
+    _scrollController.addListener(_onScroll);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
         ref.read(productDetailControllerProvider.notifier).listProducts();
       }
     });
   }
+
+  void _onScroll() {
+    if (_scrollController.position.pixels >=
+        _scrollController.position.maxScrollExtent - 200) {
+      final notifier = ref.read(productDetailControllerProvider.notifier);
+      if (searchQuery.trim().isNotEmpty) {
+        notifier.loadMoreSearchResults();
+      } else {
+        notifier.loadMoreCatalog();
+      }
+    }
+  }
+
 
   IconData _catalogIcon(String category, String name) {
     final value = '$category $name'.toLowerCase();
@@ -2526,9 +2488,11 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
 
   @override
   void dispose() {
+    _scrollController.dispose();
     _searchController.dispose();
     super.dispose();
   }
+
 
   @override
   Widget build(BuildContext context) {
@@ -2682,12 +2646,24 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                       ],
                     )
                   : ListView.builder(
+                      controller: _scrollController,
                       physics: const AlwaysScrollableScrollPhysics(),
                       padding: const EdgeInsets.symmetric(vertical: 8.0),
-                      itemCount: filteredKatalog.length,
+                      itemCount: filteredKatalog.length + (productState.isLoadingMore ? 1 : 0),
                       itemBuilder: (context, index) {
+                        if (index >= filteredKatalog.length) {
+                          return const Padding(
+                            padding: EdgeInsets.symmetric(vertical: 16),
+                            child: Center(
+                              child: CircularProgressIndicator(
+                                color: Color(0xFF304423),
+                              ),
+                            ),
+                          );
+                        }
                         final item = filteredKatalog[index];
                         return InkWell(
+
                           onTap: () {
                             showProductDetailSheet(
                               context,
@@ -2787,6 +2763,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
   String searchQuery = '';
   String selectedCategory = 'Semua';
   final TextEditingController _searchController = TextEditingController();
+  final ScrollController _scrollController = ScrollController();
 
   final List<String> categories = const [
     allProductCategoryLabel,
@@ -2806,12 +2783,26 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
   @override
   void initState() {
     super.initState();
+    _scrollController.addListener(_onScroll);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
         ref.read(productDetailControllerProvider.notifier).listProducts();
       }
     });
   }
+
+  void _onScroll() {
+    if (_scrollController.position.pixels >=
+        _scrollController.position.maxScrollExtent - 200) {
+      final notifier = ref.read(productDetailControllerProvider.notifier);
+      if (searchQuery.trim().isNotEmpty) {
+        notifier.loadMoreSearchResults();
+      } else {
+        notifier.loadMoreCatalog();
+      }
+    }
+  }
+
 
   IconData _catalogIcon(String category, String name) {
     final value = '$category $name'.toLowerCase();
@@ -2866,9 +2857,11 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
 
   @override
   void dispose() {
+    _scrollController.dispose();
     _searchController.dispose();
     super.dispose();
   }
+
 
   @override
   Widget build(BuildContext context) {
@@ -3045,12 +3038,24 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                         ],
                       )
                     : ListView.builder(
+                        controller: _scrollController,
                         physics: const AlwaysScrollableScrollPhysics(),
                         padding: const EdgeInsets.symmetric(vertical: 8.0),
-                        itemCount: filteredKatalog.length,
+                        itemCount: filteredKatalog.length + (productState.isLoadingMore ? 1 : 0),
                         itemBuilder: (context, index) {
+                          if (index >= filteredKatalog.length) {
+                            return const Padding(
+                              padding: EdgeInsets.symmetric(vertical: 16),
+                              child: Center(
+                                child: CircularProgressIndicator(
+                                  color: Color(0xFF304423),
+                                ),
+                              ),
+                            );
+                          }
                           final item = filteredKatalog[index];
                           return InkWell(
+
                             onTap: () {
                               showProductDetailSheet(
                                 context,

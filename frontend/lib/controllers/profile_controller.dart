@@ -84,6 +84,20 @@ class ProfileUsernameNotifier extends AsyncNotifier<String> {
     final user = Supabase.instance.client.auth.currentUser;
     if (user == null) return '';
 
+    // 1. Try backend API for display_name (custom username)
+    try {
+      final result = await ref.read(userRepositoryProvider).getDisplayName();
+      if (result.isSuccess) {
+        final displayName = result.requireData;
+        if (displayName.isNotEmpty) {
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.setString('username', displayName);
+          return displayName;
+        }
+      }
+    } catch (_) {}
+
+    // 2. Fallback to Google Auth metadata
     final authName = userNameFromAuth(user);
     if (authName.isNotEmpty) {
       final prefs = await SharedPreferences.getInstance();
@@ -102,17 +116,33 @@ class ProfileUsernameNotifier extends AsyncNotifier<String> {
 
   Future<void> updateUsername(String newName) async {
     state = const AsyncValue.loading();
+    final trimmed = newName.trim();
+    if (trimmed.isEmpty) {
+      state = AsyncValue.error('Nama tidak boleh kosong.', StackTrace.current);
+      return;
+    }
+
+    // 1. Update via backend API
+    try {
+      await ref.read(userRepositoryProvider).updateUsername(trimmed);
+    } catch (_) {
+      // Non-fatal: proceed to save locally anyway
+    }
+
+    // 2. Also update Supabase users table directly (legacy path)
     final user = Supabase.instance.client.auth.currentUser;
     if (user != null) {
       try {
         await Supabase.instance.client
             .from('users')
-            .update({'full_name': newName})
+            .update({'display_name': trimmed})
             .eq('id', user.id);
       } catch (_) {}
     }
+
+    // 3. Persist to SharedPreferences
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('username', newName);
-    state = AsyncValue.data(newName);
+    await prefs.setString('username', trimmed);
+    state = AsyncValue.data(trimmed);
   }
 }

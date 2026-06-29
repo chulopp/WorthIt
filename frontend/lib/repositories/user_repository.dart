@@ -18,6 +18,25 @@ class UserRepository {
     });
   }
 
+  Future<ApiResult<bool>> updateUsername(String displayName) {
+    return _apiClient.run(() async {
+      final response = await _apiClient.patch(
+        '/v1/users/me/username',
+        data: <String, dynamic>{'display_name': displayName},
+      );
+      final map = responseMap(response);
+      return map['status'] == 'success';
+    });
+  }
+
+  Future<ApiResult<String>> getDisplayName() {
+    return _apiClient.run(() async {
+      final response = await _apiClient.get('/v1/users/me');
+      final map = responseMap(response);
+      return (map['display_name'] as String?) ?? '';
+    });
+  }
+
   Future<ApiResult<List<FavoriteModel>>> getFavorites() {
     return _apiClient.run(() async {
       final response = await _apiClient.get('/v1/favorites');

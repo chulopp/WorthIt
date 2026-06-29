@@ -16,6 +16,8 @@ import '../models/api/api_models.dart';
 import '../utils/snackbar_helper.dart';
 import '../widgets/decision_badge.dart';
 import '../widgets/skeleton_analysis_card.dart';
+import '../widgets/product_detail_sheet.dart';
+
 
 /// Premium analysis result screen – fully overhauled UI.
 class AnalysisResultScreen extends ConsumerStatefulWidget {
@@ -40,21 +42,14 @@ class AnalysisResultScreen extends ConsumerStatefulWidget {
 }
 
 class _AnalysisResultScreenState extends ConsumerState<AnalysisResultScreen> {
-  bool isFavorite = false;
-
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) async {
-      if (!mounted) return;
-      await ref.read(favoriteControllerProvider.notifier).fetchFavorites();
-      final productId = ref.read(analyzeControllerProvider).data?.productId;
-      if (!mounted || productId == null || productId.isEmpty) return;
-      setState(() {
-        isFavorite = ref.read(favoriteControllerProvider).isFavorite(productId);
-      });
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(favoriteControllerProvider.notifier).fetchFavorites();
     });
   }
+
 
   static const Color _accentGreen = Color(0xFF304423);
   static const Color _darkText = Color(0xFF1E293B);
@@ -174,18 +169,8 @@ class _AnalysisResultScreenState extends ConsumerState<AnalysisResultScreen> {
       if (message != null && previous?.errorMessage != message) {
         SnackbarHelper.showTopSnackbar(context, message, isDarkContext: false);
       }
-      final productId =
-          analyzeState.data?.productId ??
-          analysisValue.maybeWhen(
-            data: (analysis) => analysis.productId,
-            orElse: () => '',
-          );
-      if (productId == null || productId.isEmpty || !mounted) return;
-      final nextIsFavorite = next.isFavorite(productId);
-      if (isFavorite != nextIsFavorite) {
-        setState(() => isFavorite = nextIsFavorite);
-      }
     });
+
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8F9FA),
@@ -270,6 +255,9 @@ class _AnalysisResultScreenState extends ConsumerState<AnalysisResultScreen> {
 
                 // ── TUGAS 5: BRAIN INSIGHTS ──
                 _buildBrainInsights(analysis),
+
+                // ── ALTERNATIF LEBIH HEMAT ──
+                _buildSubstitutes(analysis),
 
                 const SizedBox(height: 40),
               ],
@@ -468,7 +456,9 @@ class _AnalysisResultScreenState extends ConsumerState<AnalysisResultScreen> {
                     );
                     return;
                   }
-                  ref
+                  final favoriteState = ref.read(favoriteControllerProvider);
+                  final currentlyFavorite = favoriteState.isFavorite(analysis.productId);
+                  await ref
                       .read(favoriteControllerProvider.notifier)
                       .toggleFavorite(
                         analysis.productId,
@@ -482,25 +472,26 @@ class _AnalysisResultScreenState extends ConsumerState<AnalysisResultScreen> {
                           favoritedAt: DateTime.now().toIso8601String(),
                         ),
                       );
-                  setState(() {
-                    isFavorite = !isFavorite;
-                  });
+                  if (!context.mounted) return;
                   SnackbarHelper.showTopSnackbar(
                     context,
-                    isFavorite
+                    !currentlyFavorite
                         ? 'favorite_added_success'.tr()
                         : 'favorite_removed_success'.tr(),
-                    isDarkContext: isFavorite,
+                    isDarkContext: !currentlyFavorite,
                   );
                 },
                 icon: Icon(
-                  isFavorite ? Icons.star : Icons.star_border,
+                  ref.watch(favoriteControllerProvider).isFavorite(analysis.productId)
+                      ? Icons.star
+                      : Icons.star_border,
                   color: const Color(0xFFFBBF24),
                   size: 28,
                 ),
                 padding: EdgeInsets.zero,
                 constraints: const BoxConstraints(),
               ),
+
             ],
           ),
           const SizedBox(height: 8),
@@ -616,10 +607,170 @@ class _AnalysisResultScreenState extends ConsumerState<AnalysisResultScreen> {
     );
   }
 
+  Widget _buildSubstitutes(AnalyzeResponseModel analysis) {
+    if (analysis.substitutes.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const SizedBox(height: 6),
+          Divider(
+            color: const Color(0xFFE2E8F0).withValues(alpha: 0.8),
+            thickness: 1,
+          ),
+          const SizedBox(height: 24),
+          Text(
+            'substitute.title'.tr(),
+            style: GoogleFonts.urbanist(
+              fontSize: 18,
+              fontWeight: FontWeight.w800,
+              color: _darkText,
+            ),
+          ),
+          const SizedBox(height: 16),
+          ...analysis.substitutes.map((sub) {
+            return GestureDetector(
+              onTap: () {
+                showProductDetailSheet(context, productId: sub.productId);
+              },
+              child: Container(
+                margin: const EdgeInsets.only(bottom: 12),
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.02),
+                      blurRadius: 8,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                  border: Border.all(
+                    color: const Color(0xFFE2E8F0).withValues(alpha: 0.5),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    // Product image
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(12),
+                      child: Container(
+                        width: 56,
+                        height: 56,
+                        color: const Color(0xFFF1F5F9),
+                        child: sub.imageUrl != null && sub.imageUrl!.isNotEmpty
+                            ? CachedNetworkImage(
+                                imageUrl: sub.imageUrl!,
+                                fit: BoxFit.cover,
+                                placeholder: (context, url) => const Center(
+                                  child: CupertinoActivityIndicator(),
+                                ),
+                                errorWidget: (context, url, error) => const Icon(
+                                  Icons.shopping_bag_outlined,
+                                  color: Color(0xFF94A3B8),
+                                ),
+                              )
+                            : const Icon(
+                                Icons.shopping_bag_outlined,
+                                color: Color(0xFF94A3B8),
+                              ),
+                      ),
+                    ),
+                    const SizedBox(width: 14),
+                    // Product details
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            sub.name,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: GoogleFonts.urbanist(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w700,
+                              color: _darkText,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          if (sub.brand != null && sub.brand!.isNotEmpty) ...[
+                            Text(
+                              sub.brand!,
+                              style: GoogleFonts.urbanist(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w500,
+                                color: _mutedText,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                          ],
+                          Row(
+                            children: [
+                              Text(
+                                _formatPrice(sub.price),
+                                style: GoogleFonts.urbanist(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w800,
+                                  color: _accentGreen,
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                '${sub.weight.toStringAsFixed(0)}g',
+                                style: GoogleFonts.urbanist(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w500,
+                                  color: _mutedText,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    // Savings badge
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFC9E88A).withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(
+                        'substitute.save_percent'.tr(
+                          namedArgs: {'percent': sub.savingsPercent.toStringAsFixed(0)},
+                        ),
+                        style: GoogleFonts.urbanist(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                          color: const Color(0xFF304423),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          }).toList(),
+          const SizedBox(height: 12),
+        ],
+      ),
+    );
+  }
+
   // ═══════════════════════════════════════════════════════════
   // ── TUGAS 5: BRAIN INSIGHTS ──
   // ═══════════════════════════════════════════════════════════
   Widget _buildBrainInsights(AnalyzeResponseModel analysis) {
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24),
       child: Column(

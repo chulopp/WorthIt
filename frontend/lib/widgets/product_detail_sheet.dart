@@ -110,8 +110,8 @@ class _ProductDetailSheet extends ConsumerStatefulWidget {
 }
 
 class _ProductDetailSheetState extends ConsumerState<_ProductDetailSheet> {
-  bool _isFavorite = false;
   bool _isInList = false;
+
 
   // ── Design tokens ──
   static const Color _accentGreen = Color(0xFFC9E88A);
@@ -181,12 +181,6 @@ class _ProductDetailSheetState extends ConsumerState<_ProductDetailSheet> {
   Future<void> _syncFavoriteState() async {
     if (!AuthService().isLoggedIn.value) return;
     await ref.read(favoriteControllerProvider.notifier).fetchFavorites();
-    final productId = _resolvedProductId;
-    if (!mounted || productId == null || productId.isEmpty) return;
-    final isFavorite = ref
-        .read(favoriteControllerProvider)
-        .isFavorite(productId);
-    setState(() => _isFavorite = isFavorite);
   }
 
   void _showGuestLoginSnackbar() {
@@ -216,7 +210,9 @@ class _ProductDetailSheetState extends ConsumerState<_ProductDetailSheet> {
       return;
     }
 
-    final nextIsFavorite = !_isFavorite;
+    final favoriteState = ref.read(favoriteControllerProvider);
+    final currentlyFavorite = favoriteState.isFavorite(productId);
+
     final favorite = FavoriteModel(
       favoriteId: 'optimistic-$productId',
       productId: productId,
@@ -226,18 +222,21 @@ class _ProductDetailSheetState extends ConsumerState<_ProductDetailSheet> {
       currentPrice: _displayCurrentPrice,
       favoritedAt: DateTime.now().toIso8601String(),
     );
-    ref
+
+    await ref
         .read(favoriteControllerProvider.notifier)
         .toggleFavorite(productId, product: favorite);
-    setState(() => _isFavorite = nextIsFavorite);
+
+    if (!context.mounted) return;
     SnackbarHelper.showTopSnackbar(
       context,
-      nextIsFavorite
+      !currentlyFavorite
           ? 'favorite_added_success'.tr()
           : 'favorite_removed_success'.tr(),
-      isDarkContext: nextIsFavorite,
+      isDarkContext: !currentlyFavorite,
     );
   }
+
 
   ProductSummaryModel _currentProductSummary(String productId) {
     return ProductSummaryModel(
@@ -348,14 +347,8 @@ class _ProductDetailSheetState extends ConsumerState<_ProductDetailSheet> {
           icon: Icons.warning_amber_rounded,
         );
       }
-
-      final productId = _resolvedProductId ?? widget.productId ?? _detail?.id;
-      if (productId == null || productId.isEmpty || !mounted) return;
-      final nextIsFavorite = next.isFavorite(productId);
-      if (_isFavorite != nextIsFavorite) {
-        setState(() => _isFavorite = nextIsFavorite);
-      }
     });
+
     ref.listen(shoppingListControllerProvider, (previous, next) {
       final message = next.errorMessage;
       if (message != null && previous?.errorMessage != message) {
@@ -618,25 +611,34 @@ class _ProductDetailSheetState extends ConsumerState<_ProductDetailSheet> {
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
-              IconButton(
-                onPressed: _toggleFavorite,
-                icon: AnimatedSwitcher(
-                  duration: const Duration(milliseconds: 250),
-                  transitionBuilder: (child, anim) =>
-                      ScaleTransition(scale: anim, child: child),
-                  child: Icon(
-                    _isFavorite ? Icons.star : Icons.star_border,
-                    key: ValueKey<bool>(_isFavorite),
-                    size: 24,
-                    color: const Color(0xFFFBBF24),
-                  ),
-                ),
-                color: _darkText,
-                splashRadius: 22,
-                tooltip: _isFavorite
-                    ? 'product_detail.remove_from_favorites'.tr()
-                    : 'product_detail.add_to_favorites'.tr(),
+              Builder(
+                builder: (context) {
+                  final productId = _resolvedProductId ?? widget.productId ?? _detail?.id;
+                  final isFavorite = productId != null && productId.isNotEmpty
+                      ? ref.watch(favoriteControllerProvider).isFavorite(productId)
+                      : false;
+                  return IconButton(
+                    onPressed: _toggleFavorite,
+                    icon: AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 250),
+                      transitionBuilder: (child, anim) =>
+                          ScaleTransition(scale: anim, child: child),
+                      child: Icon(
+                        isFavorite ? Icons.star : Icons.star_border,
+                        key: ValueKey<bool>(isFavorite),
+                        size: 24,
+                        color: const Color(0xFFFBBF24),
+                      ),
+                    ),
+                    color: _darkText,
+                    splashRadius: 22,
+                    tooltip: isFavorite
+                        ? 'product_detail.remove_from_favorites'.tr()
+                        : 'product_detail.add_to_favorites'.tr(),
+                  );
+                }
               ),
+
             ],
           ),
         ),

@@ -4,6 +4,7 @@ GET /v1/tracker — Data portfolio / pengeluaran per kategori bulan ini.
 """
 
 from fastapi import APIRouter, Depends, Query
+from fastapi.responses import JSONResponse
 from typing import Optional
 from datetime import datetime, timezone
 
@@ -55,7 +56,7 @@ async def get_tracker(
         for i in data["items"]
     ]
 
-    return TrackerResponse(
+    response_data = TrackerResponse(
         data=TrackerData(
             total_spent=data["total_spent"],
             total_items=data["total_items"],
@@ -63,4 +64,8 @@ async def get_tracker(
             by_category=by_category,
             items=items,
         )
+    )
+    return JSONResponse(
+        content=response_data.model_dump(),
+        headers={"Cache-Control": "max-age=60, private"},
     )

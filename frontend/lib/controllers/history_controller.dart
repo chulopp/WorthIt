@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'auth_controller.dart';
 import 'controller_helpers.dart';
 import 'controller_state.dart';
 import 'repository_providers.dart';
@@ -12,7 +13,20 @@ final historyControllerProvider =
 class HistoryController extends Notifier<BaseControllerState<HistoryData>> {
   @override
   BaseControllerState<HistoryData> build() {
-    return const BaseControllerState<HistoryData>(data: HistoryData());
+    final authState = ref.watch(authProvider);
+    if (authState.isAuthenticated) {
+      final d = state.data;
+      if ((d == null || (d.scans.isEmpty && d.purchases.isEmpty)) &&
+          !state.isLoading) {
+        Future.microtask(() async {
+          await fetchScans();
+          await fetchPurchases();
+        });
+      }
+    }
+    return state.data != null
+        ? state
+        : const BaseControllerState<HistoryData>(data: HistoryData());
   }
 
   Future<void> fetchScans() async {

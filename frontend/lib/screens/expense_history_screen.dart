@@ -120,7 +120,8 @@ class _ExpenseHistoryScreenState extends ConsumerState<ExpenseHistoryScreen> {
     return DashboardData(
       monthlyBudget: 0,
       budgetRemaining: 0,
-      moneySaved: savedAmount,
+      totalBelowNormalPrice: savedAmount,
+      totalBelowNormalMessage: '',
       recentItems: items,
     );
   }
@@ -132,9 +133,10 @@ class _ExpenseHistoryScreenState extends ConsumerState<ExpenseHistoryScreen> {
     final data = _dashboardFromPurchases(
       historyState.data?.purchases ?? const <PurchaseHistoryModel>[],
       historyState.data?.totalPengeluaranTersimpan ??
-          dashboardState.data?.moneySaved ??
+          dashboardState.data?.totalBelowNormalPrice ??
           0,
     );
+
     const Color textPrimary = Color(0xFF1E293B);
 
     final filteredItems = data.recentItems
@@ -184,9 +186,10 @@ class _ExpenseHistoryScreenState extends ConsumerState<ExpenseHistoryScreen> {
               // Total Expenses Card
               TotalExpensesCard(
                 amount: calculatedTotal,
-                savedAmount: calculatedSaved,
+                totalBelowNormalPrice: calculatedSaved,
                 showCard: true,
               ),
+
 
               Padding(
                 padding: const EdgeInsets.fromLTRB(24, 8, 24, 16),

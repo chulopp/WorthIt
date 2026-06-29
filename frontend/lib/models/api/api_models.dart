@@ -420,6 +420,56 @@ class AnalyzeMetricsModel {
   };
 }
 
+class SubstituteItemModel {
+  final String productId;
+  final String name;
+  final String? brand;
+  final String category;
+  final double price;
+  final double weight;
+  final double pricePerUnit;
+  final String? imageUrl;
+  final double savingsPercent;
+
+  const SubstituteItemModel({
+    required this.productId,
+    required this.name,
+    this.brand,
+    required this.category,
+    required this.price,
+    required this.weight,
+    required this.pricePerUnit,
+    this.imageUrl,
+    required this.savingsPercent,
+  });
+
+  factory SubstituteItemModel.fromJson(JsonMap json) {
+    return SubstituteItemModel(
+      productId: _stringValue(json['product_id']),
+      name: _stringValue(json['name']),
+      brand: _nullableString(json['brand']),
+      category: _stringValue(json['category']),
+      price: _doubleValue(json['price']),
+      weight: _doubleValue(json['weight']),
+      pricePerUnit: _doubleValue(json['price_per_unit']),
+      imageUrl: _nullableString(json['image_url']),
+      savingsPercent: _doubleValue(json['savings_percent']),
+    );
+  }
+
+  JsonMap toJson() => <String, dynamic>{
+    'product_id': productId,
+    'name': name,
+    'brand': brand,
+    'category': category,
+    'price': price,
+    'weight': weight,
+    'price_per_unit': pricePerUnit,
+    'image_url': imageUrl,
+    'savings_percent': savingsPercent,
+  };
+}
+
 class AnalyzeTierModel {
   final String name;
   final int? scanLimit;
@@ -476,6 +526,7 @@ class AnalyzeResponseModel {
   final List<AnalyzeExplanationModel> explanationItems;
   final AnalyzeMetricsModel metrics;
   final AnalyzeTierModel tier;
+  final List<SubstituteItemModel> substitutes;
 
   const AnalyzeResponseModel({
     required this.productId,
@@ -493,6 +544,7 @@ class AnalyzeResponseModel {
     this.explanationItems = const <AnalyzeExplanationModel>[],
     required this.metrics,
     required this.tier,
+    this.substitutes = const <SubstituteItemModel>[],
   });
 
   factory AnalyzeResponseModel.fromJson(JsonMap json) {
@@ -533,6 +585,9 @@ class AnalyzeResponseModel {
       tier: AnalyzeTierModel.fromJson(
         tier is Map ? Map<String, dynamic>.from(tier) : <String, dynamic>{},
       ),
+      substitutes: _jsonList(
+        json['substitutes'],
+      ).map(SubstituteItemModel.fromJson).toList(growable: false),
     );
   }
 
@@ -553,6 +608,7 @@ class AnalyzeResponseModel {
         : explanationItems.map((item) => item.toJson()).toList(growable: false),
     'metrics': metrics.toJson(),
     'tier': tier.toJson(),
+    'substitutes': substitutes.map((s) => s.toJson()).toList(growable: false),
   };
 }
 
@@ -808,7 +864,8 @@ class ExpensePointModel {
 class DashboardModel {
   final double monthlyBudget;
   final double budgetRemaining;
-  final double moneySaved;
+  final double totalBelowNormalPrice;
+  final String totalBelowNormalMessage;
   final List<RecentActivityModel> recentActivities;
   final List<double> dailyExpenses;
   final List<ExpensePointModel> expensePoints;
@@ -819,7 +876,8 @@ class DashboardModel {
   const DashboardModel({
     required this.monthlyBudget,
     required this.budgetRemaining,
-    required this.moneySaved,
+    required this.totalBelowNormalPrice,
+    this.totalBelowNormalMessage = '',
     required this.recentActivities,
     this.dailyExpenses = const [],
     this.expensePoints = const <ExpensePointModel>[],
@@ -843,7 +901,8 @@ class DashboardModel {
     return DashboardModel(
       monthlyBudget: _doubleValue(json['monthly_budget']),
       budgetRemaining: _doubleValue(json['budget_remaining']),
-      moneySaved: _doubleValue(json['money_saved']),
+      totalBelowNormalPrice: _doubleValue(json['total_below_normal_price']),
+      totalBelowNormalMessage: _stringValue(json['total_below_normal_message']),
       recentActivities: _jsonList(
         json['recent_activities'],
       ).map(RecentActivityModel.fromJson).toList(growable: false),
@@ -860,7 +919,8 @@ class DashboardModel {
   JsonMap toJson() => <String, dynamic>{
     'monthly_budget': monthlyBudget,
     'budget_remaining': budgetRemaining,
-    'money_saved': moneySaved,
+    'total_below_normal_price': totalBelowNormalPrice,
+    'total_below_normal_message': totalBelowNormalMessage,
     'recent_activities': recentActivities
         .map((item) => item.toJson())
         .toList(growable: false),

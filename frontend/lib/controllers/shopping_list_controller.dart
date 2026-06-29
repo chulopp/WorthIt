@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/api/api_models.dart';
+import 'auth_controller.dart';
 import 'controller_helpers.dart';
 import 'controller_state.dart';
 import 'repository_providers.dart';
@@ -15,7 +16,13 @@ class ShoppingListController
     extends Notifier<BaseControllerState<MonthlyShoppingListModel>> {
   @override
   BaseControllerState<MonthlyShoppingListModel> build() {
-    return const BaseControllerState<MonthlyShoppingListModel>();
+    final authState = ref.watch(authProvider);
+    if (authState.isAuthenticated && state.data == null && !state.isLoading) {
+      Future.microtask(fetchCurrentList);
+    }
+    return state.data != null
+        ? state
+        : const BaseControllerState<MonthlyShoppingListModel>();
   }
 
   Future<void> fetchCurrentList() async {

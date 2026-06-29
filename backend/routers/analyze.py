@@ -29,6 +29,7 @@ from models.response import (
     AnalyzeMetrics,
     AnalyzeResponse,
     AnalyzeTierData,
+    SubstituteItem,
 )
 from utils.supabase_client import (
     add_scan_record,
@@ -36,6 +37,7 @@ from utils.supabase_client import (
     get_price_history,
     get_product,
     get_scan_quota_status,
+    get_substitutes,
     get_user,
     group_history_by_month,
     weights_match,
@@ -170,7 +172,33 @@ async def analyze_product(
         is_pro=is_pro,
     )
 
-    # ── Assemble Response Payload ──────────────────────────────────────────────
+    # ── Collect substitutes (rule-based, non-blocking) ─────────────────────────
+    raw_substitutes = []
+    try:
+        raw_substitutes = get_substitutes(
+            product_id=product_id,
+            category=product.get("category", ""),
+            scanned_price=body.scanned_price,
+        )
+    except Exception as exc:
+        logging.warning("get_substitutes gagal untuk produk %s: %s", product_id, exc)
+
+    substitute_items = [
+        SubstituteItem(
+            product_id=s["product_id"],
+            name=s["name"],
+            brand=s.get("brand"),
+            category=s["category"],
+            price=s["price"],
+            weight=s["weight"],
+            price_per_unit=s["price_per_unit"],
+            image_url=s.get("image_url"),
+            savings_percent=s["savings_percent"],
+        )
+        for s in raw_substitutes
+    ]
+
+    # ── Assemble Response Payload ─────────────────────────────────────────────
     quota = get_scan_quota_status(user_id)
     analyze_data = AnalyzeData(
         product_id=product_id,
@@ -212,6 +240,7 @@ async def analyze_product(
             remaining_scans=quota["remaining"],
             locked_features=analysis["locked_features"],
         ),
+        substitutes=substitute_items,
     )
 
     # ── Persist ke scan_history (fire-and-handle) ─────────────────────────────

@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/api/api_models.dart';
+import 'auth_controller.dart';
 import 'controller_helpers.dart';
 import 'controller_state.dart';
 import 'repository_providers.dart';
@@ -13,6 +14,12 @@ final favoriteControllerProvider =
 class FavoriteController extends Notifier<FavoriteState> {
   @override
   FavoriteState build() {
+    final authState = ref.watch(authProvider);
+    if (authState.isAuthenticated &&
+        (state.data == null || state.data!.isEmpty) &&
+        !state.isLoading) {
+      Future.microtask(fetchFavorites);
+    }
     return const FavoriteState(data: <FavoriteModel>[]);
   }
 

@@ -4,6 +4,7 @@ GET /v1/dashboard — Data summary untuk halaman utama WorthIt.
 """
 
 from fastapi import APIRouter, Depends
+from fastapi.responses import JSONResponse
 
 from core.security import get_current_user
 from models.response import DashboardResponse, DashboardData, RecentActivityItem
@@ -21,7 +22,7 @@ router = APIRouter(prefix="/v1", tags=["Dashboard"])
 async def get_dashboard(
     user_id: str = Depends(get_current_user),
 ):
-    data    = get_dashboard_data(user_id)
+    data = get_dashboard_data(user_id)
 
     recent = [
         RecentActivityItem(
@@ -38,11 +39,12 @@ async def get_dashboard(
         for item in data["recent_activities"]
     ]
 
-    return DashboardResponse(
+    response_data = DashboardResponse(
         data=DashboardData(
             monthly_budget=data["monthly_budget"],
             budget_remaining=data["budget_remaining"],
-            money_saved=data["money_saved"],
+            total_below_normal_price=data.get("total_below_normal_price", 0.0),
+            total_below_normal_message=data.get("total_below_normal_message", ""),
             recent_activities=recent,
             daily_expenses=data.get("daily_expenses", []),
             expense_points=data.get("expense_points", []),
@@ -50,4 +52,9 @@ async def get_dashboard(
             market_insight_key=data.get("market_insight_key"),
             market_insight_params=data.get("market_insight_params", {}),
         )
+    )
+
+    return JSONResponse(
+        content=response_data.model_dump(),
+        headers={"Cache-Control": "max-age=60, private"},
     )

@@ -47,6 +47,7 @@ from urllib.parse import quote
 
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.cron import CronTrigger
+from dotenv import load_dotenv
 from supabase import create_client, Client
 
 
@@ -55,11 +56,20 @@ ALFAGIFT_BASE_URL = "https://alfagift.id"
 ALFAGIFT_SEARCH_API_TOKEN = "webcommerce-gw.alfagift.id/v2/products/searches"
 LOGGER = logging.getLogger("alfagift_automation")
 
+# Load environment variables from .env file
+load_dotenv(dotenv_path=PROJECT_ROOT / ".env")
+
 def get_supabase() -> Client:
     url = os.environ.get("SUPABASE_URL")
-    key = os.environ.get("SUPABASE_KEY")
+    key = (
+        os.environ.get("SUPABASE_SERVICE_ROLE_KEY")
+        or os.environ.get("SUPABASE_SECRET_KEY")
+        or os.environ.get("SUPABASE_KEY")
+    )
     if not url or not key:
-        raise ValueError("SUPABASE_URL dan SUPABASE_KEY environment variables harus diset.")
+        raise ValueError(
+            "SUPABASE_URL dan SUPABASE_SERVICE_ROLE_KEY/SUPABASE_KEY harus diset di .env atau environment."
+        )
     return create_client(url, key)
 
 DISPLAY_UNIT_PATTERN = re.compile(r"\b(\d+(?:[.,]\d+)?)\s*([lL]|[kK][gG]|[gG]|[mM][lL])\b")
@@ -200,18 +210,32 @@ def fetch_products_from_supabase(supabase: Client) -> list[InputProduct]:
     return products
 
 
+def _strip_unit_from_name(name: str, unit: str) -> str:
+    """Remove unit string from product name to avoid double weight in queries.
+    e.g. 'Kentang Goreng Straight Cut 500 g' + unit '500 g' -> 'Kentang Goreng Straight Cut'
+    """
+    clean = name.strip()
+    if unit and unit in clean:
+        clean = clean.replace(unit, "").strip()
+        # Also remove trailing parentheses if left empty
+        clean = re.sub(r"\(\s*\)", "", clean).strip()
+    return clean
+
+
 def build_strict_queries(product: InputProduct) -> list[str]:
     queries = []
     brand = product.brand.strip()
+    clean_name = _strip_unit_from_name(product.name, product.unit)
     if normalize_text(brand) not in GENERIC_BRANDS:
-        queries.append(f"{brand} {product.name} {product.unit}")
+        queries.append(f"{brand} {clean_name} {product.unit}")
     else:
-        queries.append(f"{product.name} {product.unit}")
+        queries.append(f"{clean_name} {product.unit}")
     return dedupe_queries(queries)
 
 
 def build_alternative_queries(product: InputProduct) -> list[str]:
-    queries = [f"{product.name} {product.unit}", product.name, smart_query(product)]
+    clean_name = _strip_unit_from_name(product.name, product.unit)
+    queries = [f"{clean_name} {product.unit}", clean_name, smart_query(product)]
     category = normalize_text(product.category)
     if category:
         queries.append(f"{category} {product.unit}".strip())

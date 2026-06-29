@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/api/api_models.dart';
+import 'auth_controller.dart';
 import 'controller_helpers.dart';
 import 'controller_state.dart';
 import 'repository_providers.dart';
@@ -14,7 +15,14 @@ class DashboardController
     extends Notifier<BaseControllerState<DashboardModel>> {
   @override
   BaseControllerState<DashboardModel> build() {
-    return const BaseControllerState<DashboardModel>();
+    // Auto-fetch when auth state resolves to authenticated
+    final authState = ref.watch(authProvider);
+    if (authState.isAuthenticated && state.data == null && !state.isLoading) {
+      Future.microtask(fetchDashboard);
+    }
+    return state.data != null
+        ? state
+        : const BaseControllerState<DashboardModel>();
   }
 
   Future<void> fetchDashboard() async {

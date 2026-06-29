@@ -3,6 +3,7 @@ from __future__ import annotations
 import os
 import re
 import mimetypes
+import logging
 from pathlib import Path
 from datetime import datetime, timedelta, timezone
 from uuid import uuid4
@@ -11,7 +12,12 @@ from dotenv import load_dotenv
 
 from core.categories import OFFICIAL_CATEGORIES
 
-load_dotenv()
+env_path = Path(__file__).resolve().parent.parent / ".env"
+load_dotenv(dotenv_path=env_path)
+
+# ─── In-memory daily cache for Gemini market insight ──────────────────────────
+# key: "user_id:YYYY-MM-DD", value: insight dict
+_insight_cache: dict[str, dict] = {}
 
 # ─── Singleton Supabase Client ─────────────────────────────────────────────────
 
@@ -429,133 +435,155 @@ def add_scan_record(
 
 # ─── Dashboard ────────────────────────────────────────────────────────────────
 
-def get_weekly_market_insight() -> dict:
+_GEMINI_FALLBACK = {
+    "key": "dashboard.market_insight_messages.stable",
+    "params": {},
+    "text": "Harga pasar stabil bulan ini, tidak ada fluktuasi signifikan.",
+}
+
+
+def _build_market_data_summary() -> tuple[list[dict], list[dict]]:
+    """
+    Ambil data pasar: top 3 kenaikan & top 3 penurunan harga produk bulan ini vs bulan lalu.
+    Return: (top_increases, top_decreases) masing-masing list of {name, delta_pct}
+    """
     sb = get_supabase()
     now = datetime.now(timezone.utc).date()
     this_month = now.replace(day=1)
     last_month = (this_month - timedelta(days=1)).replace(day=1)
-    
     try:
         res = _safe_execute(
             sb.table("price_history")
             .select("product_id, price, recorded_at, products(name, category)")
             .gte("recorded_at", last_month.isoformat())
-            .lt("recorded_at", (this_month.replace(day=28) + timedelta(days=4)).replace(day=1).isoformat())
         )
         rows = res.data or []
-        
-        product_prices = {}
+        product_prices: dict[str, dict] = {}
         for row in rows:
             pid = row["product_id"]
             if pid not in product_prices:
                 prod = row.get("products") or {}
                 product_prices[pid] = {
                     "name": prod.get("name", "Unknown"),
-                    "category": prod.get("category", "Unknown"),
                     "this_month": [],
                     "last_month": []
                 }
-            
-            rec = str(row["recorded_at"] or "")[:10]
+            rec = str(row.get("recorded_at") or "")[:10]
             if rec >= this_month.isoformat():
-                product_prices[pid]["this_month"].append(float(row["price"] or 0))
+                product_prices[pid]["this_month"].append(float(row.get("price") or 0))
             else:
-                product_prices[pid]["last_month"].append(float(row["price"] or 0))
-                
-        product_deltas = []
-        category_deltas = {}
-        
-        for pid, data in product_prices.items():
+                product_prices[pid]["last_month"].append(float(row.get("price") or 0))
+
+        deltas = []
+        for data in product_prices.values():
             if data["this_month"] and data["last_month"]:
                 avg_this = sum(data["this_month"]) / len(data["this_month"])
                 avg_last = sum(data["last_month"]) / len(data["last_month"])
                 delta_pct = (avg_this - avg_last) / avg_last * 100
-                product_deltas.append({
-                    "name": data["name"],
-                    "category": data["category"],
-                    "delta_pct": delta_pct
-                })
-                
-                cat = data["category"]
-                if cat not in category_deltas:
-                    category_deltas[cat] = []
-                category_deltas[cat].append(delta_pct)
-        
-        if not product_deltas:
-            raise ValueError("No data")
-            
-        highest_increase = max(product_deltas, key=lambda x: x["delta_pct"])
-        highest_decrease = min(product_deltas, key=lambda x: x["delta_pct"])
-        
-        cat_avg_deltas = []
-        for cat, deltas in category_deltas.items():
-            cat_avg_deltas.append({
-                "category": cat,
-                "delta_pct": sum(deltas) / len(deltas)
-            })
-            
-        cat_highest_increase = max(cat_avg_deltas, key=lambda x: x["delta_pct"])
-        cat_highest_decrease = min(cat_avg_deltas, key=lambda x: x["delta_pct"])
-        
-        insights = []
-        if highest_increase["delta_pct"] > 0:
-            insights.append({
-                "key": "dashboard.market_insight_messages.product_increase",
-                "params": {
-                    "product": str(highest_increase["name"]),
-                    "percent": f"{highest_increase['delta_pct']:.1f}",
-                },
-                "text": f"Waspada! Harga {highest_increase['name']} naik {highest_increase['delta_pct']:.1f}% bulan ini.",
-            })
-        if highest_decrease["delta_pct"] < 0:
-            insights.append({
-                "key": "dashboard.market_insight_messages.product_decrease",
-                "params": {
-                    "product": str(highest_decrease["name"]),
-                    "percent": f"{abs(highest_decrease['delta_pct']):.1f}",
-                },
-                "text": f"Mumpung murah! Harga {highest_decrease['name']} turun {abs(highest_decrease['delta_pct']):.1f}% bulan ini.",
-            })
-        if cat_highest_increase["delta_pct"] > 0:
-            insights.append({
-                "key": "dashboard.market_insight_messages.category_increase",
-                "params": {
-                    "category": str(cat_highest_increase["category"]),
-                    "percent": f"{cat_highest_increase['delta_pct']:.1f}",
-                },
-                "text": f"Kategori {cat_highest_increase['category']} sedang mengalami inflasi harga bulan ini.",
-            })
-        if cat_highest_decrease["delta_pct"] < 0:
-            insights.append({
-                "key": "dashboard.market_insight_messages.category_decrease",
-                "params": {
-                    "category": str(cat_highest_decrease["category"]),
-                    "percent": f"{abs(cat_highest_decrease['delta_pct']):.1f}",
-                },
-                "text": f"Kategori {cat_highest_decrease['category']} lagi banyak turun harga bulan ini!",
-            })
-        if not insights:
-            insights = [{
-                "key": "dashboard.market_insight_messages.stable",
-                "params": {},
-                "text": "Harga pasar stabil bulan ini, tidak ada fluktuasi signifikan.",
-            }]
-            
+                deltas.append({"name": data["name"], "delta_pct": round(delta_pct, 1)})
+
+        deltas_sorted = sorted(deltas, key=lambda x: x["delta_pct"], reverse=True)
+        top_increases = [d for d in deltas_sorted if d["delta_pct"] > 0][:3]
+        top_decreases = [d for d in reversed(deltas_sorted) if d["delta_pct"] < 0][:3]
+        return top_increases, top_decreases
     except Exception:
-        insights = [{
-            "key": "dashboard.market_insight_messages.stable",
-            "params": {},
-            "text": "Harga pasar stabil bulan ini, tidak ada fluktuasi signifikan.",
-        }]
-        
-    week_hash = hash(f"{now.year}-W{now.isocalendar()[1]}")
-    return insights[week_hash % len(insights)]
+        return [], []
+
+
+def _build_user_top_categories(user_id: str, start_of_month: str) -> list[str]:
+    """Ambil top 3 kategori pengeluaran user bulan ini."""
+    sb = get_supabase()
+    try:
+        res = _safe_execute(
+            sb.table("purchase_history")
+            .select("purchased_price, quantity, products(category)")
+            .eq("user_id", user_id)
+            .gte("purchased_at", start_of_month)
+        )
+        cat_totals: dict[str, float] = {}
+        for row in res.data or []:
+            cat = (row.get("products") or {}).get("category", "Lainnya")
+            price = float(row.get("purchased_price") or 0) * float(row.get("quantity") or 1)
+            cat_totals[cat] = cat_totals.get(cat, 0) + price
+        sorted_cats = sorted(cat_totals.items(), key=lambda x: -x[1])
+        return [f"{cat}: Rp{int(total):,}" for cat, total in sorted_cats[:3]]
+    except Exception:
+        return []
+
+
+def get_weekly_market_insight(user_id: str) -> dict:
+    """
+    Hasilkan market insight menggunakan Gemini Flash API.
+    - Cache per user per hari (in-memory)
+    - Fallback ke stable text jika API gagal / timeout
+    """
+    import google.generativeai as genai
+
+    now = datetime.now(timezone.utc)
+    today_str = now.date().isoformat()
+    cache_key = f"{user_id}:{today_str}"
+
+    if cache_key in _insight_cache:
+        return _insight_cache[cache_key]
+
+    start_of_month = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0).isoformat()
+    top_categories = _build_user_top_categories(user_id, start_of_month)
+    top_increases, top_decreases = _build_market_data_summary()
+
+    # Build prompt
+    cat_str = ", ".join(top_categories) if top_categories else "belum ada data"
+    inc_str = ", ".join(f"{d['name']}: +{d['delta_pct']}%" for d in top_increases) if top_increases else "tidak ada"
+    dec_str = ", ".join(f"{d['name']}: {d['delta_pct']}%" for d in top_decreases) if top_decreases else "tidak ada"
+
+    prompt = (
+        "Kamu asisten analisis belanja. Beri 2 insight SINGKAT "
+        "(maks 2 kalimat per insight, maks total 150 karakter) berdasarkan data:\n"
+        f"Pengeluaran user bulan ini: {cat_str}\n"
+        f"Kenaikan harga: {inc_str}\n"
+        f"Penurunan harga: {dec_str}\n"
+        "Format: insight spesifik & personal. Jangan pakai template generik. "
+        "Contoh bagus: 'Minyak goreng naik 8%. Stok sekarang sebelum naik lagi.' "
+        "Contoh buruk: 'Harga pasar stabil bulan ini.'"
+    )
+
+    api_key = os.getenv("GEMINI_API_KEY")
+    result = _GEMINI_FALLBACK
+    if api_key and (top_categories or top_increases or top_decreases):
+        try:
+            import signal
+
+            def _timeout_handler(signum, frame):
+                raise TimeoutError("Gemini timeout")
+
+            genai.configure(api_key=api_key)
+            model = genai.GenerativeModel("gemini-1.5-flash")
+
+            # Use threading timeout compatible with Windows
+            import concurrent.futures
+            with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
+                future = executor.submit(model.generate_content, prompt)
+                try:
+                    response = future.result(timeout=5)
+                    text = response.text.strip()
+                    if text:
+                        result = {
+                            "key": "dashboard.market_insight_messages.stable",
+                            "params": {},
+                            "text": text,
+                        }
+                except concurrent.futures.TimeoutError:
+                    logging.warning("Gemini API timeout setelah 5 detik")
+        except Exception as exc:
+            logging.warning("Gemini insight gagal: %s", exc)
+
+    _insight_cache[cache_key] = result
+    return result
 
 
 def get_dashboard_data(user_id: str) -> dict:
     """
     Kumpulkan ringkasan dashboard dari purchase_history nyata.
-    Daftar belanja bulanan tetap dikelola terpisah oleh shopping_list_items.
+    total_below_normal_price: total selisih harga beli < harga normal (price_history) bulan ini.
     """
     sb = get_supabase()
     user = get_user(user_id) or {}
@@ -564,7 +592,7 @@ def get_dashboard_data(user_id: str) -> dict:
     start_of_month = now.replace(
         day=1, hour=0, minute=0, second=0, microsecond=0
     ).isoformat()
-    
+
     if now.month == 12:
         days_in_month = 31
     else:
@@ -574,12 +602,16 @@ def get_dashboard_data(user_id: str) -> dict:
     total_spent = 0.0
     recent_items = []
     expense_points = []
+    purchased_product_ids: list[str] = []
+
     try:
-        purchase_res = _safe_execute(sb.table("purchase_history")
+        purchase_res = _safe_execute(
+            sb.table("purchase_history")
             .select("id, product_id, purchased_price, quantity, purchased_at, products(id, name, image_url, category, unit_label)")
             .eq("user_id", user_id)
             .gte("purchased_at", start_of_month)
-            .order("purchased_at", desc=True))
+            .order("purchased_at", desc=True)
+        )
         for row in purchase_res.data or []:
             price = (row.get("purchased_price") or 0) * (row.get("quantity") or 1)
             total_spent += price
@@ -587,7 +619,10 @@ def get_dashboard_data(user_id: str) -> dict:
                 "purchased_at": row.get("purchased_at", ""),
                 "amount": price,
             })
-            
+            pid = row.get("product_id")
+            if pid:
+                purchased_product_ids.append(pid)
+
             try:
                 day = int(row["purchased_at"][8:10])
                 if 1 <= day <= days_in_month:
@@ -598,7 +633,7 @@ def get_dashboard_data(user_id: str) -> dict:
             if len(recent_items) < 5:
                 product = row.get("products") or {}
                 recent_items.append({
-                    "product_id":    row.get("product_id"),
+                    "product_id":   row.get("product_id"),
                     "product_name": product.get("name", "Produk Tidak Diketahui"),
                     "price":        price,
                     "decision":     "BUY",
@@ -611,33 +646,49 @@ def get_dashboard_data(user_id: str) -> dict:
     except Exception:
         pass
 
-    money_saved = 0.0
+    # ── Total Belanja di Bawah Harga Normal ───────────────────────────────────
+    # Ambil harga normal (price_history terbaru) per produk yang dibeli bulan ini
+    total_below_normal_price = 0.0
     try:
-        scan_res = _safe_execute(sb.table("scan_history")
-            .select("decision, scanned_price, normal_price")
-            .eq("user_id", user_id))
-        for row in scan_res.data or []:
-            decision = str(row.get("decision") or "").strip().lower()
-            scanned_price = float(row.get("scanned_price") or 0)
-            normal_price = float(row.get("normal_price") or 0)
-            if decision.lower() == "worthit" and scanned_price < normal_price:
-                money_saved += normal_price - scanned_price
+        if purchased_product_ids:
+            # Ambil harga normal terbaru per produk
+            normal_prices = latest_prices_by_product(list(set(purchased_product_ids)))
+            # Re-query purchase_history untuk detail per row
+            purchase_detail_res = _safe_execute(
+                sb.table("purchase_history")
+                .select("product_id, purchased_price")
+                .eq("user_id", user_id)
+                .gte("purchased_at", start_of_month)
+            )
+            for row in purchase_detail_res.data or []:
+                pid = row.get("product_id")
+                paid = float(row.get("purchased_price") or 0)
+                normal = float(normal_prices.get(pid, 0))
+                if normal > 0 and paid < normal:
+                    total_below_normal_price += normal - paid
     except Exception:
         pass
 
+    total_below_normal_message = (
+        "Belum ada pembelian di bawah harga normal bulan ini"
+        if total_below_normal_price == 0
+        else ""
+    )
+
     budget_remaining = max(0.0, monthly_budget - total_spent)
-    market_insight = get_weekly_market_insight()
+    market_insight = get_weekly_market_insight(user_id)
 
     return {
-        "monthly_budget":    monthly_budget,
-        "budget_remaining":  budget_remaining,
-        "money_saved":       money_saved,
-        "recent_activities": recent_items,
-        "daily_expenses":    daily_expenses,
-        "expense_points":    list(reversed(expense_points)),
-        "market_insight":    market_insight.get("text", ""),
-        "market_insight_key": market_insight.get("key"),
-        "market_insight_params": market_insight.get("params", {}),
+        "monthly_budget":              monthly_budget,
+        "budget_remaining":            budget_remaining,
+        "total_below_normal_price":    total_below_normal_price,
+        "total_below_normal_message":  total_below_normal_message,
+        "recent_activities":           recent_items,
+        "daily_expenses":              daily_expenses,
+        "expense_points":              list(reversed(expense_points)),
+        "market_insight":              market_insight.get("text", ""),
+        "market_insight_key":          market_insight.get("key"),
+        "market_insight_params":       market_insight.get("params", {}),
     }
 
 
@@ -713,6 +764,87 @@ def find_product_by_name(name: str) -> dict | None:
     return res.data
 
 
+# ─── Substitute Products ──────────────────────────────────────────────────────
+
+def get_substitutes(
+    product_id: str,
+    category: str,
+    scanned_price: float,
+) -> list[dict]:
+    """
+    Cari produk pengganti dalam kategori yang sama:
+    - Harga 5-20% lebih murah dari scanned_price
+    - Urutkan dari yang paling murah per unit (harga/berat)
+    - Max 3 hasil
+    - Exclude produk yang sama (by id)
+    """
+    if not category or scanned_price <= 0:
+        return []
+
+    sb = get_supabase()
+    try:
+        cat_res = _safe_execute(
+            sb.table("products")
+            .select("id, name, brand, category, base_weight_gram, unit_label, image_url")
+            .eq("category", category)
+            .neq("id", product_id)
+        )
+        category_products = cat_res.data or []
+    except Exception:
+        return []
+
+    if not category_products:
+        return []
+
+    # Ambil harga terbaru semua produk dalam satu batch
+    all_ids = [p["id"] for p in category_products]
+    prices = latest_prices_by_product(all_ids)
+
+    lower_bound = scanned_price * 0.80  # 20% lebih murah max
+    upper_bound = scanned_price * 0.95  # 5% lebih murah min
+
+    candidates = []
+    for prod in category_products:
+        pid = prod["id"]
+        price = prices.get(pid)
+        if price is None or price <= 0:
+            continue
+        # Filter: 5-20% lebih murah
+        if not (lower_bound <= price <= upper_bound):
+            continue
+
+        weight = float(prod.get("base_weight_gram") or 0)
+        price_per_unit = round(price / weight, 4) if weight > 0 else 0.0
+        savings_pct = round((scanned_price - price) / scanned_price * 100, 1)
+
+        candidates.append({
+            "product_id":     pid,
+            "name":           prod.get("name", ""),
+            "brand":          prod.get("brand"),
+            "category":       prod.get("category", category),
+            "price":          price,
+            "weight":         weight,
+            "price_per_unit": price_per_unit,
+            "image_url":      prod.get("image_url"),
+            "savings_percent": savings_pct,
+        })
+
+    # Urutkan dari paling murah per unit
+    candidates.sort(key=lambda x: x["price_per_unit"] if x["price_per_unit"] > 0 else float("inf"))
+    return candidates[:3]
+
+
+def update_user_display_name(user_id: str, display_name: str) -> dict | None:
+    """Update display_name user di tabel users."""
+    sb = get_supabase()
+    res = _safe_execute(
+        sb.table("users")
+        .update({"display_name": display_name})
+        .eq("id", user_id)
+    )
+    return res.data[0] if res.data else None
+
+
 # ─── Product Images ───────────────────────────────────────────────────────────
 
 PRODUCT_SELECT = "id, name, brand, category, base_weight_gram, unit_label, image_url, created_at, updated_at"
@@ -749,16 +881,36 @@ def _search_once(q: str, category: str | None, limit: int) -> list[dict]:
     return res.data or []
 
 
-def search_products(q: str, category: str | None = None, limit: int = 30) -> list[dict]:
-    """Cari produk berdasarkan nama/brand, opsional dibatasi kategori."""
+def search_products(
+    q: str,
+    category: str | None = None,
+    limit: int = 30,
+    offset: int = 0,
+) -> list[dict]:
+    """Cari produk berdasarkan nama/brand, opsional dibatasi kategori. Support pagination via offset."""
     normalized = " ".join((q or "").split())
     if not normalized:
-        return list_products(category=category, limit=limit)
+        return list_products(category=category, limit=limit, offset=offset)
 
-    rows = _search_once(normalized, category, limit)
+    def _search_with_offset(query_str: str) -> list[dict]:
+        sb = get_supabase()
+        pattern = f"%{query_str}%"
+        query = (
+            sb.table("products")
+            .select(PRODUCT_SELECT)
+            .or_(f"name.ilike.{pattern},brand.ilike.{pattern}")
+            .order("name")
+            .range(offset, offset + limit - 1)
+        )
+        query = _apply_product_category(query, category)
+        res = _safe_execute(query)
+        return res.data or []
+
+    rows = _search_with_offset(normalized)
     if rows:
         return rows
 
+    # Fallback token search (offset tidak dipakai di fallback untuk simplisitas)
     seen: set[str] = set()
     fallback: list[dict] = []
     for token in [part for part in re.split(r"\W+", normalized) if len(part) >= 3]:

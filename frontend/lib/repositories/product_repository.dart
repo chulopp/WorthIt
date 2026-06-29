@@ -35,6 +35,7 @@ class ProductRepository {
   Future<ApiResult<List<ProductSummaryModel>>> searchProducts(
     String keyword, {
     int limit = productFetchLimit,
+    int offset = 0,
   }) {
     return _apiClient.run(() async {
       final response = await _apiClient.get(
@@ -42,6 +43,7 @@ class ProductRepository {
         queryParameters: <String, dynamic>{
           'keyword': keyword,
           'limit': _boundedLimit(limit),
+          'offset': offset,
         },
       );
       return responseDataList(

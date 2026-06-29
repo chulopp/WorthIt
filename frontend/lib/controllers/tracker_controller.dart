@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/api/api_models.dart';
+import 'auth_controller.dart';
 import 'controller_helpers.dart';
 import 'controller_state.dart';
 import 'repository_providers.dart';
@@ -13,7 +14,13 @@ final trackerControllerProvider =
 class TrackerController extends Notifier<BaseControllerState<TrackerModel>> {
   @override
   BaseControllerState<TrackerModel> build() {
-    return const BaseControllerState<TrackerModel>();
+    final authState = ref.watch(authProvider);
+    if (authState.isAuthenticated && state.data == null && !state.isLoading) {
+      Future.microtask(fetchTracker);
+    }
+    return state.data != null
+        ? state
+        : const BaseControllerState<TrackerModel>();
   }
 
   Future<void> fetchTracker({String? month}) async {

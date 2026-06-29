@@ -19,12 +19,14 @@ class FaqScreen extends StatelessWidget {
       {'question': 'faq.q6'.tr(), 'answer': 'faq.a6'.tr()},
       {'question': 'faq.q7'.tr(), 'answer': 'faq.a7'.tr()},
       {'question': 'faq.q8'.tr(), 'answer': 'faq.a8'.tr()},
+      {'question': 'faq.q9'.tr(), 'answer': 'faq.a9'.tr()},
       {
         'question': 'faq_q_record_activity'.tr(),
         'answer': 'faq_a_record_activity'.tr(),
       },
       {'question': 'faq_q_export_pdf'.tr(), 'answer': 'faq_a_export_pdf'.tr()},
     ];
+
 
     return Scaffold(
       backgroundColor: bgScaffold,

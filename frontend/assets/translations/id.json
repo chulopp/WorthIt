@@ -154,7 +154,9 @@
     "q7": "Apakah data belanja saya akan terhapus otomatis?",
     "a7": "Ya. Untuk menjaga performa aplikasi, data dan daftar belanja kamu disimpan secara bulanan dan akan otomatis direset/dihapus pada awal setiap bulan baru.",
     "q8": "Berapa banyak hasil scan yang bisa saya simpan?",
-    "a8": "WorthIt menyimpan hingga 20 riwayat hasil scan produk terakhirmu. Ini memudahkan kamu untuk meninjau kembali hasil analisis pintar kami pada barang yang pernah kamu temui sebelumnya tanpa perlu scan ulang."
+    "a8": "WorthIt menyimpan hingga 20 riwayat hasil scan produk terakhirmu. Ini memudahkan kamu untuk meninjau kembali hasil analisis pintar kami pada barang yang pernah kamu temui sebelumnya tanpa perlu scan ulang.",
+    "q9": "Apa itu Total Belanja di Bawah Harga Normal?",
+    "a9": "Jumlah rupiah yang berhasil kamu hemat bulan ini dari membeli produk dengan harga di bawah rata-rata harga normalnya. Misal harga normal Beras 5kg = Rp75.000, kamu beli di harga Rp70.000 → hemat Rp5.000."
   },
 
   "terms": {
@@ -274,7 +276,9 @@
       "category_increase": "Harga kategori {category} sedang naik bulan ini, sekitar {percent}%.",
       "category_decrease": "Harga kategori {category} sedang turun bulan ini, sekitar {percent}%.",
       "stable": "Harga pasar stabil bulan ini dan tidak ada pergerakan besar."
-    }
+    },
+    "total_below_normal_price": "Belanja di Bawah Harga Normal",
+    "total_below_normal_price_empty": "Belum ada pembelian di bawah harga normal bulan ini"
   },
   "smart_shopping": "Belanja Cerdas",
   "welcome_subtitle": "Scan label harga, analisis tren, dan simpan daftar belanja cerdasmu.",
@@ -323,6 +327,14 @@
       "saving_desc": "Pengeluaran {lastMonth} sebesar {lastTotal}, turun {difference} dibanding {twoMonthsAgo} ({previousTotal}). Ritmenya sudah bagus, pertahankan.",
       "overspent_title": "Pengeluaran bulan lalu naik",
       "overspent_desc": "Pengeluaran {lastMonth} mencapai {lastTotal}, naik {difference} dari {twoMonthsAgo} ({previousTotal}). Kita rapikan prioritas bulan ini pelan-pelan."
+    },
+    "budget_20_percent": {
+      "title": "Anggaran tersisa 20%",
+      "desc": "Kamu sudah menggunakan {spent} dari batas {budget}. Yuk lebih hemat di sisa bulan ini."
+    },
+    "weekly_insight": {
+      "title": "Insight belanja mingguan",
+      "desc": "Cek insight pasar terbaru untuk bantu kamu hemat minggu ini."
     }
   },
   "notif_price_drop_title": "Harga Beras Turun!",
@@ -339,6 +351,13 @@
   "snacks": "Cemilan",
   "cancel": "Batal",
   "saved_expenses": "Pengeluaran Tersimpan",
+  "total_below_normal_price": "Belanja di Bawah Harga Normal",
+  "total_below_normal_price_empty": "Belum ada pembelian di bawah harga normal bulan ini",
+  "substitute": {
+    "title": "Alternatif Lebih Hemat",
+    "empty": "Tidak ditemukan alternatif yang lebih hemat untuk produk ini",
+    "save_percent": "Hemat {percent}%"
+  },
   "market_insight_title": "Insight Pasar",
   "search_in_list": "Cari di daftar...",
   "delete_all": "Hapus Semua",
