@@ -43,10 +43,11 @@ frontend/lib/config/local_config.dart
 *.iml
 *.ipr
 *.iws
-#.vscode/
+.vscode/
 *.swp
 *.swo
 .agents/ 
+.hermes/
 skills-lock.json
 
 # ─── OS Files ─────────────────────────────────────────────────────────────────
