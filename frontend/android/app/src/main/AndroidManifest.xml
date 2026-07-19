@@ -7,14 +7,14 @@
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32" />
 
     <application
-        android:label="WorthIt ML"
+        android:label="WorthIt"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher"
         android:usesCleartextTraffic="true"
         android:allowBackup="false"
         android:fullBackupContent="false">
         <activity
-            android:name="com.example.worthit_app.MainActivity"
+            android:name=".MainActivity"
             android:exported="true"
             android:launchMode="singleTop"
             android:taskAffinity=""
@@ -39,7 +39,7 @@
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
                 <data
-                    android:scheme="com.example.worthit_app.ml"
+                    android:scheme="com.example.worthit_app"
                     android:host="login-callback" />
             </intent-filter>
         </activity>
