@@ -92,12 +92,14 @@ class AnalyzeState {
 
 class ProductDetailState {
   final bool isLoading;
+  final bool isLoadingMore;
   final String? errorMessage;
   final ProductDetailModel? data;
   final List<ProductSummaryModel> searchResults;
 
   const ProductDetailState({
     this.isLoading = false,
+    this.isLoadingMore = false,
     this.errorMessage,
     this.data,
     this.searchResults = const <ProductSummaryModel>[],
@@ -105,12 +107,14 @@ class ProductDetailState {
 
   ProductDetailState copyWith({
     bool? isLoading,
+    bool? isLoadingMore,
     Object? errorMessage = _unchanged,
     Object? data = _unchanged,
     List<ProductSummaryModel>? searchResults,
   }) {
     return ProductDetailState(
       isLoading: isLoading ?? this.isLoading,
+      isLoadingMore: isLoadingMore ?? this.isLoadingMore,
       errorMessage: identical(errorMessage, _unchanged)
           ? this.errorMessage
           : errorMessage as String?,

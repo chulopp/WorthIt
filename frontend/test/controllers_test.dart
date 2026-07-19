@@ -226,7 +226,7 @@ void main() {
       final state = container.read(dashboardControllerProvider);
       expect(state.isLoading, isFalse);
       expect(state.errorMessage, isNull);
-      expect(state.data?.moneySaved, equals(125000));
+      expect(state.data?.totalBelowNormalPrice, equals(125000));
       expect(state.data?.recentActivities.single.productName, equals('Beras'));
     });
   });
@@ -497,7 +497,7 @@ class _FakeDashboardRepository extends DashboardRepository {
       const DashboardModel(
         monthlyBudget: 2000000,
         budgetRemaining: 1500000,
-        moneySaved: 125000,
+        totalBelowNormalPrice: 125000,
         recentActivities: <RecentActivityModel>[
           RecentActivityModel(
             productName: 'Beras',

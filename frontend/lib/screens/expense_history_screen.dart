@@ -57,7 +57,7 @@ class _ExpenseHistoryScreenState extends ConsumerState<ExpenseHistoryScreen> {
       0.0,
       (sum, item) => sum + item.price,
     );
-    final savedExpense = data.moneySaved;
+    final savedExpense = data.totalBelowNormalPrice;
 
     await Printing.layoutPdf(
       onLayout: (PdfPageFormat format) async {
@@ -146,7 +146,7 @@ class _ExpenseHistoryScreenState extends ConsumerState<ExpenseHistoryScreen> {
       0.0,
       (sum, item) => sum + item.price,
     );
-    final calculatedSaved = data.moneySaved;
+    final calculatedSaved = data.totalBelowNormalPrice;
     final historyErrorMessage = historyState.errorMessage;
     final shouldShowHistoryError =
         historyErrorMessage != null &&

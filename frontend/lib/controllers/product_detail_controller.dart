@@ -99,6 +99,7 @@ class ProductDetailController extends Notifier<ProductDetailState> {
   Future<void> loadMoreSearchResults() async {
     if (!_searchHasMore || _isLoadingMore || _currentKeyword.isEmpty) return;
     _isLoadingMore = true;
+    state = state.copyWith(isLoadingMore: true);
     try {
       final result = await ref
           .read(productRepositoryProvider)
@@ -113,6 +114,7 @@ class ProductDetailController extends Notifier<ProductDetailState> {
       }
     } finally {
       _isLoadingMore = false;
+      state = state.copyWith(isLoadingMore: false);
     }
   }
 
@@ -164,6 +166,7 @@ class ProductDetailController extends Notifier<ProductDetailState> {
   Future<void> loadMoreCatalog() async {
     if (!_catalogHasMore || _isLoadingMore) return;
     _isLoadingMore = true;
+    state = state.copyWith(isLoadingMore: true);
     try {
       final result = await ref
           .read(productRepositoryProvider)
@@ -182,6 +185,7 @@ class ProductDetailController extends Notifier<ProductDetailState> {
       }
     } finally {
       _isLoadingMore = false;
+      state = state.copyWith(isLoadingMore: false);
     }
   }
 
