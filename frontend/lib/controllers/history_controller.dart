@@ -13,20 +13,19 @@ final historyControllerProvider =
 class HistoryController extends Notifier<BaseControllerState<HistoryData>> {
   @override
   BaseControllerState<HistoryData> build() {
+    // Do NOT read `state` here — it is not yet initialised on first build.
     final authState = ref.watch(authProvider);
     if (authState.isAuthenticated) {
-      final d = state.data;
-      if ((d == null || (d.scans.isEmpty && d.purchases.isEmpty)) &&
-          !state.isLoading) {
-        Future.microtask(() async {
-          await fetchScans();
-          await fetchPurchases();
-        });
-      }
+      Future.microtask(() {
+        final d = state.data;
+        final isEmpty = d == null || (d.scans.isEmpty && d.purchases.isEmpty);
+        if (isEmpty && !state.isLoading) {
+          fetchScans();
+          fetchPurchases();
+        }
+      });
     }
-    return state.data != null
-        ? state
-        : const BaseControllerState<HistoryData>(data: HistoryData());
+    return const BaseControllerState<HistoryData>(data: HistoryData());
   }
 
   Future<void> fetchScans() async {

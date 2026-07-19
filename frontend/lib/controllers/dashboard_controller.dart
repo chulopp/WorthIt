@@ -15,14 +15,16 @@ class DashboardController
     extends Notifier<BaseControllerState<DashboardModel>> {
   @override
   BaseControllerState<DashboardModel> build() {
-    // Auto-fetch when auth state resolves to authenticated
+    // Auto-fetch when auth state resolves to authenticated.
+    // Do NOT read `state` here — it is not yet initialised on first build.
     final authState = ref.watch(authProvider);
-    if (authState.isAuthenticated && state.data == null && !state.isLoading) {
-      Future.microtask(fetchDashboard);
+    if (authState.isAuthenticated) {
+      Future.microtask(() {
+        // Guard inside the microtask where `state` is already live.
+        if (state.data == null && !state.isLoading) fetchDashboard();
+      });
     }
-    return state.data != null
-        ? state
-        : const BaseControllerState<DashboardModel>();
+    return const BaseControllerState<DashboardModel>();
   }
 
   Future<void> fetchDashboard() async {

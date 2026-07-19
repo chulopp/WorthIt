@@ -16,13 +16,14 @@ class ShoppingListController
     extends Notifier<BaseControllerState<MonthlyShoppingListModel>> {
   @override
   BaseControllerState<MonthlyShoppingListModel> build() {
+    // Do NOT read `state` here — it is not yet initialised on first build.
     final authState = ref.watch(authProvider);
-    if (authState.isAuthenticated && state.data == null && !state.isLoading) {
-      Future.microtask(fetchCurrentList);
+    if (authState.isAuthenticated) {
+      Future.microtask(() {
+        if (state.data == null && !state.isLoading) fetchCurrentList();
+      });
     }
-    return state.data != null
-        ? state
-        : const BaseControllerState<MonthlyShoppingListModel>();
+    return const BaseControllerState<MonthlyShoppingListModel>();
   }
 
   Future<void> fetchCurrentList() async {

@@ -14,11 +14,14 @@ final favoriteControllerProvider =
 class FavoriteController extends Notifier<FavoriteState> {
   @override
   FavoriteState build() {
+    // Do NOT read `state` here — it is not yet initialised on first build.
     final authState = ref.watch(authProvider);
-    if (authState.isAuthenticated &&
-        (state.data == null || state.data!.isEmpty) &&
-        !state.isLoading) {
-      Future.microtask(fetchFavorites);
+    if (authState.isAuthenticated) {
+      Future.microtask(() {
+        if ((state.data == null || state.data!.isEmpty) && !state.isLoading) {
+          fetchFavorites();
+        }
+      });
     }
     return const FavoriteState(data: <FavoriteModel>[]);
   }

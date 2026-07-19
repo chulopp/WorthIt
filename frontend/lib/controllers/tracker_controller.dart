@@ -14,13 +14,14 @@ final trackerControllerProvider =
 class TrackerController extends Notifier<BaseControllerState<TrackerModel>> {
   @override
   BaseControllerState<TrackerModel> build() {
+    // Do NOT read `state` here — it is not yet initialised on first build.
     final authState = ref.watch(authProvider);
-    if (authState.isAuthenticated && state.data == null && !state.isLoading) {
-      Future.microtask(fetchTracker);
+    if (authState.isAuthenticated) {
+      Future.microtask(() {
+        if (state.data == null && !state.isLoading) fetchTracker();
+      });
     }
-    return state.data != null
-        ? state
-        : const BaseControllerState<TrackerModel>();
+    return const BaseControllerState<TrackerModel>();
   }
 
   Future<void> fetchTracker({String? month}) async {
