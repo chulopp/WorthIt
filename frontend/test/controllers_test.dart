@@ -392,6 +392,7 @@ class _FakeProductRepository extends ProductRepository {
   Future<ApiResult<List<ProductSummaryModel>>> searchProducts(
     String keyword, {
     int limit = 50,
+    int offset = 0,
   }) async {
     return _success([
       const ProductSummaryModel(id: 'product-1', name: 'Chitato'),
