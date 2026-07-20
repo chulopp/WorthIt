@@ -2639,7 +2639,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                           : selectedCategory,
                     );
               },
-              child: productState.isLoading
+              child: (productState.isLoading && filteredKatalog.isEmpty)
                   ? const _ProductListSkeleton()
                   : filteredKatalog.isEmpty
                   ? ListView(
@@ -2671,6 +2671,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                       ],
                     )
                   : ListView.builder(
+                      key: const PageStorageKey('katalog_list_key'),
                       controller: _scrollController,
                       physics: const AlwaysScrollableScrollPhysics(),
                       padding: const EdgeInsets.symmetric(vertical: 8.0),

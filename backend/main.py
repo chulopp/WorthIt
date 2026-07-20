@@ -40,6 +40,7 @@ from routers import (
     dashboard,
     favorites,
     history,
+    notifications,
     products,
     scanner,
     shopping,
@@ -205,6 +206,7 @@ app.include_router(favorites.router)
 app.include_router(users.router)
 app.include_router(shopping.router)
 app.include_router(history.router)
+app.include_router(notifications.router)
 app.include_router(scanner.router, prefix="/v1", tags=["Scanner"])
 
 # ─── Health Endpoints ─────────────────────────────────────────────────────────

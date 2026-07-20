@@ -146,153 +146,168 @@ class _AccountDetailsScreenState extends ConsumerState<AccountDetailsScreen> {
           ),
         ),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(24.0),
-        child: Column(
-          children: [
-            // Avatar
-            Center(
-              child: Container(
-                width: 100,
-                height: 100,
-                decoration: const BoxDecoration(
-                  color: Color(0xFF304423),
-                  shape: BoxShape.circle,
-                ),
-                child: Center(
-                  child: Text(
-                    auth.initials,
-                    style: GoogleFonts.bricolageGrotesque(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 36,
-                    ),
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(height: 24),
-            // Name
-            Text(
-              displayName.isEmpty ? '-' : displayName,
-              style: GoogleFonts.bricolageGrotesque(
-                color: textPrimary,
-                fontWeight: FontWeight.bold,
-                fontSize: 20,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 10),
-            const SubscriptionBadge(),
-            const SizedBox(height: 40),
-
-            // Info Card
-            Container(
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: Colors.grey.shade200),
-              ),
+      body: RefreshIndicator(
+        color: const Color(0xFF304423),
+        onRefresh: () async {
+          ref.invalidate(profileUsernameProvider);
+          await ref.read(profileUsernameProvider.notifier).fetchUsername();
+        },
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          child: SizedBox(
+            height: MediaQuery.of(context).size.height -
+                kToolbarHeight -
+                MediaQuery.of(context).padding.top,
+            child: Padding(
+              padding: const EdgeInsets.all(24.0),
               child: Column(
                 children: [
-                  ListTile(
-                    title: Text(
-                      'account.username'.tr(),
-                      style: GoogleFonts.bricolageGrotesque(
-                        color: Colors.grey.shade500,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
+                  // Avatar
+                  Center(
+                    child: Container(
+                      width: 100,
+                      height: 100,
+                      decoration: const BoxDecoration(
+                        color: Color(0xFF304423),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Center(
+                        child: Text(
+                          auth.initials,
+                          style: GoogleFonts.bricolageGrotesque(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 36,
+                          ),
+                        ),
                       ),
                     ),
-                    subtitle: Padding(
-                      padding: const EdgeInsets.only(top: 6.0),
-                      child: isUsernameLoading
-                          ? _buildTextSkeleton(width: 120, height: 18)
-                          : Text(
-                              username.isEmpty ? '-' : username,
+                  ),
+                  const SizedBox(height: 24),
+                  // Name
+                  Text(
+                    displayName.isEmpty ? '-' : displayName,
+                    style: GoogleFonts.bricolageGrotesque(
+                      color: textPrimary,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 20,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 10),
+                  const SubscriptionBadge(),
+                  const SizedBox(height: 40),
+
+                  // Info Card
+                  Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: Colors.grey.shade200),
+                    ),
+                    child: Column(
+                      children: [
+                        ListTile(
+                          title: Text(
+                            'account.username'.tr(),
+                            style: GoogleFonts.bricolageGrotesque(
+                              color: Colors.grey.shade500,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          subtitle: Padding(
+                            padding: const EdgeInsets.only(top: 6.0),
+                            child: isUsernameLoading
+                                ? _buildTextSkeleton(width: 120, height: 18)
+                                : Text(
+                                    username.isEmpty ? '-' : username,
+                                    style: GoogleFonts.bricolageGrotesque(
+                                      color: textPrimary,
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                          ),
+                          trailing: IconButton(
+                            icon: const Icon(
+                              Icons.edit_outlined,
+                              color: textPrimary,
+                              size: 20,
+                            ),
+                            onPressed: isUsernameLoading
+                                ? null
+                                : () => _showEditUsernameDialog(username),
+                          ),
+                        ),
+                        ListTile(
+                          title: Text(
+                            'account.email'.tr(),
+                            style: GoogleFonts.bricolageGrotesque(
+                              color: Colors.grey.shade500,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          subtitle: Padding(
+                            padding: const EdgeInsets.only(top: 6.0),
+                            child: Text(
+                              email,
                               style: GoogleFonts.bricolageGrotesque(
                                 color: textPrimary,
                                 fontSize: 16,
                                 fontWeight: FontWeight.w500,
                               ),
                             ),
-                    ),
-                    trailing: IconButton(
-                      icon: const Icon(
-                        Icons.edit_outlined,
-                        color: textPrimary,
-                        size: 20,
-                      ),
-                      onPressed: isUsernameLoading
-                          ? null
-                          : () => _showEditUsernameDialog(username),
-                    ),
-                  ),
-                  ListTile(
-                    title: Text(
-                      'account.email'.tr(),
-                      style: GoogleFonts.bricolageGrotesque(
-                        color: Colors.grey.shade500,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    subtitle: Padding(
-                      padding: const EdgeInsets.only(top: 6.0),
-                      child: Text(
-                        email,
-                        style: GoogleFonts.bricolageGrotesque(
-                          color: textPrimary,
-                          fontSize: 16,
-                          fontWeight: FontWeight.w500,
+                          ),
                         ),
+                      ],
+                    ),
+                  ),
+
+                  const Spacer(),
+
+                  // Delete Account Button
+                  TextButton(
+                    onPressed: () async {
+                      final confirm = await showDeleteAccountDialog(context);
+                      if (confirm == true) {
+                        final result = await AuthRepository().deleteAccount();
+                        if (result.isFailure) {
+                          if (!context.mounted) return;
+                          SnackbarHelper.showTopSnackbar(
+                            context,
+                            result.error?.message ?? 'Gagal menghapus akun.',
+                            icon: Icons.warning_amber_rounded,
+                          );
+                          return;
+                        }
+                        final prefs = await SharedPreferences.getInstance();
+                        await prefs.setBool('isLoggedIn', false);
+                        if (!context.mounted) return;
+                        Navigator.pushAndRemoveUntil(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const WelcomePage(),
+                          ),
+                          (route) => false,
+                        );
+                      }
+                    },
+                    child: Text(
+                      'account.delete_account'.tr(),
+                      style: GoogleFonts.bricolageGrotesque(
+                        color: Colors.red,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
                       ),
                     ),
                   ),
+                  const SizedBox(height: 24),
                 ],
               ),
             ),
-
-            const Spacer(),
-
-            // Delete Account Button
-            TextButton(
-              onPressed: () async {
-                final confirm = await showDeleteAccountDialog(context);
-                if (confirm == true) {
-                  final result = await AuthRepository().deleteAccount();
-                  if (result.isFailure) {
-                    if (!context.mounted) return;
-                    SnackbarHelper.showTopSnackbar(
-                      context,
-                      result.error?.message ?? 'Gagal menghapus akun.',
-                      icon: Icons.warning_amber_rounded,
-                    );
-                    return;
-                  }
-                  final prefs = await SharedPreferences.getInstance();
-                  await prefs.setBool('isLoggedIn', false);
-                  if (!context.mounted) return;
-                  Navigator.pushAndRemoveUntil(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const WelcomePage(),
-                    ),
-                    (route) => false,
-                  );
-                }
-              },
-              child: Text(
-                'account.delete_account'.tr(),
-                style: GoogleFonts.bricolageGrotesque(
-                  color: Colors.red,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16,
-                ),
-              ),
-            ),
-            const SizedBox(height: 24),
-          ],
+          ),
         ),
       ),
     );

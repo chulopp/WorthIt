@@ -1149,3 +1149,43 @@ def upload_product_image(
         "storage_path": storage_path,
         "bucket": bucket,
     }
+
+
+# ─── Notifications ────────────────────────────────────────────────────────────
+
+def create_notification(user_id: str, title: str, body: str = "", notif_type: str = "INFO") -> dict | None:
+    """Simpan notifikasi baru ke tabel notifications di Supabase."""
+    sb = get_supabase()
+    res = _safe_execute(
+        sb.table("notifications").insert({
+            "user_id": user_id,
+            "title": title,
+            "body": body,
+            "type": notif_type,
+            "is_read": False,
+        })
+    )
+    return res.data[0] if res.data else None
+
+
+def get_user_notifications(user_id: str, limit: int = 20) -> list[dict]:
+    """Ambil maksimal `limit` (default 20) notifikasi terbaru untuk user_id tertentu."""
+    sb = get_supabase()
+    res = _safe_execute(
+        sb.table("notifications")
+        .select("id, title, body, type, is_read, created_at")
+        .eq("user_id", user_id)
+        .order("created_at", desc=True)
+        .limit(limit)
+    )
+    return res.data or []
+
+
+def mark_notifications_as_read(user_id: str, notification_ids: list[str] | None = None) -> bool:
+    """Tandai notifikasi sebagai sudah dibaca."""
+    sb = get_supabase()
+    query = sb.table("notifications").update({"is_read": True}).eq("user_id", user_id)
+    if notification_ids:
+        query = query.in_("id", notification_ids)
+    _safe_execute(query)
+    return True

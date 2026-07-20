@@ -151,9 +151,17 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           ),
         ),
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-        child: Column(
+      body: RefreshIndicator(
+        color: const Color(0xFF304423),
+        onRefresh: () async {
+          ref.invalidate(profileUsernameProvider);
+          ref.invalidate(dashboardControllerProvider);
+          await ref.read(profileUsernameProvider.notifier).fetchUsername();
+        },
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+          child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Header / User Card
@@ -756,7 +764,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           ],
         ),
       ),
-    );
+    ),
+  );
   }
 
   Widget _buildListTile(IconData icon, String title, {VoidCallback? onTap}) {

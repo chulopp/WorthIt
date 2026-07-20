@@ -7,14 +7,14 @@ import '../services/notification_service.dart';
 import '../services/auth_service.dart';
 import '../controllers/notification_controller.dart';
 
-class NotificationScreen extends StatefulWidget {
+class NotificationScreen extends ConsumerStatefulWidget {
   const NotificationScreen({Key? key}) : super(key: key);
 
   @override
-  State<NotificationScreen> createState() => _NotificationScreenState();
+  ConsumerState<NotificationScreen> createState() => _NotificationScreenState();
 }
 
-class _NotificationScreenState extends State<NotificationScreen> {
+class _NotificationScreenState extends ConsumerState<NotificationScreen> {
   final NotificationService _notificationService = NotificationService();
 
   @override
@@ -24,6 +24,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
 
   void _markAllAsRead() {
     _notificationService.markAllAsRead();
+    ref.read(notificationControllerProvider.notifier).markAllAsRead();
   }
 
   @override
@@ -97,7 +98,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
               child: RefreshIndicator(
                 color: const Color(0xFF304423),
                 onRefresh: () async {
-                  await Future.delayed(const Duration(milliseconds: 500));
+                  await ref.read(notificationControllerProvider.notifier).refresh();
                 },
                 child: !isLoggedIn
                     ? ListView(

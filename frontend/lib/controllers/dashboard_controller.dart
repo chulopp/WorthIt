@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../models/api/api_models.dart';
 import '../services/notification_service.dart';
@@ -55,6 +56,19 @@ class DashboardController
             totalSpending: totalSpent,
             monthlyBudget: data.monthlyBudget,
           );
+          final user = Supabase.instance.client.auth.currentUser;
+          if (user != null) {
+            try {
+              await Supabase.instance.client.from('notifications').insert({
+                'user_id': user.id,
+                'title': 'Peringatan Batas Anggaran',
+                'body':
+                    'Pengeluaran bulan ini (Rp ${totalSpent.round()}) telah melebihi batas anggaran bulanan Anda (Rp ${data.monthlyBudget.round()}).',
+                'type': 'OVER_BUDGET',
+                'is_read': false,
+              });
+            } catch (_) {}
+          }
         }
       }
     } catch (error) {
