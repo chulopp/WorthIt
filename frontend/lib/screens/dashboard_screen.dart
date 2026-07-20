@@ -1471,7 +1471,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                                                     touchTooltipData: LineTouchTooltipData(
                                                       getTooltipColor: (_) => const Color(0xFF304423),
                                                       tooltipPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                                                      tooltipRoundedRadius: 8,
+                                                      tooltipBorderRadius: const BorderRadius.all(Radius.circular(8)),
                                                       getTooltipItems: (touchedSpots) {
                                                         return touchedSpots.map((spot) {
                                                           final day = spot.x.toInt();

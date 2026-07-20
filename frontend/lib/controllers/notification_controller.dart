@@ -31,24 +31,45 @@ class NotificationController extends AsyncNotifier<List<NotificationModel>> {
           .order('created_at', ascending: false)
           .limit(20);
 
-      final list = (res as List).map((map) {
+      final list = (res as List).map<NotificationModel>((map) {
         final title = map['title']?.toString() ?? 'Notifikasi';
         final body = map['body']?.toString() ?? '';
         final createdAtStr = map['created_at']?.toString() ?? '';
         final isRead = map['is_read'] == true;
+        final rawType = map['type']?.toString();
 
         DateTime? dt = DateTime.tryParse(createdAtStr)?.toLocal();
         String formattedTime = dt != null
             ? '${dt.day}/${dt.month}/${dt.year} ${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}'
             : 'Baru saja';
 
+        NotificationType notifType = NotificationType.shoppingListReminder;
+        if (rawType != null) {
+          switch (rawType.toUpperCase()) {
+            case 'OVER_BUDGET':
+              notifType = NotificationType.overBudget;
+              break;
+            case 'PRO_EXPIRING':
+              notifType = NotificationType.proSubscriptionExpiring;
+              break;
+            case 'PDF_DOWNLOAD':
+              notifType = NotificationType.pdfDownloadSuccess;
+              break;
+            case 'PRICE_DROP':
+              notifType = NotificationType.favoritePriceDrop;
+              break;
+            case 'SPENDING_COMPARE':
+              notifType = NotificationType.monthlySpendingComparison;
+              break;
+          }
+        }
+
         return NotificationModel(
-          id: map['id']?.toString() ?? '',
           title: title,
           message: body,
           dateTime: formattedTime,
           isUnread: !isRead,
-          icon: Icons.notifications_active_rounded,
+          type: notifType,
         );
       }).toList();
 
@@ -58,7 +79,7 @@ class NotificationController extends AsyncNotifier<List<NotificationModel>> {
     } catch (_) {}
 
     final service = NotificationService();
-    return service.notifications.value;
+    return List<NotificationModel>.from(service.notifications.value);
   }
 
   Future<void> refresh() async {
