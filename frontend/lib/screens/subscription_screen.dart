@@ -348,7 +348,7 @@ class _SubscriptionScreenState extends ConsumerState<SubscriptionScreen> {
 
                           // Animated Price Counter
                           Row(
-                            crossAxisAlignment: CrossBaseline.alphabetic,
+                            crossAxisAlignment: CrossAxisAlignment.baseline,
                             textBaseline: TextBaseline.alphabetic,
                             children: [
                               TweenAnimationBuilder<double>(
