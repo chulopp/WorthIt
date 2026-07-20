@@ -3292,7 +3292,9 @@ class _StatisticsScreenState extends ConsumerState<StatisticsScreen> {
     }
 
     String insightText = 'statistics.insight_stable'.tr();
-    if (lastMonthTotal > 0) {
+    if (tracker?.personalInsight != null && tracker!.personalInsight!.isNotEmpty) {
+      insightText = tracker.personalInsight!;
+    } else if (lastMonthTotal > 0) {
       final diff = thisMonthTotal - lastMonthTotal;
       final percent = ((diff.abs() / lastMonthTotal) * 100).toStringAsFixed(1);
       final week = (now.day / 7).ceil();
@@ -3321,6 +3323,13 @@ class _StatisticsScreenState extends ConsumerState<StatisticsScreen> {
             ? 'statistics.insight_category_down'.tr(namedArgs: args)
             : 'statistics.insight_category_up'.tr(namedArgs: args);
       }
+    } else if (thisMonthTotal > 0) {
+      final categories = tracker?.byCategory ?? [];
+      final topCat = categories.isNotEmpty
+          ? categories.first.category
+          : 'Lainnya';
+      final mappedTopCat = _translateCategory(topCat).tr();
+      insightText = 'Total belanja Anda bulan ini adalah Rp ${thisMonthTotal.round()}. Pengeluaran terbesar berada pada kategori $mappedTopCat.';
     }
 
     final monthsLabels = <String>[];

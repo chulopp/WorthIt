@@ -131,6 +131,7 @@ class TrackerData(BaseModel):
     avg_per_item: float
     by_category: List[CategorySpend]
     items: List[TrackerItem]
+    personal_insight: str = ""
 
 
 class TrackerResponse(BaseModel):

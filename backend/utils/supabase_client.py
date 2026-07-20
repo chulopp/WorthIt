@@ -485,8 +485,8 @@ def _build_market_data_summary() -> tuple[list[dict], list[dict]]:
                 deltas.append({"name": data["name"], "delta_pct": round(delta_pct, 1)})
 
         deltas_sorted = sorted(deltas, key=lambda x: x["delta_pct"], reverse=True)
-        top_increases = [d for d in deltas_sorted if d["delta_pct"] > 0][:3]
-        top_decreases = [d for d in reversed(deltas_sorted) if d["delta_pct"] < 0][:3]
+        top_increases = [d for d in deltas_sorted if d["delta_pct"] > 0][:5]
+        top_decreases = [d for d in reversed(deltas_sorted) if d["delta_pct"] < 0][:5]
         return top_increases, top_decreases
     except Exception:
         return [], []
@@ -515,9 +515,9 @@ def _build_user_top_categories(user_id: str, start_of_month: str) -> list[str]:
 
 def get_weekly_market_insight(user_id: str) -> dict:
     """
-    Hasilkan market insight menggunakan DeepSeek v4 Flash API.
+    Hasilkan market insight umum menggunakan DeepSeek v4 Flash API.
+    - Hanya menggunakan perubahan harga pasar (tidak dikaitkan ke user belanjaan)
     - Cache per user per hari (in-memory)
-    - Fallback ke stable text jika API gagal / timeout
     """
     import requests
     import concurrent.futures
@@ -529,29 +529,24 @@ def get_weekly_market_insight(user_id: str) -> dict:
     if cache_key in _insight_cache:
         return _insight_cache[cache_key]
 
-    start_of_month = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0).isoformat()
-    top_categories = _build_user_top_categories(user_id, start_of_month)
     top_increases, top_decreases = _build_market_data_summary()
 
-    # Build prompt
-    cat_str = ", ".join(top_categories) if top_categories else "belum ada data"
+    # Build prompt for general market price trends
     inc_str = ", ".join(f"{d['name']}: +{d['delta_pct']}%" for d in top_increases) if top_increases else "tidak ada"
     dec_str = ", ".join(f"{d['name']}: {d['delta_pct']}%" for d in top_decreases) if top_decreases else "tidak ada"
 
     prompt = (
-        "Kamu asisten analisis belanja. Beri 2 insight SINGKAT "
+        "Kamu asisten analisis belanja. Beri 2 insight SINGKAT tentang perkembangan harga pasar "
         "(maks 2 kalimat per insight, maks total 150 karakter) berdasarkan data:\n"
-        f"Pengeluaran user bulan ini: {cat_str}\n"
         f"Kenaikan harga: {inc_str}\n"
         f"Penurunan harga: {dec_str}\n"
-        "Format: insight spesifik & personal. Jangan pakai template generik. "
-        "Contoh bagus: 'Minyak goreng naik 8%. Stok sekarang sebelum naik lagi.' "
-        "Contoh buruk: 'Harga pasar stabil bulan ini.'"
+        "Format: insight spesifik & informatif bagi pembeli umum. Jangan pakai template generik. "
+        "Contoh bagus: 'Harga minyak goreng naik 8%, sebaiknya stok sekarang. Kebalikannya, susu UHT turun 5%.'"
     )
 
     api_key = os.getenv("DEEPSEEK_API_KEY", "")
     result = _GEMINI_FALLBACK
-    if top_categories or top_increases or top_decreases:
+    if top_increases or top_decreases:
         def _call_deepseek():
             headers = {
                 "Authorization": f"Bearer {api_key}",
@@ -593,6 +588,162 @@ def get_weekly_market_insight(user_id: str) -> dict:
 
     _insight_cache[cache_key] = result
     return result
+
+
+def get_personal_tracker_insight(user_id: str, month: str) -> str:
+    """
+    Hasilkan personal tracker/spending insight menggunakan DeepSeek v4 Flash.
+    - Menganalisis total pengeluaran bulan ini vs bulan lalu, top kategori, dan barang termahal.
+    - Cache per user per bulan per hari.
+    """
+    import requests
+    import concurrent.futures
+
+    now = datetime.now(timezone.utc)
+    today_str = now.date().isoformat()
+    cache_key = f"{user_id}:tracker_insight:{month}:{today_str}"
+
+    if cache_key in _insight_cache:
+        return _insight_cache[cache_key].get("text", "")
+
+    try:
+        year, mon = map(int, month.split("-"))
+    except Exception:
+        year, mon = now.year, now.month
+
+    # Get this month's purchases
+    sb = get_supabase()
+    this_month_start = datetime(year, mon, 1, tzinfo=timezone.utc)
+    if mon == 12:
+        this_month_end = datetime(year + 1, 1, 1, tzinfo=timezone.utc)
+    else:
+        this_month_end = datetime(year, mon + 1, 1, tzinfo=timezone.utc)
+
+    try:
+        res_this = _safe_execute(
+            sb.table("purchase_history")
+            .select("purchased_price, quantity, products(name, category)")
+            .eq("user_id", user_id)
+            .gte("purchased_at", this_month_start.isoformat())
+            .lt("purchased_at", this_month_end.isoformat())
+        )
+        purchases_this = res_this.data or []
+    except Exception:
+        purchases_this = []
+
+    # Get last month's spending
+    if mon == 1:
+        prev_year, prev_mon = year - 1, 12
+    else:
+        prev_year, prev_mon = year, mon - 1
+
+    last_month_start = datetime(prev_year, prev_mon, 1, tzinfo=timezone.utc)
+    if prev_mon == 12:
+        last_month_end = datetime(prev_year + 1, 1, 1, tzinfo=timezone.utc)
+    else:
+        last_month_end = datetime(prev_year, prev_mon + 1, 1, tzinfo=timezone.utc)
+
+    try:
+        res_prev = _safe_execute(
+            sb.table("purchase_history")
+            .select("purchased_price, quantity")
+            .eq("user_id", user_id)
+            .gte("purchased_at", last_month_start.isoformat())
+            .lt("purchased_at", last_month_end.isoformat())
+        )
+        last_month_spent = sum(float(row.get("purchased_price") or 0) * float(row.get("quantity") or 1) for row in res_prev.data or [])
+    except Exception:
+        last_month_spent = 0.0
+
+    # Calculate statistics
+    this_month_spent = 0.0
+    cat_totals: dict[str, float] = {}
+    item_totals: dict[str, float] = {}
+
+    for row in purchases_this:
+        price = float(row.get("purchased_price") or 0) * float(row.get("quantity") or 1)
+        this_month_spent += price
+        prod = row.get("products") or {}
+        cat = prod.get("category", "Lainnya")
+        name = prod.get("name", "Unknown")
+        cat_totals[cat] = cat_totals.get(cat, 0) + price
+        item_totals[name] = item_totals.get(name, 0) + price
+
+    # Top category & items
+    sorted_cats = sorted(cat_totals.items(), key=lambda x: -x[1])
+    top_cat_name = sorted_cats[0][0] if sorted_cats else "Lainnya"
+    cat_str = ", ".join(f"{c}: Rp{int(amt):,}" for c, amt in sorted_cats[:3]) if sorted_cats else "belum ada data"
+
+    sorted_items = sorted(item_totals.items(), key=lambda x: -x[1])
+    expensive_items_str = ", ".join(f"{name} (Rp{int(amt):,})" for name, amt in sorted_items[:3]) if sorted_items else "tidak ada"
+
+    # Fallback rule-based local summary
+    diff = this_month_spent - last_month_spent
+    if last_month_spent > 0:
+        percent = abs(diff) / last_month_spent * 100
+        percent_str = f"{percent:.1f}%"
+        if diff > 0:
+            fallback_text = f"Pengeluaran bulan ini naik {percent_str} dibanding bulan lalu. Pengeluaran terbanyak Anda berada pada kategori {top_cat_name}."
+        else:
+            fallback_text = f"Bagus! Pengeluaran bulan ini turun {percent_str} dibanding bulan lalu. Terus pertahankan pola belanja hemat Anda."
+    else:
+        fallback_text = f"Total belanja Anda bulan ini adalah Rp{int(this_month_spent):,}. Pengeluaran terbesar berada pada kategori {top_cat_name}."
+
+    result = {
+        "text": fallback_text
+    }
+
+    if this_month_spent > 0:
+        prompt = (
+            "Kamu asisten keuangan pribadi. Berikan 2 insight belanja personal yang sangat spesifik dan membantu "
+            "(maks 2 kalimat per insight, total maks 150 karakter) berdasarkan data belanja user bulan ini:\n"
+            f"- Total pengeluaran bulan ini ({month}): Rp{int(this_month_spent):,}\n"
+            f"- Total pengeluaran bulan lalu: Rp{int(last_month_spent):,}\n"
+            f"- Kategori pengeluaran terbesar: {cat_str}\n"
+            f"- 3 barang belanja termahal bulan ini: {expensive_items_str}\n"
+            "Format: insight spesifik, ramah, memotivasi hemat, dan membantu secara finansial. Jangan gunakan template generik. "
+            "Contoh bagus: 'Pengeluaran camilan Anda naik 12%. Hemat Rp 50rb bulan ini jika Anda kurangi beli camilan manis di toko.'"
+        )
+
+        api_key = os.getenv("DEEPSEEK_API_KEY", "")
+        if api_key:
+            def _call_deepseek():
+                headers = {
+                    "Authorization": f"Bearer {api_key}",
+                    "Content-Type": "application/json",
+                }
+                payload = {
+                    "model": "deepseek-chat",
+                    "messages": [
+                        {"role": "user", "content": prompt}
+                    ],
+                    "max_tokens": 200,
+                    "temperature": 0.7,
+                }
+                resp = requests.post(
+                    "https://api.deepseek.com/chat/completions",
+                    json=payload,
+                    headers=headers,
+                    timeout=8,
+                )
+                resp.raise_for_status()
+                data = resp.json()
+                return data["choices"][0]["message"]["content"].strip()
+
+            try:
+                with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
+                    future = executor.submit(_call_deepseek)
+                    try:
+                        text = future.result(timeout=10)
+                        if text:
+                            result = {"text": text}
+                    except concurrent.futures.TimeoutError:
+                        logging.warning("DeepSeek personal insight timeout setelah 10 detik")
+            except Exception as exc:
+                logging.warning("DeepSeek personal insight gagal: %s", exc)
+
+    _insight_cache[cache_key] = result
+    return result["text"]
 
 
 def get_dashboard_data(user_id: str) -> dict:
@@ -764,12 +915,15 @@ def get_tracker_data(user_id: str, month: str) -> dict:
         pct = (amount / total_spent * 100) if total_spent > 0 else 0.0
         by_category.append({"category": cat, "amount": amount, "percentage": round(pct, 1)})
 
+    personal_insight = get_personal_tracker_insight(user_id, month)
+
     return {
         "total_spent":  total_spent,
         "total_items":  total_items,
         "avg_per_item": avg_per_item,
         "by_category":  by_category,
         "items":        tracker_items,
+        "personal_insight": personal_insight,
     }
 
 def find_product_by_name(name: str) -> dict | None:

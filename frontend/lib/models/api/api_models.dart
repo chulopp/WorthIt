@@ -1002,6 +1002,7 @@ class TrackerModel {
   final double avgPerItem;
   final List<CategorySpendModel> byCategory;
   final List<TrackerItemModel> items;
+  final String? personalInsight;
 
   const TrackerModel({
     required this.totalSpent,
@@ -1009,6 +1010,7 @@ class TrackerModel {
     required this.avgPerItem,
     required this.byCategory,
     required this.items,
+    this.personalInsight,
   });
 
   factory TrackerModel.fromJson(JsonMap json) {
@@ -1022,6 +1024,7 @@ class TrackerModel {
       items: _jsonList(
         json['items'],
       ).map(TrackerItemModel.fromJson).toList(growable: false),
+      personalInsight: _nullableString(json['personal_insight']),
     );
   }
 
@@ -1033,6 +1036,7 @@ class TrackerModel {
         .map((item) => item.toJson())
         .toList(growable: false),
     'items': items.map((item) => item.toJson()).toList(growable: false),
+    'personal_insight': personalInsight,
   };
 }
 
