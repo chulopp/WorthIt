@@ -256,7 +256,11 @@ class _ProductAnalysisSheetState extends ConsumerState<_ProductAnalysisSheet> {
   Future<void> _resolveProduct() async {
     final explicitId = widget.item['product_id']?.toString();
     if (explicitId != null && explicitId.isNotEmpty) {
-      _productId = explicitId;
+      if (mounted) {
+        setState(() {
+          _productId = explicitId;
+        });
+      }
     } else {
       await ref
           .read(productDetailControllerProvider.notifier)
@@ -268,7 +272,11 @@ class _ProductAnalysisSheetState extends ConsumerState<_ProductAnalysisSheet> {
           (item) => item.name.toLowerCase() == lowerName,
           orElse: () => results.first,
         );
-        _productId = match.id;
+        if (mounted) {
+          setState(() {
+            _productId = match.id;
+          });
+        }
       }
     }
 

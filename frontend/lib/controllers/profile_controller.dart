@@ -77,6 +77,12 @@ final profileUsernameProvider =
 class ProfileUsernameNotifier extends AsyncNotifier<String> {
   @override
   FutureOr<String> build() async {
+    final prefs = await SharedPreferences.getInstance();
+    final cached = prefs.getString('username');
+    if (cached != null && cached.isNotEmpty) {
+      Future.microtask(() => fetchUsername());
+      return cached;
+    }
     return fetchUsername();
   }
 

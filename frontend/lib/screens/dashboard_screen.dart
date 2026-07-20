@@ -1499,6 +1499,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                                                     LineChartBarData(
                                                       spots: chartSpots,
                                                       isCurved: true,
+                                                      preventCurveOverShooting: true,
                                                       curveSmoothness: 0.35,
                                                       color: const Color(
                                                         0xFFC9E88A,

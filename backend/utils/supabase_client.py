@@ -599,9 +599,23 @@ def get_personal_tracker_insight(user_id: str, month: str) -> str:
     import requests
     import concurrent.futures
 
+    sb = get_supabase()
     now = datetime.now(timezone.utc)
-    today_str = now.date().isoformat()
-    cache_key = f"{user_id}:tracker_insight:{month}:{today_str}"
+
+    # Get last transaction timestamp to make cache dynamic per transaction
+    try:
+        stat_res = _safe_execute(
+            sb.table("purchase_history")
+            .select("purchased_at")
+            .eq("user_id", user_id)
+            .order("purchased_at", desc=True)
+            .limit(1)
+        )
+        last_purchase = stat_res.data[0]["purchased_at"] if stat_res.data else "no_purchases"
+    except Exception:
+        last_purchase = "error"
+
+    cache_key = f"{user_id}:tracker_insight:{month}:{last_purchase}"
 
     if cache_key in _insight_cache:
         return _insight_cache[cache_key].get("text", "")
@@ -612,7 +626,6 @@ def get_personal_tracker_insight(user_id: str, month: str) -> str:
         year, mon = now.year, now.month
 
     # Get this month's purchases
-    sb = get_supabase()
     this_month_start = datetime(year, mon, 1, tzinfo=timezone.utc)
     if mon == 12:
         this_month_end = datetime(year + 1, 1, 1, tzinfo=timezone.utc)
