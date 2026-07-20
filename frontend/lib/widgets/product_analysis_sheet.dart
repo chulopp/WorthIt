@@ -16,6 +16,7 @@ import '../models/api/api_models.dart';
 import '../services/auth_service.dart';
 import '../utils/snackbar_helper.dart';
 import 'decision_badge.dart';
+import 'product_detail_sheet.dart';
 import 'skeleton_analysis_card.dart';
 import '../models/dashboard_data.dart';
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -85,6 +86,7 @@ void showHistoryAnalysisSheet(
       'imageUrl': data.imageUrl ?? analysis.imageUrl,
       'explanationItems': analysis.explanationItems,
       'explanations': analysis.explanations,
+      'substitutes': analysis.substitutes,
     },
   );
 }
@@ -353,7 +355,9 @@ class _ProductAnalysisSheetState extends ConsumerState<_ProductAnalysisSheet> {
   @override
   Widget build(BuildContext context) {
     final productName = widget.productName;
-    final isFavorite = widget.isFavorite;
+    final bool isFavorite = _productId != null &&
+        _productId!.isNotEmpty &&
+        ref.watch(favoriteControllerProvider).isFavorite(_productId!);
     final onFavoriteToggle = widget.onFavoriteToggle;
     ref.listen(favoriteControllerProvider, (previous, next) {
       final message = next.errorMessage;
@@ -449,6 +453,7 @@ class _ProductAnalysisSheetState extends ConsumerState<_ProductAnalysisSheet> {
                         _buildProductDetails(),
                         const SizedBox(height: 8),
                         _buildBrainInsights(),
+                        _buildSubstitutes(),
                         const SizedBox(height: 40),
                       ],
                     ),
@@ -1199,5 +1204,177 @@ class _ProductAnalysisSheetState extends ConsumerState<_ProductAnalysisSheet> {
             ? Icons.cancel_rounded
             : Icons.check_circle_rounded;
     }
+  }
+
+  List<SubstituteItemModel> _substitutesList() {
+    final raw = widget.item['substitutes'];
+    if (raw is List<SubstituteItemModel>) return raw;
+    if (raw is List) {
+      return raw
+          .map((e) => e is SubstituteItemModel ? e : SubstituteItemModel.fromJson(e as Map<String, dynamic>))
+          .toList(growable: false);
+    }
+    return const <SubstituteItemModel>[];
+  }
+
+  Widget _buildSubstitutes() {
+    final substitutes = _substitutesList();
+    if (substitutes.isEmpty) return const SizedBox.shrink();
+
+    const darkText = Color(0xFF1E293B);
+    const mutedText = Color(0xFF64748B);
+    const accentGreen = Color(0xFF304423);
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const SizedBox(height: 6),
+          Divider(
+            color: const Color(0xFFE2E8F0).withValues(alpha: 0.8),
+            thickness: 1,
+          ),
+          const SizedBox(height: 24),
+          Text(
+            'substitute.title'.tr(),
+            style: GoogleFonts.urbanist(
+              fontSize: 18,
+              fontWeight: FontWeight.w800,
+              color: darkText,
+            ),
+          ),
+          const SizedBox(height: 16),
+          ...substitutes.map((sub) {
+            return GestureDetector(
+              onTap: () {
+                showProductDetailSheet(context, productId: sub.productId);
+              },
+              child: Container(
+                margin: const EdgeInsets.only(bottom: 12),
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.02),
+                      blurRadius: 8,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                  border: Border.all(
+                    color: const Color(0xFFE2E8F0).withValues(alpha: 0.5),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(12),
+                      child: Container(
+                        width: 56,
+                        height: 56,
+                        color: const Color(0xFFF1F5F9),
+                        child: sub.imageUrl != null && sub.imageUrl!.isNotEmpty
+                            ? CachedNetworkImage(
+                                imageUrl: sub.imageUrl!,
+                                fit: BoxFit.cover,
+                                placeholder: (context, url) => const Center(
+                                  child: CupertinoActivityIndicator(),
+                                ),
+                                errorWidget: (context, url, error) => const Icon(
+                                  Icons.shopping_bag_outlined,
+                                  color: Color(0xFF94A3B8),
+                                ),
+                              )
+                            : const Icon(
+                                Icons.shopping_bag_outlined,
+                                color: Color(0xFF94A3B8),
+                              ),
+                      ),
+                    ),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            sub.name,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: GoogleFonts.urbanist(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w700,
+                              color: darkText,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          if (sub.brand != null && sub.brand!.isNotEmpty) ...[
+                            Text(
+                              sub.brand!,
+                              style: GoogleFonts.urbanist(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w500,
+                                color: mutedText,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                          ],
+                          Row(
+                            children: [
+                              Text(
+                                _formatPriceValue(sub.price),
+                                style: GoogleFonts.urbanist(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w800,
+                                  color: accentGreen,
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                '${sub.weight.toStringAsFixed(0)}g',
+                                style: GoogleFonts.urbanist(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w500,
+                                  color: mutedText,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFC9E88A).withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        'substitute.save_percent'.tr(
+                          namedArgs: {
+                            'percent': sub.savingsPercent.toStringAsFixed(0),
+                          },
+                        ),
+                        style: GoogleFonts.urbanist(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                          color: const Color(0xFF304423),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          }),
+          const SizedBox(height: 12),
+        ],
+      ),
+    );
   }
 }

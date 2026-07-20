@@ -1340,19 +1340,11 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                             builder: (context, isObscured, child) {
                               final bool isBudgetVisible = !isObscured;
 
-                              final List<double> dailyExpenses =
-                                  data.dailyExpenses;
-                              final nonZeroDailyCount = dailyExpenses
-                                  .where((value) => value > 0)
-                                  .length;
-                              final bool usePurchasePoints =
-                                  nonZeroDailyCount < 2 &&
-                                  data.expensePoints.isNotEmpty;
-                              final List<double> expenses = usePurchasePoints
-                                  ? data.expensePoints
+                              final List<double> expenses = data.dailyExpenses.isNotEmpty
+                                  ? data.dailyExpenses
+                                  : data.expensePoints
                                         .map((point) => point.amount)
-                                        .toList()
-                                  : dailyExpenses;
+                                        .toList();
                               final double highestSpending = expenses.isEmpty
                                   ? 0
                                   : expenses.reduce((a, b) => a > b ? a : b);
@@ -1473,10 +1465,36 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                                                   borderData: FlBorderData(
                                                     show: false,
                                                   ),
-                                                  lineTouchData:
-                                                      const LineTouchData(
-                                                        enabled: false,
-                                                      ),
+                                                  lineTouchData: LineTouchData(
+                                                    enabled: true,
+                                                    handleBuiltInTouches: true,
+                                                    touchTooltipData: LineTouchTooltipData(
+                                                      getTooltipColor: (_) => const Color(0xFF304423),
+                                                      tooltipPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                                      tooltipRoundedRadius: 8,
+                                                      getTooltipItems: (touchedSpots) {
+                                                        return touchedSpots.map((spot) {
+                                                          final day = spot.x.toInt();
+                                                          final amount = spot.y;
+                                                          final formattedPrice = amount
+                                                              .round()
+                                                              .toString()
+                                                              .replaceAllMapped(
+                                                                RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
+                                                                (m) => '${m[1]}.',
+                                                              );
+                                                          return LineTooltipItem(
+                                                            'Tgl $day: Rp $formattedPrice',
+                                                            GoogleFonts.urbanist(
+                                                              color: const Color(0xFFC9E88A),
+                                                              fontWeight: FontWeight.bold,
+                                                              fontSize: 12,
+                                                            ),
+                                                          );
+                                                        }).toList();
+                                                      },
+                                                    ),
+                                                  ),
                                                   lineBarsData: [
                                                     LineChartBarData(
                                                       spots: chartSpots,
