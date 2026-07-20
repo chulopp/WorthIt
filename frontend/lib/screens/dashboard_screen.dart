@@ -21,6 +21,7 @@ import '../controllers/history_controller.dart';
 import '../controllers/product_detail_controller.dart';
 import '../controllers/shopping_list_controller.dart';
 import '../controllers/tracker_controller.dart';
+import '../controllers/profile_controller.dart';
 import '../controllers/auth_controller.dart';
 import '../config/product_categories.dart';
 import '../models/api/api_models.dart';
@@ -281,11 +282,17 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       greetingText = 'greeting_night'.tr();
     }
     final authService = AuthService();
-    final name = authService.isLoggedIn.value
-        ? (authService.displayName ??
-              authService.userEmail.value ??
-              'user'.tr())
-        : 'guest'.tr();
+    final customName = ref.watch(profileUsernameProvider).valueOrNull;
+    final String name;
+    if (!authService.isLoggedIn.value) {
+      name = 'guest'.tr();
+    } else if (customName != null && customName.trim().isNotEmpty) {
+      name = customName.trim();
+    } else {
+      name = authService.displayName ??
+          authService.userEmail.value ??
+          'user'.tr();
+    }
     final displayGreeting = compact
         ? greetingText.replaceFirst(RegExp(r'^(Selamat|Good)\s+'), '')
         : greetingText;

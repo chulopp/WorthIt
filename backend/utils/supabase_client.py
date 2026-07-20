@@ -154,11 +154,11 @@ def delete_user_account(user_id: str) -> None:
     sb.auth.admin.delete_user(user_id)
 
 
-FREE_WEEKLY_SCAN_LIMIT = 35
+FREE_MONTHLY_SCAN_LIMIT = 30
 
 
 def get_scan_quota_status(user_id: str) -> dict:
-    """Hitung quota scan mingguan dari scan_history 7 hari terakhir."""
+    """Hitung quota scan bulanan dari scan_history bulan ini."""
     sb = get_supabase()
     user = get_user(user_id)
     if not user:
@@ -166,8 +166,8 @@ def get_scan_quota_status(user_id: str) -> dict:
             "can_scan": False,
             "message": "User tidak ditemukan.",
             "tier": "free",
-            "limit": FREE_WEEKLY_SCAN_LIMIT,
-            "period": "weekly",
+            "limit": FREE_MONTHLY_SCAN_LIMIT,
+            "period": "monthly",
             "used": 0,
             "remaining": 0,
         }
@@ -184,26 +184,28 @@ def get_scan_quota_status(user_id: str) -> dict:
             "remaining": None,
         }
 
-    since = (datetime.now(timezone.utc) - timedelta(days=7)).isoformat()
+    # Hitung dari awal bulan ini
+    now = datetime.now(timezone.utc)
+    start_of_month = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0).isoformat()
     res = _safe_execute(sb.table("scan_history")
         .select("id")
         .eq("user_id", user_id)
-        .gte("created_at", since)
-        .limit(FREE_WEEKLY_SCAN_LIMIT + 1))
+        .gte("created_at", start_of_month)
+        .limit(FREE_MONTHLY_SCAN_LIMIT + 1))
     used = len(res.data or [])
-    remaining = max(0, FREE_WEEKLY_SCAN_LIMIT - used)
-    can_scan = used < FREE_WEEKLY_SCAN_LIMIT
+    remaining = max(0, FREE_MONTHLY_SCAN_LIMIT - used)
+    can_scan = used < FREE_MONTHLY_SCAN_LIMIT
 
     return {
         "can_scan": can_scan,
         "message": (
-            f"Scan tersedia: {used}/{FREE_WEEKLY_SCAN_LIMIT} terpakai minggu ini."
+            f"Scan tersedia: {used}/{FREE_MONTHLY_SCAN_LIMIT} terpakai bulan ini."
             if can_scan
-            else "Limit scan mingguan (35x) telah tercapai. Upgrade ke PRO untuk scan tanpa batas."
+            else "Limit scan bulanan (30x) telah tercapai. Upgrade ke PRO untuk scan tanpa batas."
         ),
         "tier": "free",
-        "limit": FREE_WEEKLY_SCAN_LIMIT,
-        "period": "weekly",
+        "limit": FREE_MONTHLY_SCAN_LIMIT,
+        "period": "monthly",
         "used": used,
         "remaining": remaining,
     }
@@ -513,11 +515,12 @@ def _build_user_top_categories(user_id: str, start_of_month: str) -> list[str]:
 
 def get_weekly_market_insight(user_id: str) -> dict:
     """
-    Hasilkan market insight menggunakan Gemini Flash API.
+    Hasilkan market insight menggunakan DeepSeek v4 Flash API.
     - Cache per user per hari (in-memory)
     - Fallback ke stable text jika API gagal / timeout
     """
-    import google.generativeai as genai
+    import requests
+    import concurrent.futures
 
     now = datetime.now(timezone.utc)
     today_str = now.date().isoformat()
@@ -546,25 +549,37 @@ def get_weekly_market_insight(user_id: str) -> dict:
         "Contoh buruk: 'Harga pasar stabil bulan ini.'"
     )
 
-    api_key = os.getenv("GEMINI_API_KEY")
+    api_key = os.getenv("DEEPSEEK_API_KEY", "")
     result = _GEMINI_FALLBACK
-    if api_key and (top_categories or top_increases or top_decreases):
+    if top_categories or top_increases or top_decreases:
+        def _call_deepseek():
+            headers = {
+                "Authorization": f"Bearer {api_key}",
+                "Content-Type": "application/json",
+            }
+            payload = {
+                "model": "deepseek-chat",
+                "messages": [
+                    {"role": "user", "content": prompt}
+                ],
+                "max_tokens": 200,
+                "temperature": 0.7,
+            }
+            resp = requests.post(
+                "https://api.deepseek.com/chat/completions",
+                json=payload,
+                headers=headers,
+                timeout=8,
+            )
+            resp.raise_for_status()
+            data = resp.json()
+            return data["choices"][0]["message"]["content"].strip()
+
         try:
-            import signal
-
-            def _timeout_handler(signum, frame):
-                raise TimeoutError("Gemini timeout")
-
-            genai.configure(api_key=api_key)
-            model = genai.GenerativeModel("gemini-1.5-flash")
-
-            # Use threading timeout compatible with Windows
-            import concurrent.futures
             with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
-                future = executor.submit(model.generate_content, prompt)
+                future = executor.submit(_call_deepseek)
                 try:
-                    response = future.result(timeout=5)
-                    text = response.text.strip()
+                    text = future.result(timeout=10)
                     if text:
                         result = {
                             "key": "dashboard.market_insight_messages.stable",
@@ -572,9 +587,9 @@ def get_weekly_market_insight(user_id: str) -> dict:
                             "text": text,
                         }
                 except concurrent.futures.TimeoutError:
-                    logging.warning("Gemini API timeout setelah 5 detik")
+                    logging.warning("DeepSeek API timeout setelah 10 detik")
         except Exception as exc:
-            logging.warning("Gemini insight gagal: %s", exc)
+            logging.warning("DeepSeek insight gagal: %s", exc)
 
     _insight_cache[cache_key] = result
     return result
@@ -840,6 +855,20 @@ def update_user_display_name(user_id: str, display_name: str) -> dict | None:
     res = _safe_execute(
         sb.table("users")
         .update({"display_name": display_name})
+        .eq("id", user_id)
+    )
+    return res.data[0] if res.data else None
+
+
+def update_user_subscription_tier(user_id: str, tier: str) -> dict | None:
+    """Update subscription_tier user di tabel users. Tier: 'FREE' atau 'PRO'."""
+    tier_upper = tier.upper()
+    if tier_upper not in ("FREE", "PRO"):
+        raise ValueError(f"Invalid tier: {tier}. Must be 'FREE' or 'PRO'.")
+    sb = get_supabase()
+    res = _safe_execute(
+        sb.table("users")
+        .update({"subscription_tier": tier_upper})
         .eq("id", user_id)
     )
     return res.data[0] if res.data else None

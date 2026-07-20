@@ -1,20 +1,29 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../controllers/repository_providers.dart';
 import '../services/auth_service.dart';
 import '../utils/snackbar_helper.dart';
-import 'package:easy_localization/easy_localization.dart';
 
-class SubscriptionScreen extends StatefulWidget {
+class SubscriptionScreen extends ConsumerStatefulWidget {
   const SubscriptionScreen({Key? key}) : super(key: key);
 
   @override
-  State<SubscriptionScreen> createState() => _SubscriptionScreenState();
+  ConsumerState<SubscriptionScreen> createState() => _SubscriptionScreenState();
 }
 
-class _SubscriptionScreenState extends State<SubscriptionScreen> {
+class _SubscriptionScreenState extends ConsumerState<SubscriptionScreen> {
   bool _isPro = false; // false = Free, true = Pro
   bool _isYearly = false; // false = Bulanan, true = Tahunan
   double _previousPrice = 0;
+  bool _isLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _isPro = AuthService().isPro.value;
+  }
 
   double get _currentPrice {
     if (!_isPro) return 0;
@@ -52,6 +61,48 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
 
   bool get _showBestSeller => _isPro && !_isYearly;
 
+  Future<void> _handleUpgradeOrContinue() async {
+    if (!_isPro) {
+      await AuthService().setProStatus(false);
+      if (mounted) Navigator.pop(context);
+      return;
+    }
+
+    setState(() => _isLoading = true);
+    try {
+      final userRepo = ref.read(userRepositoryProvider);
+      final result = await userRepo.upgradeToProTier();
+
+      if (!mounted) return;
+
+      if (result.isSuccess && result.requireData == true) {
+        await AuthService().setProStatus(true);
+        SnackbarHelper.showTopSnackbar(
+          context,
+          'upgrade_success'.tr(),
+          icon: Icons.workspace_premium,
+        );
+        Navigator.pop(context);
+      } else {
+        SnackbarHelper.showTopSnackbar(
+          context,
+          'Gagal melakukan upgrade. Silakan coba lagi.',
+          icon: Icons.error_outline,
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        SnackbarHelper.showTopSnackbar(
+          context,
+          'Gagal upgrade: $e',
+          icon: Icons.error_outline,
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     const Color darkGreen = Color(0xFF304423);
@@ -83,7 +134,6 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            // Header
             Text(
               'choose_best_plan'.tr(),
               textAlign: TextAlign.center,
@@ -100,105 +150,110 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
               textAlign: TextAlign.center,
               style: GoogleFonts.outfit(
                 color: Colors.grey.shade600,
+                fontWeight: FontWeight.w400,
                 fontSize: 14,
-                height: 1.5,
               ),
             ),
             const SizedBox(height: 28),
 
-            // Main Card
             Container(
-              width: double.infinity,
+              padding: const EdgeInsets.all(4),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: Colors.grey.shade200),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.03),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: Row(
+                children: [
+                  _buildToggleButton(
+                    label: 'free'.tr(),
+                    isSelected: !_isPro,
+                    onTap: () => _setPro(false),
+                  ),
+                  _buildToggleButton(
+                    label: 'pro'.tr(),
+                    isSelected: _isPro,
+                    icon: Icons.workspace_premium,
+                    onTap: () => _setPro(true),
+                  ),
+                ],
+              ),
+            ),
+
+            if (_isPro) ...[
+              const SizedBox(height: 16),
+              Container(
+                padding: const EdgeInsets.all(4),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: Colors.grey.shade200),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.03),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  children: [
+                    _buildToggleButton(
+                      label: 'monthly'.tr(),
+                      isSelected: !_isYearly,
+                      onTap: () => _setYearly(false),
+                    ),
+                    _buildToggleButton(
+                      label: 'yearly'.tr(),
+                      isSelected: _isYearly,
+                      badge: 'save_17_percent'.tr(),
+                      onTap: () => _setYearly(true),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+            const SizedBox(height: 24),
+
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 300),
+              curve: Curves.easeInOut,
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(24),
+                border: Border.all(
+                  color: _isPro
+                      ? darkGreen.withValues(alpha: 0.3)
+                      : Colors.grey.shade200,
+                  width: _isPro ? 2 : 1,
+                ),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.06),
+                    color: _isPro
+                        ? darkGreen.withValues(alpha: 0.08)
+                        : Colors.black.withValues(alpha: 0.04),
                     blurRadius: 20,
                     offset: const Offset(0, 8),
                   ),
                 ],
               ),
-              child: Padding(
-                padding: const EdgeInsets.all(24),
-                child: Column(
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(24),
+                child: Stack(
                   children: [
-                    // Plan Toggle (Free / Pro)
-                    Container(
-                      padding: const EdgeInsets.all(4),
-                      decoration: BoxDecoration(
-                        color: Colors.grey.shade100,
-                        borderRadius: BorderRadius.circular(14),
-                      ),
-                      child: Row(
-                        children: [
-                          _buildToggleButton(
-                            label: 'free'.tr(),
-                            isSelected: !_isPro,
-                            onTap: () => _setPro(false),
-                          ),
-                          _buildToggleButton(
-                            label: 'pro'.tr(),
-                            isSelected: _isPro,
-                            onTap: () => _setPro(true),
-                            icon: Icons.workspace_premium,
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-
-                    // Cycle Toggle (Bulanan / Tahunan)
-                    AnimatedOpacity(
-                      opacity: _isPro ? 1.0 : 0.4,
-                      duration: const Duration(milliseconds: 250),
-                      child: IgnorePointer(
-                        ignoring: !_isPro,
+                    if (_showBestSeller)
+                      Positioned(
+                        top: 0,
+                        right: 0,
                         child: Container(
-                          padding: const EdgeInsets.all(4),
-                          decoration: BoxDecoration(
-                            color: Colors.grey.shade100,
-                            borderRadius: BorderRadius.circular(14),
-                          ),
-                          child: Row(
-                            children: [
-                              _buildToggleButton(
-                                label: 'monthly'.tr(),
-                                isSelected: !_isYearly,
-                                onTap: () => _setYearly(false),
-                              ),
-                              _buildToggleButton(
-                                label: 'yearly'.tr(),
-                                isSelected: _isYearly,
-                                onTap: () => _setYearly(true),
-                                badge: 'save_17_percent'.tr(),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 28),
-
-                    // Price Area with Best Seller Badge
-                    Stack(
-                      clipBehavior: Clip.none,
-                      children: [
-                        Container(
-                          width: double.infinity,
                           padding: const EdgeInsets.symmetric(
-                            vertical: 24,
-                            horizontal: 20,
-                          ),
-                          decoration: BoxDecoration(
-                            color: _isPro ? darkGreen : Colors.grey.shade50,
-                            borderRadius: BorderRadius.circular(20),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.25),
-                                spreadRadius: 1,
-                                blurRadius: 10,
                                 offset: const Offset(0, 6),
                               ),
                             ],
@@ -322,6 +377,10 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                     ] else ...[
                       _buildBenefitItem('limited_scan'.tr(), false),
                       _buildBenefitItem('basic_price_analysis'.tr(), false),
+                      _buildBenefitItem(
+                        'smart_product_recommendation'.tr(),
+                        false,
+                      ),
                       _buildBenefitItem('shopping_list'.tr(), false),
                     ],
                     const SizedBox(height: 28),
@@ -331,19 +390,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                       width: double.infinity,
                       height: 56,
                       child: ElevatedButton(
-                        onPressed: () {
-                          if (_isPro) {
-                            AuthService().isPro.value = true;
-                            SnackbarHelper.showTopSnackbar(
-                              context,
-                              'upgrade_success'.tr(),
-                              icon: Icons.workspace_premium,
-                            );
-                          } else {
-                            AuthService().isPro.value = false;
-                          }
-                          Navigator.pop(context);
-                        },
+                        onPressed: _isLoading ? null : _handleUpgradeOrContinue,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: lightGreen,
                           foregroundColor: darkGreen,
@@ -352,13 +399,24 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                             borderRadius: BorderRadius.circular(16),
                           ),
                         ),
-                        child: Text(
-                          _isPro ? 'subscribe_pro'.tr() : 'continue_free'.tr(),
-                          style: GoogleFonts.bricolageGrotesque(
-                            fontWeight: FontWeight.w800,
-                            fontSize: 16,
-                          ),
-                        ),
+                        child: _isLoading
+                            ? const SizedBox(
+                                width: 24,
+                                height: 24,
+                                child: CircularProgressIndicator(
+                                  color: darkGreen,
+                                  strokeWidth: 2.5,
+                                ),
+                              )
+                            : Text(
+                                _isPro
+                                    ? 'subscribe_pro'.tr()
+                                    : 'continue_free'.tr(),
+                                style: GoogleFonts.bricolageGrotesque(
+                                  fontWeight: FontWeight.w800,
+                                  fontSize: 16,
+                                ),
+                              ),
                       ),
                     ),
                   ],

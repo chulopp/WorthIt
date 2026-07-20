@@ -742,7 +742,7 @@ class _AnalysisResultScreenState extends ConsumerState<AnalysisResultScreen> {
                       ),
                       decoration: BoxDecoration(
                         color: const Color(0xFFC9E88A).withValues(alpha: 0.15),
-                        borderRadius: BorderRadius.circular(20),
+                        borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(
                         'substitute.save_percent'.tr(

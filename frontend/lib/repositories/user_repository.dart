@@ -37,6 +37,22 @@ class UserRepository {
     });
   }
 
+  Future<ApiResult<String>> getSubscriptionTier() {
+    return _apiClient.run(() async {
+      final response = await _apiClient.get('/v1/users/me');
+      final map = responseMap(response);
+      return ((map['subscription_tier'] as String?) ?? 'FREE').toUpperCase();
+    });
+  }
+
+  Future<ApiResult<bool>> upgradeToProTier() {
+    return _apiClient.run(() async {
+      final response = await _apiClient.post('/v1/users/me/upgrade', data: {});
+      final map = responseMap(response);
+      return (map['subscription_tier'] as String?)?.toUpperCase() == 'PRO';
+    });
+  }
+
   Future<ApiResult<List<FavoriteModel>>> getFavorites() {
     return _apiClient.run(() async {
       final response = await _apiClient.get('/v1/favorites');

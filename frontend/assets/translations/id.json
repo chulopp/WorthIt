@@ -81,7 +81,7 @@
     "smart_product_recommendation": "Rekomendasi produk cerdas",
     "export_pdf_report": "Ekspor laporan PDF",
     "priority_access": "Akses prioritas ke fitur baru",
-    "limited_scan": "Scan produk terbatas (10x/bulan)",
+    "limited_scan": "Scan produk terbatas (30x/bulan)",
     "basic_price_analysis": "Analisis harga dasar",
     "shopping_list": "Daftar Belanja",
     "subscribe_pro": "Langganan Pro Sekarang",
@@ -245,7 +245,7 @@
   "smart_product_recommendation": "Rekomendasi produk cerdas",
   "export_pdf_report": "Ekspor laporan PDF",
   "priority_access": "Akses prioritas ke fitur baru",
-  "limited_scan": "Scan produk terbatas (10x/bulan)",
+  "limited_scan": "Scan produk terbatas (30x/bulan)",
   "basic_price_analysis": "Analisis harga dasar",
   "shopping_list": "Daftar Belanja",
   "subscribe_pro": "Langganan Pro Sekarang",
@@ -522,9 +522,9 @@
       "wma_fair": "Harga scan {scan} masih dekat dengan harga normal {period} bulan sekitar {normal}, jadi masih tergolong wajar.",
       "wma_above": "Harga scan {scan} berada {delta}% di atas harga normal {period} bulan sekitar {normal}, jadi perlu dipertimbangkan.",
       "wma_expensive": "Harga scan {scan} berada {delta}% di atas harga normal {period} bulan sekitar {normal}, ini sinyal kuat harga mahal.",
-      "sr_support": "Harga berada dekat area support {support}, area historis rendah dari {period} bulan terakhir.",
-      "sr_resistance": "Harga berada dekat area resistance {resistance}, area historis tinggi dari {period} bulan terakhir.",
-      "sr_middle": "Harga berada di tengah antara support {support} dan resistance {resistance} dari {period} bulan terakhir.",
+      "sr_support": "Harga scan saat ini berada dekat titik terendah historis (support Rp {support}) dari {period} bulan terakhir. Ini posisi harga yang sangat menguntungkan untuk dibeli.",
+      "sr_resistance": "Harga scan saat ini mendekati titik tertinggi historis (resistance Rp {resistance}) dari {period} bulan terakhir. Ini menandakan harga sedang berada di puncaknya.",
+      "sr_middle": "Harga scan saat ini berada di posisi tengah antara rentang harga terendah (support Rp {support}) dan tertinggi (resistance Rp {resistance}) dalam {period} bulan terakhir.",
       "urgency_1_worthit": "Harga cukup bagus untuk dibeli sebagai stok meskipun belum terlalu dibutuhkan.",
       "urgency_1_waspada": "Karena kebutuhan belum mendesak, menunda pembelian lebih aman kecuali memang ingin stok.",
       "urgency_1_mahal": "Kebutuhan rendah dan harga tinggi, jadi pembelian sebaiknya ditunda.",
@@ -541,5 +541,7 @@
       "pro_locked": "Anomali harga dan shrinkflation adalah pengecekan lanjutan Pro. Analisis Free tetap mencakup WMA dan rentang historis."
     }
   },
-  "launch_target_unavailable": "Aplikasi tujuan tidak tersedia di perangkat ini."
+  "launch_target_unavailable": "Aplikasi tujuan tidak tersedia di perangkat ini.",
+  "pdf_pro_only_title": "Fitur Khusus Pro",
+  "pdf_pro_only_desc": "Ekspor laporan PDF hanya tersedia untuk pengguna Pro. Upgrade sekarang untuk membuka akses penuh tanpa batas."
 }

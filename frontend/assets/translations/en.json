@@ -75,7 +75,7 @@
     "smart_product_recommendation": "Smart product recommendations",
     "export_pdf_report": "Export PDF reports",
     "priority_access": "Priority access to new features",
-    "limited_scan": "Limited product scans (5x/day)",
+    "limited_scan": "Limited product scans (30x/month)",
     "basic_price_analysis": "Basic price analysis",
     "shopping_list": "Shopping List",
     "subscribe_pro": "Subscribe to Pro Now",
@@ -231,7 +231,7 @@
   "smart_product_recommendation": "Smart product recommendations",
   "export_pdf_report": "Export PDF reports",
   "priority_access": "Priority access to new features",
-  "limited_scan": "Limited product scans (5x/day)",
+  "limited_scan": "Limited product scans (30x/month)",
   "basic_price_analysis": "Basic price analysis",
   "shopping_list": "Shopping List",
   "subscribe_pro": "Subscribe to Pro Now",
@@ -506,9 +506,9 @@
       "wma_fair": "The scanned price {scan} is close to the {period}-month normal price around {normal}, so it is still reasonable.",
       "wma_above": "The scanned price {scan} is {delta}% above the {period}-month normal price around {normal}, so consider it carefully.",
       "wma_expensive": "The scanned price {scan} is {delta}% above the {period}-month normal price around {normal}, which is a strong expensive signal.",
-      "sr_support": "The price is near support at {support}, a lower historical area from the last {period} months.",
-      "sr_resistance": "The price is near resistance at {resistance}, a higher historical area from the last {period} months.",
-      "sr_middle": "The price sits between support {support} and resistance {resistance} from the last {period} months.",
+      "sr_support": "Current scanned price is near the historical low point (support at Rp {support}) from the last {period} months. This is a very favorable purchase position.",
+      "sr_resistance": "Current scanned price is near the historical high point (resistance at Rp {resistance}) from the last {period} months. This indicates the price is at its historical peak.",
+      "sr_middle": "Current scanned price sits mid-range between historical low (support Rp {support}) and high (resistance Rp {resistance}) from the last {period} months.",
       "urgency_1_worthit": "The price is good enough to buy for stock even if you do not need it urgently.",
       "urgency_1_waspada": "Because the need is not urgent, delaying is safer unless you specifically want to stock up.",
       "urgency_1_mahal": "The need is low and the price is high, so delaying the purchase is recommended.",
@@ -525,5 +525,7 @@
       "pro_locked": "Price anomaly and shrinkflation are advanced Pro checks. Free analysis still includes WMA and historical range."
     }
   },
-  "launch_target_unavailable": "The target app is not available on this device."
+  "launch_target_unavailable": "The target app is not available on this device.",
+  "pdf_pro_only_title": "Pro Feature Only",
+  "pdf_pro_only_desc": "Exporting PDF reports is only available for Pro users. Upgrade now for full unlimited access."
 }

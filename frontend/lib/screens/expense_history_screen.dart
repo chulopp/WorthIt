@@ -14,9 +14,11 @@ import '../widgets/total_expenses_card.dart';
 import '../widgets/product_detail_sheet.dart';
 import '../widgets/decision_badge.dart';
 import '../widgets/empty_activity_state.dart';
+import '../services/auth_service.dart';
 import '../services/notification_service.dart';
 import '../utils/pdf_generator.dart';
 import '../utils/date_helper.dart';
+import 'subscription_screen.dart';
 
 class ExpenseHistoryScreen extends ConsumerStatefulWidget {
   const ExpenseHistoryScreen({super.key});
@@ -49,6 +51,71 @@ class _ExpenseHistoryScreenState extends ConsumerState<ExpenseHistoryScreen> {
 
   /// Generates and opens the native PDF share/save dialog.
   Future<void> _exportPdf(BuildContext context, DashboardData data) async {
+    if (!AuthService().isPro.value) {
+      showDialog(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          title: Row(
+            children: [
+              const Icon(
+                Icons.workspace_premium,
+                color: Color(0xFF304423),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  'pdf_pro_only_title'.tr(),
+                  style: GoogleFonts.bricolageGrotesque(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 18,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          content: Text(
+            'pdf_pro_only_desc'.tr(),
+            style: GoogleFonts.outfit(fontSize: 14),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: Text(
+                'btn_cancel'.tr(),
+                style: GoogleFonts.outfit(color: Colors.grey),
+              ),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.pop(ctx);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const SubscriptionScreen(),
+                  ),
+                );
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFC9E88A),
+                foregroundColor: const Color(0xFF304423),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              child: Text(
+                'profile.upgrade_to_pro'.tr(),
+                style: GoogleFonts.outfit(fontWeight: FontWeight.bold),
+              ),
+            ),
+          ],
+        ),
+      );
+      return;
+    }
+
     final filteredItems = data.recentItems
         .where((item) => DateHelper.isCurrentMonth(item.date))
         .toList();

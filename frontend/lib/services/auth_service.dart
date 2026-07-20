@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../config/supabase_config.dart';
@@ -34,6 +35,10 @@ class AuthService {
   }
 
   Future<void> init() async {
+    // Load persisted isPro state from SharedPreferences
+    final prefs = await SharedPreferences.getInstance();
+    isPro.value = prefs.getBool('is_pro') ?? false;
+
     _syncSession(_client?.auth.currentSession);
     _client?.auth.onAuthStateChange.listen((data) {
       _syncSession(data.session);
@@ -97,7 +102,16 @@ class AuthService {
       isLoggedIn.value = false;
       isPro.value = false;
       userEmail.value = null;
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool('is_pro', false);
     }
+  }
+
+  /// Persist dan set isPro dari luar (dipanggil setelah upgrade API berhasil).
+  Future<void> setProStatus(bool value) async {
+    isPro.value = value;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('is_pro', value);
   }
 
   String? get accessToken => _client?.auth.currentSession?.accessToken;

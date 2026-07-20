@@ -9,6 +9,7 @@ from core.security import get_current_user
 from models.users import (
     BudgetUpdateRequest,
     BudgetUpdateResponse,
+    SubscriptionUpgradeResponse,
     UsernameUpdateRequest,
     UserProfileResponse,
 )
@@ -17,6 +18,7 @@ from utils.supabase_client import (
     get_user,
     update_user_monthly_budget,
     update_user_display_name,
+    update_user_subscription_tier,
 )
 
 router = APIRouter(prefix="/v1/users", tags=["Users"])
@@ -47,6 +49,7 @@ async def get_my_profile(
         email=user.get("email") or "",
         display_name=user.get("display_name") or user.get("full_name") or "",
         monthly_budget=int(user.get("monthly_budget") or 0),
+        subscription_tier=(user.get("subscription_tier") or "FREE").upper(),
     )
 
 
@@ -125,6 +128,43 @@ async def update_my_username(
             "display_name": display_name,
         },
     }
+
+
+@router.post(
+    "/me/upgrade",
+    response_model=SubscriptionUpgradeResponse,
+    summary="Upgrade to Pro",
+    description="Upgrade subscription_tier user ke PRO di database.",
+)
+async def upgrade_to_pro(
+    user_id: str = Depends(get_current_user),
+):
+    user = get_user(user_id)
+    if not user:
+        raise HTTPException(
+            status_code=404,
+            detail={
+                "code": "USER_NOT_FOUND",
+                "message": "User tidak ditemukan.",
+                "suggestion": "Login ulang dengan Google lalu coba lagi.",
+            },
+        )
+
+    updated = update_user_subscription_tier(user_id, "PRO")
+    if not updated:
+        raise HTTPException(
+            status_code=500,
+            detail={
+                "code": "UPGRADE_FAILED",
+                "message": "Gagal mengupgrade subscription.",
+                "suggestion": "Coba lagi dalam beberapa saat.",
+            },
+        )
+
+    return SubscriptionUpgradeResponse(
+        user_id=user_id,
+        subscription_tier="PRO",
+    )
 
 
 @router.delete(

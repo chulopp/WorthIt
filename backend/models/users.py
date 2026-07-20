@@ -21,3 +21,10 @@ class UserProfileResponse(BaseModel):
     email: str
     display_name: str
     monthly_budget: int
+    subscription_tier: str = "FREE"
+
+
+class SubscriptionUpgradeResponse(BaseModel):
+    status: str = "success"
+    user_id: str
+    subscription_tier: str

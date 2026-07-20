@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/api/api_models.dart';
+import '../services/notification_service.dart';
 import 'auth_controller.dart';
 import 'controller_helpers.dart';
 import 'controller_state.dart';
@@ -39,11 +40,23 @@ class DashboardController
         return;
       }
 
+      final data = result.requireData;
       state = state.copyWith(
         isLoading: false,
         errorMessage: null,
-        data: result.requireData,
+        data: data,
       );
+
+      // Check over budget notification trigger
+      if (data.monthlyBudget > 0) {
+        final totalSpent = data.monthlyBudget - data.budgetRemaining;
+        if (totalSpent >= data.monthlyBudget) {
+          NotificationService().notifyOverBudget(
+            totalSpending: totalSpent,
+            monthlyBudget: data.monthlyBudget,
+          );
+        }
+      }
     } catch (error) {
       state = state.copyWith(
         isLoading: false,
