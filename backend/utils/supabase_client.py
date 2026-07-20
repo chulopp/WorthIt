@@ -850,11 +850,11 @@ def get_substitutes(
 
 
 def update_user_display_name(user_id: str, display_name: str) -> dict | None:
-    """Update display_name user di tabel users."""
+    """Update display_name & full_name user di tabel users."""
     sb = get_supabase()
     res = _safe_execute(
         sb.table("users")
-        .update({"display_name": display_name})
+        .update({"display_name": display_name, "full_name": display_name})
         .eq("id", user_id)
     )
     return res.data[0] if res.data else None

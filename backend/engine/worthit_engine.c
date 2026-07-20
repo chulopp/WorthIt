@@ -154,8 +154,12 @@ float calculate_resistance(float* prices, int count) {
 float calculate_sr_position(float current_price, float support, float resistance) {
     float range = resistance - support;
 
-    /* Edge case: pasar flat (tidak ada volatilitas), posisi netral */
-    if (range <= 0.0f) return 50.0f;
+    /* Edge case: pasar flat (support == resistance) */
+    if (range <= 0.0f) {
+        if (current_price > resistance) return 100.0f;
+        if (current_price < support)    return 0.0f;
+        return 50.0f;
+    }
 
     float position = (current_price - support) / range * 100.0f;
 

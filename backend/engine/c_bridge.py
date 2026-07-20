@@ -137,7 +137,11 @@ def compute_sr_position(current: float, support: float, resistance: float) -> fl
         ))
 
     # Fallback Python
-    if resistance == support:
+    if resistance <= support:
+        if current > resistance:
+            return 100.0
+        if current < support:
+            return 0.0
         return 50.0
     pos = (current - support) / (resistance - support) * 100.0
     return max(0.0, min(100.0, pos))

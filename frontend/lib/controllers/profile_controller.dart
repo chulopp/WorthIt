@@ -129,13 +129,13 @@ class ProfileUsernameNotifier extends AsyncNotifier<String> {
       // Non-fatal: proceed to save locally anyway
     }
 
-    // 2. Also update Supabase users table directly (legacy path)
+    // 2. Also update Supabase users table directly
     final user = Supabase.instance.client.auth.currentUser;
     if (user != null) {
       try {
         await Supabase.instance.client
             .from('users')
-            .update({'display_name': trimmed})
+            .update({'display_name': trimmed, 'full_name': trimmed})
             .eq('id', user.id);
       } catch (_) {}
     }
