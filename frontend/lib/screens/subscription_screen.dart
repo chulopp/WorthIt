@@ -2,6 +2,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
+
 import '../controllers/repository_providers.dart';
 import '../services/auth_service.dart';
 import '../utils/snackbar_helper.dart';
@@ -134,6 +135,7 @@ class _SubscriptionScreenState extends ConsumerState<SubscriptionScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
+            // Header
             Text(
               'choose_best_plan'.tr(),
               textAlign: TextAlign.center,
@@ -156,6 +158,7 @@ class _SubscriptionScreenState extends ConsumerState<SubscriptionScreen> {
             ),
             const SizedBox(height: 28),
 
+            // Tier Switcher
             Container(
               padding: const EdgeInsets.all(4),
               decoration: BoxDecoration(
@@ -189,6 +192,7 @@ class _SubscriptionScreenState extends ConsumerState<SubscriptionScreen> {
 
             if (_isPro) ...[
               const SizedBox(height: 16),
+              // Cycle Switcher
               Container(
                 padding: const EdgeInsets.all(4),
                 decoration: BoxDecoration(
@@ -222,6 +226,7 @@ class _SubscriptionScreenState extends ConsumerState<SubscriptionScreen> {
             ],
             const SizedBox(height: 24),
 
+            // Main Pricing Card
             AnimatedContainer(
               duration: const Duration(milliseconds: 300),
               curve: Curves.easeInOut,
@@ -254,11 +259,97 @@ class _SubscriptionScreenState extends ConsumerState<SubscriptionScreen> {
                         right: 0,
                         child: Container(
                           padding: const EdgeInsets.symmetric(
-                                offset: const Offset(0, 6),
+                            horizontal: 16,
+                            vertical: 6,
+                          ),
+                          decoration: const BoxDecoration(
+                            color: darkGreen,
+                            borderRadius: BorderRadius.only(
+                              bottomLeft: Radius.circular(16),
+                            ),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(
+                                Icons.star,
+                                color: lightGreen,
+                                size: 14,
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                'best_seller'.tr(),
+                                style: GoogleFonts.outfit(
+                                  color: lightGreen,
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 11,
+                                ),
                               ),
                             ],
                           ),
-                          child: Column(
+                        ),
+                      ),
+                    Padding(
+                      padding: const EdgeInsets.all(28),
+                      child: Column(
+                        children: [
+                          // Badge Title
+                          Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(10),
+                                decoration: BoxDecoration(
+                                  color: _isPro
+                                      ? darkGreen
+                                      : Colors.grey.shade100,
+                                  borderRadius: BorderRadius.circular(14),
+                                ),
+                                child: Icon(
+                                  _isPro
+                                      ? Icons.workspace_premium
+                                      : Icons.flash_on,
+                                  color: _isPro
+                                      ? lightGreen
+                                      : Colors.grey.shade600,
+                                  size: 24,
+                                ),
+                              ),
+                              const SizedBox(width: 14),
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    _isPro
+                                        ? 'WorthIt Pro'
+                                        : 'WorthIt Starter',
+                                    style: GoogleFonts.bricolageGrotesque(
+                                      color: textPrimary,
+                                      fontWeight: FontWeight.w800,
+                                      fontSize: 20,
+                                    ),
+                                  ),
+                                  Text(
+                                    _isPro
+                                        ? (_isYearly
+                                              ? 'Paket Hemat Tahunan'
+                                              : 'Paket Fleksibel Bulanan')
+                                        : 'free_forever'.tr(),
+                                    style: GoogleFonts.outfit(
+                                      color: Colors.grey.shade500,
+                                      fontWeight: FontWeight.w500,
+                                      fontSize: 13,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 24),
+
+                          // Animated Price Counter
+                          Row(
+                            crossAxisAlignment: CrossBaseline.alphabetic,
+                            textBaseline: TextBaseline.alphabetic,
                             children: [
                               TweenAnimationBuilder<double>(
                                 tween: Tween<double>(
@@ -266,157 +357,113 @@ class _SubscriptionScreenState extends ConsumerState<SubscriptionScreen> {
                                   end: _currentPrice,
                                 ),
                                 duration: const Duration(milliseconds: 400),
-                                builder: (context, value, child) => Text(
-                                  _formatPrice(value),
-                                  style: GoogleFonts.bricolageGrotesque(
-                                    color: _isPro ? lightGreen : textPrimary,
-                                    fontWeight: FontWeight.w800,
-                                    fontSize: 40,
-                                  ),
+                                curve: Curves.easeOutCubic,
+                                builder: (context, val, child) {
+                                  return Text(
+                                    _formatPrice(val),
+                                    style: GoogleFonts.bricolageGrotesque(
+                                      color: darkGreen,
+                                      fontWeight: FontWeight.w800,
+                                      fontSize: 36,
+                                      letterSpacing: -1,
+                                    ),
+                                  );
+                                },
+                              ),
+                              const SizedBox(width: 6),
+                              Text(
+                                _cycleText,
+                                style: GoogleFonts.outfit(
+                                  color: Colors.grey.shade500,
+                                  fontWeight: FontWeight.w500,
+                                  fontSize: 14,
                                 ),
                               ),
-                              if (_isPro)
-                                Text(
-                                  _cycleText,
-                                  style: GoogleFonts.outfit(
-                                    color: lightGreen.withValues(alpha: 0.7),
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                              if (!_isPro) ...[
-                                const SizedBox(height: 4),
-                                Text(
-                                  'free_forever'.tr(),
-                                  style: GoogleFonts.outfit(
-                                    color: Colors.grey.shade500,
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                              ],
                             ],
                           ),
-                        ),
+                          const SizedBox(height: 24),
 
-                        // "Paling Laris" Badge
-                        if (_showBestSeller)
-                          Positioned(
-                            top: -12,
-                            right: 16,
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 12,
-                                vertical: 6,
-                              ),
-                              decoration: BoxDecoration(
-                                gradient: const LinearGradient(
-                                  colors: [
-                                    Color(0xFFFF9800),
-                                    Color(0xFFFFC107),
-                                  ],
-                                ),
-                                borderRadius: BorderRadius.circular(20),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: const Color(
-                                      0xFFFF9800,
-                                    ).withValues(alpha: 0.3),
-                                    blurRadius: 8,
-                                    offset: const Offset(0, 2),
-                                  ),
-                                ],
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  const Icon(
-                                    Icons.local_fire_department,
-                                    color: Colors.white,
-                                    size: 14,
-                                  ),
-                                  const SizedBox(width: 4),
-                                  Text(
-                                    'best_seller'.tr(),
-                                    style: GoogleFonts.outfit(
-                                      color: Colors.white,
-                                      fontWeight: FontWeight.w700,
-                                      fontSize: 11,
-                                    ),
-                                  ),
-                                ],
+                          const Divider(height: 1),
+                          const SizedBox(height: 24),
+
+                          // Benefits List
+                          Align(
+                            alignment: Alignment.centerLeft,
+                            child: Text(
+                              _isPro
+                                  ? 'all_you_get'.tr()
+                                  : 'basic_features'.tr(),
+                              style: GoogleFonts.outfit(
+                                color: textPrimary,
+                                fontWeight: FontWeight.w700,
+                                fontSize: 15,
                               ),
                             ),
                           ),
-                      ],
-                    ),
-                    const SizedBox(height: 28),
+                          const SizedBox(height: 16),
+                          if (_isPro) ...[
+                            _buildBenefitItem('unlimited_scan'.tr(), true),
+                            _buildBenefitItem(
+                              'premium_ai_analysis'.tr(),
+                              true,
+                            ),
+                            _buildBenefitItem(
+                              'smart_product_recommendation'.tr(),
+                              true,
+                            ),
+                            _buildBenefitItem('export_pdf_report'.tr(), true),
+                            _buildBenefitItem('priority_access'.tr(), true),
+                          ] else ...[
+                            _buildBenefitItem('limited_scan'.tr(), false),
+                            _buildBenefitItem(
+                              'basic_price_analysis'.tr(),
+                              false,
+                            ),
+                            _buildBenefitItem(
+                              'smart_product_recommendation'.tr(),
+                              false,
+                            ),
+                            _buildBenefitItem('shopping_list'.tr(), false),
+                          ],
+                          const SizedBox(height: 28),
 
-                    // Benefits List
-                    Align(
-                      alignment: Alignment.centerLeft,
-                      child: Text(
-                        _isPro ? 'all_you_get'.tr() : 'basic_features'.tr(),
-                        style: GoogleFonts.outfit(
-                          color: textPrimary,
-                          fontWeight: FontWeight.w700,
-                          fontSize: 15,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    if (_isPro) ...[
-                      _buildBenefitItem('unlimited_scan'.tr(), true),
-                      _buildBenefitItem('premium_ai_analysis'.tr(), true),
-                      _buildBenefitItem(
-                        'smart_product_recommendation'.tr(),
-                        true,
-                      ),
-                      _buildBenefitItem('export_pdf_report'.tr(), true),
-                      _buildBenefitItem('priority_access'.tr(), true),
-                    ] else ...[
-                      _buildBenefitItem('limited_scan'.tr(), false),
-                      _buildBenefitItem('basic_price_analysis'.tr(), false),
-                      _buildBenefitItem(
-                        'smart_product_recommendation'.tr(),
-                        false,
-                      ),
-                      _buildBenefitItem('shopping_list'.tr(), false),
-                    ],
-                    const SizedBox(height: 28),
-
-                    // CTA Button
-                    SizedBox(
-                      width: double.infinity,
-                      height: 56,
-                      child: ElevatedButton(
-                        onPressed: _isLoading ? null : _handleUpgradeOrContinue,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: lightGreen,
-                          foregroundColor: darkGreen,
-                          elevation: 0,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                        ),
-                        child: _isLoading
-                            ? const SizedBox(
-                                width: 24,
-                                height: 24,
-                                child: CircularProgressIndicator(
-                                  color: darkGreen,
-                                  strokeWidth: 2.5,
-                                ),
-                              )
-                            : Text(
-                                _isPro
-                                    ? 'subscribe_pro'.tr()
-                                    : 'continue_free'.tr(),
-                                style: GoogleFonts.bricolageGrotesque(
-                                  fontWeight: FontWeight.w800,
-                                  fontSize: 16,
+                          // CTA Button
+                          SizedBox(
+                            width: double.infinity,
+                            height: 56,
+                            child: ElevatedButton(
+                              onPressed: _isLoading
+                                  ? null
+                                  : _handleUpgradeOrContinue,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: lightGreen,
+                                foregroundColor: darkGreen,
+                                elevation: 0,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(16),
                                 ),
                               ),
+                              child: _isLoading
+                                  ? const SizedBox(
+                                      width: 24,
+                                      height: 24,
+                                      child: CircularProgressIndicator(
+                                        color: darkGreen,
+                                        strokeWidth: 2.5,
+                                      ),
+                                    )
+                                  : Text(
+                                      _isPro
+                                          ? 'subscribe_pro'.tr()
+                                          : 'continue_free'.tr(),
+                                      style: GoogleFonts.bricolageGrotesque(
+                                        fontWeight: FontWeight.w800,
+                                        fontSize: 16,
+                                      ),
+                                    ),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ],

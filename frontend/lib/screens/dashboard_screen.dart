@@ -282,7 +282,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       greetingText = 'greeting_night'.tr();
     }
     final authService = AuthService();
-    final customName = ref.watch(profileUsernameProvider).valueOrNull;
+    final customName = ref.watch(profileUsernameProvider).asData?.value;
     final String name;
     if (!authService.isLoggedIn.value) {
       name = 'guest'.tr();
