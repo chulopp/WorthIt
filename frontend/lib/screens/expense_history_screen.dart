@@ -12,8 +12,9 @@ import '../models/dashboard_data.dart';
 import '../models/api/api_models.dart';
 import '../widgets/total_expenses_card.dart';
 import '../widgets/product_detail_sheet.dart';
-import '../widgets/decision_badge.dart';
 import '../widgets/empty_activity_state.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import '../controllers/notification_controller.dart';
 import '../services/auth_service.dart';
 import '../services/notification_service.dart';
 import '../utils/pdf_generator.dart';
@@ -151,16 +152,24 @@ class _ExpenseHistoryScreenState extends ConsumerState<ExpenseHistoryScreen> {
       name: 'WorthIt_Expense_Report',
     );
     NotificationService().notifyPdfDownloadSuccess();
-  }
 
-  String _formatRp(double v) {
-    final s = v.toStringAsFixed(0);
-    final buf = StringBuffer();
-    for (var i = 0; i < s.length; i++) {
-      if (i > 0 && (s.length - i) % 3 == 0) buf.write('.');
-      buf.write(s[i]);
+    // Persist notification to Supabase DB so it survives app restarts
+    final user = Supabase.instance.client.auth.currentUser;
+    if (user != null) {
+      try {
+        await Supabase.instance.client.from('notifications').insert({
+          'user_id': user.id,
+          'title': 'Laporan PDF Berhasil Diunduh',
+          'body': 'Laporan pengeluaran bulanan Anda telah berhasil diekspor.',
+          'type': 'PDF_DOWNLOAD',
+          'is_read': false,
+        });
+        // Refresh notification list in UI
+        if (mounted) {
+          ref.read(notificationControllerProvider.notifier).refresh();
+        }
+      } catch (_) {}
     }
-    return 'Rp $buf';
   }
 
   DashboardData _dashboardFromPurchases(
@@ -283,7 +292,7 @@ class _ExpenseHistoryScreenState extends ConsumerState<ExpenseHistoryScreen> {
                   ),
                   child: Center(
                     child: Text(
-                      historyErrorMessage!,
+                      historyErrorMessage,
                       textAlign: TextAlign.center,
                       style: GoogleFonts.bricolageGrotesque(
                         fontSize: 16,
@@ -352,7 +361,6 @@ class _ActivityTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     const Color textPrimary = Color(0xFF1E293B);
-    final decisionCode = decisionCodeFromColor(item.color);
 
     return InkWell(
       onTap: () {
@@ -380,7 +388,7 @@ class _ActivityTile extends StatelessWidget {
                 borderRadius: BorderRadius.circular(12),
               ),
               clipBehavior: Clip.antiAlias,
-              child: item.imageUrl != null && item.imageUrl!.isNotEmpty
+              child: item.imageUrl?.isNotEmpty == true
                   ? CachedNetworkImage(
                       imageUrl: item.imageUrl!,
                       fit: BoxFit.cover,

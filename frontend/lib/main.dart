@@ -59,7 +59,6 @@ class WorthItApp extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     // ── New Design System Colors ─────────────────────────────────────
     const Color darkGreen = Color(0xFF304423);
-    const Color lightGreen = Color(0xFFC9E88A);
 
     // Light Theme Colors
     const Color bgLight = Color(0xFFF8F9FA);

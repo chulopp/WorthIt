@@ -437,41 +437,6 @@ class AboutScreen extends StatelessWidget {
     );
   }
 
-  // ── HELPER: Stat Pill ──
-  Widget _buildStatPill(String value, String label) {
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 16),
-        decoration: BoxDecoration(
-          color: _worthItGreen.withValues(alpha: 0.07),
-          borderRadius: BorderRadius.circular(14),
-        ),
-        child: Column(
-          children: [
-            Text(
-              value,
-              style: GoogleFonts.bricolageGrotesque(
-                color: _bgDark,
-                fontWeight: FontWeight.bold,
-                fontSize: 20,
-              ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              label,
-              textAlign: TextAlign.center,
-              style: GoogleFonts.bricolageGrotesque(
-                color: Colors.grey.shade600,
-                fontSize: 10,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
   // ── HELPER: Team Member ──
   Widget _buildTeamMember({
     required String svgPath,
@@ -560,18 +525,5 @@ class AboutScreen extends StatelessWidget {
 
   bool _needsInlineTrailingSpace(String text) {
     return text.isNotEmpty && !RegExp(r'^\s').hasMatch(text);
-  }
-
-  // ── HELPER: Social Icon ──
-  Widget _buildSocialIcon(IconData icon) {
-    return Container(
-      width: 42,
-      height: 42,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
-      ),
-      child: Icon(icon, color: Colors.white.withValues(alpha: 0.7), size: 20),
-    );
   }
 }

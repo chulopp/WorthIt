@@ -80,7 +80,12 @@ class ProfileUsernameNotifier extends AsyncNotifier<String> {
     final prefs = await SharedPreferences.getInstance();
     final cached = prefs.getString('username');
     if (cached != null && cached.isNotEmpty) {
-      Future.microtask(() => fetchUsername());
+      Future.microtask(() async {
+        try {
+          final fresh = await fetchUsername();
+          state = AsyncValue.data(fresh);
+        } catch (_) {}
+      });
       return cached;
     }
     return fetchUsername();

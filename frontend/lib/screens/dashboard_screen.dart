@@ -26,7 +26,6 @@ import '../controllers/auth_controller.dart';
 import '../config/product_categories.dart';
 import '../models/api/api_models.dart';
 import '../widgets/product_detail_sheet.dart';
-import '../widgets/decision_badge.dart';
 import '../widgets/empty_activity_state.dart';
 import '../utils/dialog_helper.dart';
 import '../utils/date_helper.dart';
@@ -256,18 +255,6 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               : sum,
         );
   }
-
-  IconData _categoryIcon(String color) => switch (color) {
-    'green' => Icons.check_circle_outline,
-    'red' => Icons.warning_amber_rounded,
-    _ => Icons.info_outline,
-  };
-
-  Color _dotColor(String c) => switch (c) {
-    'green' => const Color(0xFFC9E88A),
-    'red' => const Color(0xFFEF4444),
-    _ => const Color(0xFFFBBF24),
-  };
 
   String _buildGreeting({bool compact = false}) {
     final hour = DateTime.now().hour;
@@ -1043,9 +1030,6 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     );
     final totalBelowNormalPrice = data.totalBelowNormalPrice;
     final totalBelowNormalMessage = data.totalBelowNormalMessage;
-
-    const Color accentGreen = Color(0xFFC9E88A);
-
     const Color textPrimary = Color(0xFF1E293B);
     const Color textSecondary = Color(0xFF64748B);
     const Color sheetWhite = Color(0xFFFFFFFF);
@@ -2084,7 +2068,6 @@ class _ActivityTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     const Color textPrimary = Color(0xFF1E293B);
-    final decisionCode = decisionCodeFromColor(item.color);
 
     return InkWell(
       onTap: () {
@@ -2112,7 +2095,7 @@ class _ActivityTile extends StatelessWidget {
                 borderRadius: BorderRadius.circular(12),
               ),
               clipBehavior: Clip.antiAlias,
-              child: item.imageUrl != null && item.imageUrl!.isNotEmpty
+              child: item.imageUrl?.isNotEmpty == true
                   ? CachedNetworkImage(
                       imageUrl: item.imageUrl!,
                       fit: BoxFit.cover,

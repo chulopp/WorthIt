@@ -9,7 +9,6 @@ import '../controllers/product_detail_controller.dart';
 import '../controllers/profile_controller.dart';
 import '../controllers/shopping_list_controller.dart';
 import '../controllers/tracker_controller.dart';
-import '../widgets/dialogs.dart';
 import '../widgets/subscription_badge.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'about_screen.dart';

@@ -17,7 +17,6 @@ import '../models/api/api_models.dart';
 import '../services/api_client.dart';
 import '../utils/image_compression.dart';
 import '../utils/snackbar_helper.dart';
-import '../widgets/product_analysis_sheet.dart';
 
 class _ScanApiResult {
   final String productName;
@@ -74,15 +73,8 @@ class _ScannerScreenState extends State<ScannerScreen>
 
   // ── Scan State ──
   bool _isScanning = false;
-  bool _isFrozen = false;
   bool _isFlashOn = false;
   String _scanStatusText = '';
-  String _detectedItemName = '';
-  int? _detectedItemPrice;
-  String _detectedItemWeight = '';
-  int _detectedItemWeightUnitIndex = 0;
-  String? _detectedItemCategoryKey;
-  String _lastOcrText = '';
 
   // ── Animations ──
   late AnimationController _pulseController;
@@ -165,7 +157,6 @@ class _ScannerScreenState extends State<ScannerScreen>
 
     setState(() {
       _isScanning = true;
-      _isFrozen = true;
       _scanStatusText = 'scanner_reading_price_text'.tr();
     });
     _scanLineController.repeat();
@@ -178,15 +169,14 @@ class _ScannerScreenState extends State<ScannerScreen>
         _showScannerMessage('Gagal membaca gambar. Coba arahkan kamera lagi.');
       }
     } finally {
-      if (!mounted) return;
-      _scanLineController.stop();
-      _scanLineController.reset();
-
-      setState(() {
-        _isScanning = false;
-        _isFrozen = false;
-        _scanStatusText = '';
-      });
+      if (mounted) {
+        _scanLineController.stop();
+        _scanLineController.reset();
+        setState(() {
+          _isScanning = false;
+          _scanStatusText = '';
+        });
+      }
     }
   }
 
@@ -201,7 +191,6 @@ class _ScannerScreenState extends State<ScannerScreen>
 
     setState(() {
       _isScanning = true;
-      _isFrozen = true;
       _scanStatusText = 'scanner_reading_gallery_text'.tr();
     });
 
@@ -212,12 +201,12 @@ class _ScannerScreenState extends State<ScannerScreen>
         _showScannerMessage('Gagal membaca gambar dari galeri.');
       }
     } finally {
-      if (!mounted) return;
-      setState(() {
-        _isScanning = false;
-        _isFrozen = false;
-        _scanStatusText = '';
-      });
+      if (mounted) {
+        setState(() {
+          _isScanning = false;
+          _scanStatusText = '';
+        });
+      }
     }
   }
 
@@ -227,14 +216,6 @@ class _ScannerScreenState extends State<ScannerScreen>
       final categoryKey = _categoryKeyFromBackend(scanResult.category);
 
       if (!mounted) return;
-      setState(() {
-        _detectedItemName = scanResult.productName;
-        _detectedItemPrice = scanResult.price;
-        _detectedItemWeight = _formatWeightGram(scanResult.weightGram);
-        _detectedItemWeightUnitIndex = 0;
-        _detectedItemCategoryKey = categoryKey;
-        _lastOcrText = scanResult.productName;
-      });
 
       _showReviewBottomSheet(
         prefillName: scanResult.productName,
@@ -312,43 +293,6 @@ class _ScannerScreenState extends State<ScannerScreen>
     return buffer.toString();
   }
 
-  void _showProductAnalysisBottomSheet() {
-    final itemName = _detectedItemName.isNotEmpty
-        ? _detectedItemName
-        : 'Produk';
-    final itemPrice = _detectedItemPrice ?? 0;
-
-    showProductAnalysisSheet(
-      context,
-      item: {
-        'name': itemName,
-        'price': itemPrice.toString(),
-        'status': 'scanned',
-        'score': '78',
-        'decision': 'Hasil OCR',
-        'category': 'Hasil Scan',
-        'urgency': 'Sedang',
-        'weight': '',
-        'icon': _getItemIcon(itemName),
-        'ocrText': _lastOcrText,
-      },
-    );
-  }
-
-  IconData _getItemIcon(String name) {
-    final normalized = name.toLowerCase();
-    if (normalized.contains('mie')) return Icons.fastfood;
-    if (normalized.contains('susu')) return Icons.emoji_food_beverage;
-    if (normalized.contains('beras')) return Icons.rice_bowl;
-    if (normalized.contains('minyak')) return Icons.water_drop;
-    if (normalized.contains('kopi')) return Icons.coffee;
-    if (normalized.contains('snack') ||
-        normalized.contains('keripik') ||
-        normalized.contains('chitato')) {
-      return Icons.cookie;
-    }
-    return Icons.shopping_bag;
-  }
 
   void _showScannerMessage(String message) {
     SnackbarHelper.showTopSnackbar(

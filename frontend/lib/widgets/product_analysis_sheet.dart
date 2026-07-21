@@ -27,7 +27,13 @@ void showProductAnalysisSheet(
   BuildContext context, {
   required Map<String, dynamic> item,
 }) {
-  bool isFavorite = false;
+  // Read initial favorite state directly from provider if product_id is available,
+  // so the star icon is correct immediately when the sheet opens.
+  final productIdFromItem = item['product_id']?.toString() ?? '';
+  final container = ProviderScope.containerOf(context, listen: false);
+  bool isFavorite = productIdFromItem.isNotEmpty
+      ? container.read(favoriteControllerProvider).isFavorite(productIdFromItem)
+      : false;
   final String productName = item['name'] as String? ?? 'Produk';
 
   showModalBottomSheet(

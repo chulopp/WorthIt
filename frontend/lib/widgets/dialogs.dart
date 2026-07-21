@@ -4,7 +4,6 @@ import 'package:easy_localization/easy_localization.dart';
 
 // ── Brand Colors ─────────────────────────────────────────────────────────────
 const Color _darkGreen = Color(0xFF304423);
-const Color _accentGreen = Color(0xFFC9E88A);
 
 // ═════════════════════════════════════════════════════════════════════════════
 //  LOGOUT DIALOG
