@@ -24,17 +24,15 @@ tasks.register<Delete>("clean") {
 }
 
 subprojects {
-    afterEvaluate {
-        tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
-            compilerOptions {
-                val currentLang = languageVersion.orNull?.name
-                if (currentLang == "KOTLIN_1_6" || currentLang == "1.6") {
-                    languageVersion.set(org.jetbrains.kotlin.gradle.dsl.KotlinVersion.KOTLIN_1_8)
-                }
-                val currentApi = apiVersion.orNull?.name
-                if (currentApi == "KOTLIN_1_6" || currentApi == "1.6") {
-                    apiVersion.set(org.jetbrains.kotlin.gradle.dsl.KotlinVersion.KOTLIN_1_8)
-                }
+    tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
+        compilerOptions {
+            val currentLang = languageVersion.orNull?.name
+            if (currentLang == "KOTLIN_1_6" || currentLang == "1.6") {
+                languageVersion.set(org.jetbrains.kotlin.gradle.dsl.KotlinVersion.KOTLIN_1_8)
+            }
+            val currentApi = apiVersion.orNull?.name
+            if (currentApi == "KOTLIN_1_6" || currentApi == "1.6") {
+                apiVersion.set(org.jetbrains.kotlin.gradle.dsl.KotlinVersion.KOTLIN_1_8)
             }
         }
     }
