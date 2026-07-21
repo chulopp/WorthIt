@@ -58,6 +58,7 @@ dependencies:
   cached_network_image: ^3.4.1
   flutter_local_notifications: ^17.0.0
   permission_handler: ^11.3.0
+  sentry_flutter: ^8.14.2
 
 
 dev_dependencies:

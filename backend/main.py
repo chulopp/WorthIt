@@ -26,8 +26,17 @@ Arsitektur Error Response:
 
 from __future__ import annotations
 
+import os
 import logging
 import traceback
+import sentry_sdk
+
+sentry_dsn = os.getenv("SENTRY_DSN")
+if sentry_dsn:
+    sentry_sdk.init(
+        dsn=sentry_dsn,
+        traces_sample_rate=1.0,
+    )
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.exceptions import RequestValidationError
@@ -84,12 +93,12 @@ Token diperoleh dari Supabase Google OAuth flow di sisi Flutter client.
 )
 
 # ─── CORS Middleware ───────────────────────────────────────────────────────────
-# TODO (production): Ganti allow_origins=["*"] dengan daftar domain spesifik
-# (Dev Tunnel URL, domain production) untuk mencegah cross-origin abuse.
+# Load allowed origins from environment variable, default to wildcard for local dev convenience
+allowed_origins = [orig.strip() for orig in os.getenv("ALLOWED_ORIGINS", "*").split(",") if orig.strip()]
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=allowed_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

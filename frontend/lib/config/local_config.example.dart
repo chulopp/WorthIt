@@ -6,4 +6,7 @@ class LocalConfig {
 
   // Leave empty to use localhost on iOS/web/desktop and 10.0.2.2 on Android emulator.
   static const apiBaseUrl = 'http://192.168.1.10:8000';
+
+  // Sentry production error monitoring DSN key
+  static const sentryDsn = '';
 }

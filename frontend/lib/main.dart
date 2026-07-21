@@ -14,6 +14,8 @@ import 'services/notification_service.dart';
 import 'services/privacy_service.dart';
 import 'services/auth_service.dart';
 import 'screens/auth_route_guard.dart';
+import 'package:sentry_flutter/sentry_flutter.dart';
+import 'config/sentry_config.dart';
 
 void main() async {
   WidgetsBinding widgetsBinding = WidgetsFlutterBinding.ensureInitialized();
@@ -39,17 +41,38 @@ void main() async {
   await AuthService().init();
   await PrivacyService().init();
   await NotificationService().init();
-  runApp(
-    ProviderScope(
-      child: EasyLocalization(
-        supportedLocales: const [Locale('id', 'ID'), Locale('en', 'US')],
-        path: 'assets/translations',
-        fallbackLocale: const Locale('id', 'ID'),
-        useOnlyLangCode: true,
-        child: const WorthItApp(),
+
+  if (SentryConfig.isEnabled) {
+    await SentryFlutter.init(
+      (options) {
+        options.dsn = SentryConfig.dsn;
+        options.tracesSampleRate = 1.0;
+      },
+      appRunner: () => runApp(
+        ProviderScope(
+          child: EasyLocalization(
+            supportedLocales: const [Locale('id', 'ID'), Locale('en', 'US')],
+            path: 'assets/translations',
+            fallbackLocale: const Locale('id', 'ID'),
+            useOnlyLangCode: true,
+            child: const WorthItApp(),
+          ),
+        ),
       ),
-    ),
-  );
+    );
+  } else {
+    runApp(
+      ProviderScope(
+        child: EasyLocalization(
+          supportedLocales: const [Locale('id', 'ID'), Locale('en', 'US')],
+          path: 'assets/translations',
+          fallbackLocale: const Locale('id', 'ID'),
+          useOnlyLangCode: true,
+          child: const WorthItApp(),
+        ),
+      ),
+    );
+  }
 }
 
 class WorthItApp extends ConsumerWidget {
