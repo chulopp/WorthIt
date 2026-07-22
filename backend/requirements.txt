@@ -64,3 +64,7 @@ websockets==15.0.1
 yarl==1.22.0
 apscheduler==3.11.0
 sentry-sdk[fastapi]==2.12.0
+sentence-transformers
+torch
+numpy
+

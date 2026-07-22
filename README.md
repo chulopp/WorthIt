@@ -186,6 +186,7 @@ Salin URL yang diberikan (format: `https://XXXX-8000.devtunnels.ms`) dan masukka
 
 ```
 WorthIt/
+├── docs/                       # Panduan rilis Android & rencana upgrade infrastruktur (Modul A-D)
 ├── frontend/                   # Flutter App
 │   └── lib/
 │       ├── config/             # Konfigurasi (Supabase URL, API URL)
@@ -198,16 +199,17 @@ WorthIt/
 │       └── widgets/            # Reusable UI components
 │
 ├── backend/                    # Python FastAPI Backend
-│   ├── core/                   # Security (JWT), Categories
-│   ├── engine/                 # C-Engine bridge, WMA scoring
+│   ├── core/                   # Security (JWT), Categories, Embedding Engine
+│   ├── engine/                 # C-Engine bridge, WMA scoring, Similarity
 │   ├── models/                 # Pydantic request/response models
 │   ├── routers/                # API endpoints (analyze, scan, shopping, dll.)
-│   ├── scripts/                # Alfagift scraper & data import tools
+│   ├── scripts/                # Alfagift scraper, populate embeddings, benchmark evaluators
 │   ├── utils/                  # Supabase client singleton
 │   ├── main.py                 # FastAPI app entrypoint
 │   └── requirements.txt
 │
-└── supabase_*.sql              # Schema & migration SQL files
+└── supabase/migrations/        # Schema & migration SQL files (termasuk pgvector migration)
+
 ```
 
 ---
@@ -254,6 +256,7 @@ Untuk setup database baru, jalankan file SQL migrasi di folder root secara berur
 | Flutter Frontend | 🟡 In Development |
 | FastAPI Backend | 🟡 In Development |
 | C-Engine (Scoring) | ✅ Selesai |
+| ML Substitution Engine (Modul D) | ✅ Selesai |
 | Alfagift Scraper | 🟡 In Development |
 | OCR (Gemini Vision) | ✅ Selesai |
 | Supabase Auth (Google Sign-In) | ✅ Selesai |
@@ -261,6 +264,7 @@ Untuk setup database baru, jalankan file SQL migrasi di folder root secara berur
 | Expense Tracker | ✅ Selesai |
 | Push Notifications | 🔴 Belum |
 | Production Deployment | 🔴 Belum |
+
 
 ---
 

@@ -1,0 +1,25 @@
+{
+  "sample_count": 30,
+  "metrics": {
+    "latency_ms": {
+      "legacy": 417.13,
+      "ml_hybrid": 621.94
+    },
+    "coverage_percent": {
+      "legacy": 96.7,
+      "ml_hybrid": 96.7
+    },
+    "cross_category_error_count": {
+      "legacy": 0,
+      "ml_hybrid": 0
+    },
+    "size_similarity_index": {
+      "legacy": 0.4149,
+      "ml_hybrid": 0.6234
+    },
+    "avg_savings_realized_percent": {
+      "legacy": 12.42,
+      "ml_hybrid": 29.83
+    }
+  }
+}

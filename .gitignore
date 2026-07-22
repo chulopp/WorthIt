@@ -31,6 +31,7 @@ backend/scraper_profile/
 .pub/
 /build/
 /frontend/build/
+frontend/android/build/
 /coverage/
 flutter_*.log
 

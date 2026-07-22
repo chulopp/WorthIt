@@ -948,18 +948,12 @@ def find_product_by_name(name: str) -> dict | None:
 
 # ─── Substitute Products ──────────────────────────────────────────────────────
 
-def get_substitutes(
+def _get_substitutes_legacy(
     product_id: str,
     category: str,
     scanned_price: float,
 ) -> list[dict]:
-    """
-    Cari produk pengganti dalam kategori yang sama:
-    - Harga 5-20% lebih murah dari scanned_price
-    - Urutkan dari yang paling murah per unit (harga/berat)
-    - Max 3 hasil
-    - Exclude produk yang sama (by id)
-    """
+    """Fallback legacy rule-based candidate search."""
     if not category or scanned_price <= 0:
         return []
 
@@ -978,12 +972,11 @@ def get_substitutes(
     if not category_products:
         return []
 
-    # Ambil harga terbaru semua produk dalam satu batch
     all_ids = [p["id"] for p in category_products]
     prices = latest_prices_by_product(all_ids)
 
-    lower_bound = scanned_price * 0.80  # 20% lebih murah max
-    upper_bound = scanned_price * 0.95  # 5% lebih murah min
+    lower_bound = scanned_price * 0.80
+    upper_bound = scanned_price * 0.95
 
     candidates = []
     for prod in category_products:
@@ -991,7 +984,6 @@ def get_substitutes(
         price = prices.get(pid)
         if price is None or price <= 0:
             continue
-        # Filter: 5-20% lebih murah
         if not (lower_bound <= price <= upper_bound):
             continue
 
@@ -1009,11 +1001,102 @@ def get_substitutes(
             "price_per_unit": price_per_unit,
             "image_url":      prod.get("image_url"),
             "savings_percent": savings_pct,
+            "is_ml_recommendation": False,
         })
 
-    # Urutkan dari paling murah per unit
     candidates.sort(key=lambda x: x["price_per_unit"] if x["price_per_unit"] > 0 else float("inf"))
-    return candidates[:3]
+    return candidates
+
+
+def get_substitutes(
+    product_id: str,
+    category: str,
+    scanned_price: float,
+) -> list[dict]:
+    """
+    Cari produk pengganti berbasis ML Hybrid (pgvector + multi-factor rescoring).
+    Jika kandidat ML < 3, dilanjutkan dengan graceful degradation fallback (rule-based).
+    """
+    if not category or scanned_price <= 0:
+        return []
+
+    ml_candidates: list[dict] = []
+    sb = get_supabase()
+
+    try:
+        # 1. Ambil detail target produk
+        target_res = _safe_execute(
+            sb.table("products")
+            .select("id, name, brand, category, base_weight_gram, unit_label, embedding")
+            .eq("id", product_id)
+            .limit(1)
+        )
+        target_prod = target_res.data[0] if target_res.data else None
+
+        if target_prod:
+            scanned_weight = float(target_prod.get("base_weight_gram") or 0)
+            target_embedding = target_prod.get("embedding")
+
+            # Jika embedding belum ada di DB, generate on-the-fly untuk target produk
+            if not target_embedding:
+                from core.embedding_engine import format_product_text, generate_embedding
+                text = format_product_text(
+                    name=target_prod.get("name") or "",
+                    brand=target_prod.get("brand"),
+                    category=target_prod.get("category"),
+                    unit_label=target_prod.get("unit_label"),
+                )
+                target_embedding = generate_embedding(text)
+
+            if target_embedding:
+                # 2. Query pgvector RPC match_products_by_embedding
+                rpc_res = sb.rpc(
+                    "match_products_by_embedding",
+                    {
+                        "query_embedding": target_embedding,
+                        "match_threshold": 0.70,
+                        "match_count": 20,
+                        "filter_category": category,
+                        "exclude_id": product_id,
+                    }
+                ).execute()
+
+                raw_matches = rpc_res.data or []
+
+                if raw_matches:
+                    match_ids = [m["id"] for m in raw_matches]
+                    prices = latest_prices_by_product(match_ids)
+
+                    # Masukkan harga terbaru ke kandidat
+                    for m in raw_matches:
+                        m["price"] = prices.get(m["id"], 0.0)
+
+                    from core.substitution_engine import rank_substitute_candidates
+                    ml_candidates = rank_substitute_candidates(
+                        scanned_price=scanned_price,
+                        scanned_weight=scanned_weight,
+                        candidates=raw_matches,
+                    )
+    except Exception as exc:
+        logging.warning("Gagal mencari ML substitutes untuk produk %s: %s. Running fallback...", product_id, exc)
+
+    # 3. Graceful degradation fallback jika ML kandidat < 3
+    if len(ml_candidates) >= 3:
+        return ml_candidates[:3]
+
+    results = list(ml_candidates)
+    seen_ids = {c["product_id"] for c in results}
+
+    legacy_candidates = _get_substitutes_legacy(product_id, category, scanned_price)
+    for leg in legacy_candidates:
+        if leg["product_id"] not in seen_ids:
+            results.append(leg)
+            seen_ids.add(leg["product_id"])
+            if len(results) >= 3:
+                break
+
+    return results[:3]
+
 
 
 def update_user_display_name(user_id: str, display_name: str) -> dict | None:
