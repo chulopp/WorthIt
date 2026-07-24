@@ -1,0 +1,89 @@
+name: Monthly Price Aggregator
+
+on:
+  # Tanggal 28 setiap bulan, jam 16:50 UTC = 23:50 WIB
+  schedule:
+    - cron: '50 16 28 * *'
+
+  # Bisa di-trigger manual dari GitHub Actions UI untuk testing
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Dry run — preview saja, tidak menulis ke database'
+        required: false
+        default: 'false'
+        type: choice
+        options:
+          - 'false'
+          - 'true'
+
+jobs:
+  aggregate:
+    name: Aggregate Weekly → Monthly Price History
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    env:
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      TZ: Asia/Jakarta
+
+    steps:
+      # ─────────────────────────────────────────
+      # 1. Checkout repo
+      # ─────────────────────────────────────────
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # ─────────────────────────────────────────
+      # 2. Setup Python
+      # ─────────────────────────────────────────
+      - name: Set up Python 3.10
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+          cache: 'pip'
+          cache-dependency-path: backend/requirements.txt
+
+      # ─────────────────────────────────────────
+      # 3. Install dependencies (minimal, tanpa Playwright)
+      # ─────────────────────────────────────────
+      - name: Install Python dependencies
+        run: |
+          pip install --upgrade pip
+          # Install hanya yang dibutuhkan promote_weekly_to_monthly.py
+          pip install python-dotenv supabase requests
+        working-directory: .
+
+      # ─────────────────────────────────────────
+      # 4. Jalankan aggregator
+      # ─────────────────────────────────────────
+      - name: Run monthly price aggregator
+        run: |
+          DRY_RUN_ARG=""
+          if [[ "${{ github.event.inputs.dry_run }}" == "true" ]]; then
+            DRY_RUN_ARG="--dry-run"
+            echo "🔍 Mode DRY RUN — tidak ada perubahan yang disimpan."
+          else
+            echo "🚀 Menjalankan aggregasi bulanan..."
+          fi
+
+          python backend/scripts/promote_weekly_to_monthly.py $DRY_RUN_ARG
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+
+      # ─────────────────────────────────────────
+      # 5. Summary
+      # ─────────────────────────────────────────
+      - name: Print run summary
+        if: always()
+        run: |
+          echo "## 📊 Monthly Aggregation Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- **Tanggal run**: $(date +'%Y-%m-%d %H:%M:%S %Z')" >> $GITHUB_STEP_SUMMARY
+          if [[ "${{ github.event.inputs.dry_run }}" == "true" ]]; then
+            echo "- **Mode**: 🔍 Dry Run (tidak ada data yang disimpan)" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "- **Mode**: ✅ Live (data dipromote ke \`price_history\`)" >> $GITHUB_STEP_SUMMARY
+          fi

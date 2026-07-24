@@ -64,6 +64,14 @@ Thumbs.db
 *.orig
 migrate_working_dir/
 
+# ─── Scratch / Bekas Dataset ──────────────────────────────────────────────────
+# File zip gambar produk & output debug — tidak perlu masuk repo
+/*.zip
+backend/*.jpg
+backend/*.jpeg
+backend/*.png
+problematic_products_mapping.json
+
 # ─── Build artifacts ──────────────────────────────────────────────────────────
 *.class
 *.log
