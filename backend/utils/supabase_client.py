@@ -541,7 +541,8 @@ def get_weekly_market_insight(user_id: str) -> dict:
         f"Kenaikan harga: {inc_str}\n"
         f"Penurunan harga: {dec_str}\n"
         "Format: insight spesifik & informatif bagi pembeli umum. Jangan pakai template generik. "
-        "Contoh bagus: 'Harga minyak goreng naik 8%, sebaiknya stok sekarang. Kebalikannya, susu UHT turun 5%.'"
+        "Contoh bagus: 'Harga minyak goreng naik 8%, sebaiknya stok sekarang. Kebalikannya, susu UHT turun 5%.'\n"
+        "PENTING: Jangan berpikir panjang. Selesaikan reasoning/thinking Anda sesingkat mungkin langsung berikan output insight akhir."
     )
 
     api_key = os.getenv("DEEPSEEK_API_KEY", "")
@@ -553,12 +554,12 @@ def get_weekly_market_insight(user_id: str) -> dict:
                 "Content-Type": "application/json",
             }
             payload = {
-                "model": "deepseek-chat",
+                "model": "deepseek-v4-flash",
                 "messages": [
                     {"role": "user", "content": prompt}
                 ],
-                "max_tokens": 200,
-                "temperature": 0.7,
+                "max_tokens": 3000,
+                "temperature": 0.2,
             }
             resp = requests.post(
                 "https://api.deepseek.com/chat/completions",
@@ -715,7 +716,8 @@ def get_personal_tracker_insight(user_id: str, month: str) -> str:
             f"- Kategori pengeluaran terbesar: {cat_str}\n"
             f"- 3 barang belanja termahal bulan ini: {expensive_items_str}\n"
             "Format: insight spesifik, ramah, memotivasi hemat, dan membantu secara finansial. Jangan gunakan template generik. "
-            "Contoh bagus: 'Pengeluaran camilan Anda naik 12%. Hemat Rp 50rb bulan ini jika Anda kurangi beli camilan manis di toko.'"
+            "Contoh bagus: 'Pengeluaran camilan Anda naik 12%. Hemat Rp 50rb bulan ini jika Anda kurangi beli camilan manis di toko.'\n"
+            "PENTING: Jangan berpikir panjang. Selesaikan reasoning/thinking Anda sesingkat mungkin langsung berikan output insight akhir."
         )
 
         api_key = os.getenv("DEEPSEEK_API_KEY", "")
@@ -726,12 +728,12 @@ def get_personal_tracker_insight(user_id: str, month: str) -> str:
                     "Content-Type": "application/json",
                 }
                 payload = {
-                    "model": "deepseek-chat",
+                    "model": "deepseek-v4-flash",
                     "messages": [
                         {"role": "user", "content": prompt}
                     ],
-                    "max_tokens": 200,
-                    "temperature": 0.7,
+                    "max_tokens": 3000,
+                    "temperature": 0.2,
                 }
                 resp = requests.post(
                     "https://api.deepseek.com/chat/completions",
