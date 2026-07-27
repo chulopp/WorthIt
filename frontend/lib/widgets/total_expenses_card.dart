@@ -60,32 +60,39 @@ class _TotalExpensesCardState extends State<TotalExpensesCard> {
               crossAxisAlignment: CrossAxisAlignment.center,
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                RichText(
-                  text: TextSpan(
-                    children: [
-                      if (isBudgetVisible)
-                        TextSpan(
-                          text: 'Rp',
-                          style: GoogleFonts.bricolageGrotesque(
-                            fontSize: 38,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
+                Expanded(
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: Alignment.centerLeft,
+                    child: RichText(
+                      text: TextSpan(
+                        children: [
+                          if (isBudgetVisible)
+                            TextSpan(
+                              text: 'Rp',
+                              style: GoogleFonts.bricolageGrotesque(
+                                fontSize: 38,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                              ),
+                            ),
+                          TextSpan(
+                            text: isBudgetVisible
+                                ? _formatRp(widget.amount).replaceFirst('Rp ', '')
+                                : '*********',
+                            style: GoogleFonts.bricolageGrotesque(
+                              fontSize: 38,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                              letterSpacing: isBudgetVisible ? 0 : 2,
+                            ),
                           ),
-                        ),
-                      TextSpan(
-                        text: isBudgetVisible
-                            ? _formatRp(widget.amount).replaceFirst('Rp ', '')
-                            : '*********',
-                        style: GoogleFonts.bricolageGrotesque(
-                          fontSize: 38,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                          letterSpacing: isBudgetVisible ? 0 : 2,
-                        ),
+                        ],
                       ),
-                    ],
+                    ),
                   ),
                 ),
+                const SizedBox(width: 8),
                 IconButton(
                   onPressed: () async {
                     await PrivacyService().toggleObscured();

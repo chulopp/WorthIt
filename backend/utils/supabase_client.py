@@ -793,13 +793,13 @@ def get_dashboard_data(user_id: str) -> dict:
     except Exception:
         monthly_budget = 0.0
 
-    # 2. Purchases this month (for total_spent & daily_expenses)
+    # 2. Purchases this month (for total_spent, daily_expenses & recent_activities)
     start_of_month = datetime(now.year, now.month, 1, tzinfo=timezone.utc).isoformat()
 
     try:
         purchases_res = _safe_execute(
             sb.table("purchase_history")
-            .select("purchased_price, quantity, purchased_at, products(name, category)")
+            .select("id, product_id, purchased_price, quantity, purchased_at, products(id, name, image_url, category, unit_label)")
             .eq("user_id", user_id)
             .gte("purchased_at", start_of_month)
             .order("purchased_at", desc=True)
@@ -813,36 +813,50 @@ def get_dashboard_data(user_id: str) -> dict:
         for row in purchases
     )
 
-    # Daily expenses (last 7 days)
-    days_data: dict[str, float] = {}
-    for i in range(6, -1, -1):
-        day_date = (now - timedelta(days=i)).date().isoformat()
-        days_data[day_date] = 0.0
+    # Monthly spending history from Day 1 to current day (Cumulative for smooth chart)
+    if now.month == 12:
+        days_in_month = 31
+    else:
+        days_in_month = (now.replace(month=now.month + 1, day=1) - timedelta(days=1)).day
 
+    daily_expenses_map = [0.0] * days_in_month
     expense_points = []
     for row in purchases:
         p_at = row.get("purchased_at", "")
+        price = float(row.get("purchased_price") or 0) * float(row.get("quantity") or 1)
         if p_at:
-            day_str = p_at[:10]
-            amount = float(row.get("purchased_price") or 0) * float(row.get("quantity") or 1)
-            if day_str in days_data:
-                days_data[day_str] += amount
-            expense_points.append({"purchased_at": p_at, "amount": amount})
+            try:
+                day = int(p_at[8:10])
+                if 1 <= day <= days_in_month:
+                    daily_expenses_map[day - 1] += price
+            except Exception:
+                pass
+            expense_points.append({"purchased_at": p_at, "amount": price})
 
-    daily_expenses = list(days_data.values())
+    current_day = max(1, min(now.day, days_in_month))
+    cumulative_expenses = []
+    running_total = 0.0
+    for d in range(current_day):
+        running_total += daily_expenses_map[d]
+        cumulative_expenses.append(running_total)
 
-    # 3. Recent Activities (recent 5 purchases)
+    daily_expenses = cumulative_expenses if cumulative_expenses else [0.0]
+
+    # 3. Recent Activities (recent 5 purchases with image_url and metadata)
     recent_items = []
     for row in purchases[:5]:
         prod = row.get("products") or {}
+        price = float(row.get("purchased_price") or 0) * float(row.get("quantity") or 1)
         recent_items.append({
-            "productId": None,
-            "product_name": prod.get("name", "Unknown"),
-            "price": float(row.get("purchased_price") or 0),
-            "decision": "BUY",
-            "color": "green",
-            "timestamp": row.get("purchased_at", ""),
-            "category": prod.get("category", "Lainnya"),
+            "product_id":   row.get("product_id"),
+            "product_name": prod.get("name", "Produk Tidak Diketahui"),
+            "price":        price,
+            "decision":     "BUY",
+            "color":        "green",
+            "timestamp":    row.get("purchased_at", ""),
+            "image_url":    prod.get("image_url"),
+            "category":     prod.get("category", "Lainnya"),
+            "unit_label":   prod.get("unit_label"),
         })
 
     # 4. Total below normal price calculation
