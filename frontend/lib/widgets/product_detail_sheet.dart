@@ -797,16 +797,12 @@ class _ProductDetailSheetState extends ConsumerState<_ProductDetailSheet> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Single star icon
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: insight.iconBgColor,
-                borderRadius: BorderRadius.circular(10),
-              ),
+            Padding(
+              padding: const EdgeInsets.only(top: 2),
               child: Icon(
-                Icons.star_rounded,
+                Icons.star_rate_rounded,
                 color: insight.iconColor,
-                size: 22,
+                size: 24,
               ),
             ),
             const SizedBox(width: 14),

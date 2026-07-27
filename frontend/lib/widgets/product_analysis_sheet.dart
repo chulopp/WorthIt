@@ -1090,16 +1090,9 @@ class _ProductAnalysisSheetState extends ConsumerState<_ProductAnalysisSheet> {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            width: 42,
-            height: 42,
-            decoration: BoxDecoration(
-              color: indicatorColor.withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Center(
-              child: Icon(tileIcon, size: 22, color: indicatorColor),
-            ),
+          Padding(
+            padding: const EdgeInsets.only(top: 2),
+            child: Icon(tileIcon, size: 24, color: indicatorColor),
           ),
           const SizedBox(width: 14),
           Expanded(

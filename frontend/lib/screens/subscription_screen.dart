@@ -233,12 +233,6 @@ class _SubscriptionScreenState extends ConsumerState<SubscriptionScreen> {
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(24),
-                border: Border.all(
-                  color: _isPro
-                      ? darkGreen.withValues(alpha: 0.3)
-                      : Colors.grey.shade200,
-                  width: _isPro ? 2 : 1,
-                ),
                 boxShadow: [
                   BoxShadow(
                     color: _isPro
