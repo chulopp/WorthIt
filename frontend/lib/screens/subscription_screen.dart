@@ -183,7 +183,7 @@ class _SubscriptionScreenState extends ConsumerState<SubscriptionScreen> {
                   _buildToggleButton(
                     label: 'pro'.tr(),
                     isSelected: _isPro,
-                    icon: Icons.workspace_premium,
+                    icon: Icons.diamond,
                     onTap: () => _setPro(true),
                   ),
                 ],
@@ -306,8 +306,8 @@ class _SubscriptionScreenState extends ConsumerState<SubscriptionScreen> {
                                 ),
                                 child: Icon(
                                   _isPro
-                                      ? Icons.workspace_premium
-                                      : Icons.flash_on,
+                                      ? Icons.diamond
+                                      : Icons.bolt,
                                   color: _isPro
                                       ? lightGreen
                                       : Colors.grey.shade600,

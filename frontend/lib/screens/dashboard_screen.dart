@@ -158,6 +158,14 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       }
       return key.tr(namedArgs: args);
     }
+
+    final isEn = context.locale.languageCode == 'en';
+    if (isEn && data.marketInsightEn.isNotEmpty) {
+      return data.marketInsightEn;
+    }
+    if (data.marketInsightId.isNotEmpty) {
+      return data.marketInsightId;
+    }
     return data.marketInsight.isNotEmpty
         ? data.marketInsight
         : 'dashboard.market_insight_messages.stable'.tr();
@@ -196,6 +204,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           )
           .toList(growable: false),
       marketInsight: model.marketInsight,
+      marketInsightId: model.marketInsightId,
+      marketInsightEn: model.marketInsightEn,
       marketInsightKey: model.marketInsightKey,
       marketInsightParams: model.marketInsightParams,
       recentItems: model.recentActivities
@@ -2487,15 +2497,15 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
     final products = productSummaries
         .map(_itemFromProduct)
         .toList(growable: false);
-    return products.where((item) {
-      final matchesSearch =
-          item.name.toLowerCase().contains(searchQuery.toLowerCase()) ||
-          item.brand.toLowerCase().contains(searchQuery.toLowerCase());
-      final matchesCategory =
-          selectedCategory == allProductCategoryLabel ||
-          item.rawCategory == selectedCategory;
-      return matchesSearch && matchesCategory;
-    }).toList();
+    if (searchQuery.trim().isEmpty) {
+      return products.where((item) {
+        final matchesCategory =
+            selectedCategory == allProductCategoryLabel ||
+            item.rawCategory == selectedCategory;
+        return matchesCategory;
+      }).toList();
+    }
+    return products;
   }
 
   @override
@@ -2536,18 +2546,17 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                 setState(() {
                   searchQuery = value;
                 });
+                final catParam = selectedCategory == allProductCategoryLabel
+                    ? null
+                    : selectedCategory;
                 if (value.trim().isEmpty) {
                   ref
                       .read(productDetailControllerProvider.notifier)
-                      .listProducts(
-                        category: selectedCategory == allProductCategoryLabel
-                            ? null
-                            : selectedCategory,
-                      );
+                      .listProducts(category: catParam);
                 } else {
                   ref
                       .read(productDetailControllerProvider.notifier)
-                      .searchProducts(value.trim());
+                      .searchProducts(value.trim(), category: catParam);
                 }
               },
               decoration: InputDecoration(
@@ -2596,13 +2605,21 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                       setState(() {
                         selectedCategory = cat;
                       });
-                      ref
-                          .read(productDetailControllerProvider.notifier)
-                          .listProducts(
-                            category: cat == allProductCategoryLabel
-                                ? null
-                                : cat,
-                          );
+                      final catParam = cat == allProductCategoryLabel
+                          ? null
+                          : cat;
+                      if (searchQuery.trim().isNotEmpty) {
+                        ref
+                            .read(productDetailControllerProvider.notifier)
+                            .searchProducts(
+                              searchQuery.trim(),
+                              category: catParam,
+                            );
+                      } else {
+                        ref
+                            .read(productDetailControllerProvider.notifier)
+                            .listProducts(category: catParam);
+                      }
                     },
                     child: _FilterChip(
                       label: displayProductCategory(cat),
@@ -2618,13 +2635,18 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
             child: RefreshIndicator(
               color: const Color(0xFF304423),
               onRefresh: () async {
-                await ref
-                    .read(productDetailControllerProvider.notifier)
-                    .listProducts(
-                      category: selectedCategory == allProductCategoryLabel
-                          ? null
-                          : selectedCategory,
-                    );
+                final catParam = selectedCategory == allProductCategoryLabel
+                    ? null
+                    : selectedCategory;
+                if (searchQuery.trim().isNotEmpty) {
+                  await ref
+                      .read(productDetailControllerProvider.notifier)
+                      .searchProducts(searchQuery.trim(), category: catParam);
+                } else {
+                  await ref
+                      .read(productDetailControllerProvider.notifier)
+                      .listProducts(category: catParam);
+                }
               },
               child: (productState.isLoading && filteredKatalog.isEmpty)
                   ? const _ProductListSkeleton()
@@ -2857,15 +2879,15 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     final products = productSummaries
         .map(_itemFromProduct)
         .toList(growable: false);
-    return products.where((item) {
-      final matchesSearch =
-          item.name.toLowerCase().contains(searchQuery.toLowerCase()) ||
-          item.brand.toLowerCase().contains(searchQuery.toLowerCase());
-      final matchesCategory =
-          selectedCategory == allProductCategoryLabel ||
-          item.rawCategory == selectedCategory;
-      return matchesSearch && matchesCategory;
-    }).toList();
+    if (searchQuery.trim().isEmpty) {
+      return products.where((item) {
+        final matchesCategory =
+            selectedCategory == allProductCategoryLabel ||
+            item.rawCategory == selectedCategory;
+        return matchesCategory;
+      }).toList();
+    }
+    return products;
   }
 
   @override
@@ -2899,19 +2921,17 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                         setState(() {
                           searchQuery = value;
                         });
+                        final catParam = selectedCategory == allProductCategoryLabel
+                            ? null
+                            : selectedCategory;
                         if (value.trim().isEmpty) {
                           ref
                               .read(productDetailControllerProvider.notifier)
-                              .listProducts(
-                                category:
-                                    selectedCategory == allProductCategoryLabel
-                                    ? null
-                                    : selectedCategory,
-                              );
+                              .listProducts(category: catParam);
                         } else {
                           ref
                               .read(productDetailControllerProvider.notifier)
-                              .searchProducts(value.trim());
+                              .searchProducts(value.trim(), category: catParam);
                         }
                       },
                       decoration: InputDecoration(
@@ -2987,13 +3007,21 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                         setState(() {
                           selectedCategory = cat;
                         });
-                        ref
-                            .read(productDetailControllerProvider.notifier)
-                            .listProducts(
-                              category: cat == allProductCategoryLabel
-                                  ? null
-                                  : cat,
-                            );
+                        final catParam = cat == allProductCategoryLabel
+                            ? null
+                            : cat;
+                        if (searchQuery.trim().isNotEmpty) {
+                          ref
+                              .read(productDetailControllerProvider.notifier)
+                              .searchProducts(
+                                searchQuery.trim(),
+                                category: catParam,
+                              );
+                        } else {
+                          ref
+                              .read(productDetailControllerProvider.notifier)
+                              .listProducts(category: catParam);
+                        }
                       },
                       child: _FilterChip(
                         label: cat == allProductCategoryLabel
@@ -3011,13 +3039,21 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
               child: RefreshIndicator(
                 color: const Color(0xFF304423),
                 onRefresh: () async {
-                  await ref
-                      .read(productDetailControllerProvider.notifier)
-                      .listProducts(
-                        category: selectedCategory == allProductCategoryLabel
-                            ? null
-                            : selectedCategory,
-                      );
+                  final catParam = selectedCategory == allProductCategoryLabel
+                      ? null
+                      : selectedCategory;
+                  if (searchQuery.trim().isNotEmpty) {
+                    await ref
+                        .read(productDetailControllerProvider.notifier)
+                        .searchProducts(
+                          searchQuery.trim(),
+                          category: catParam,
+                        );
+                  } else {
+                    await ref
+                        .read(productDetailControllerProvider.notifier)
+                        .listProducts(category: catParam);
+                  }
                 },
                 child: productState.isLoading
                     ? const _ProductListSkeleton()
@@ -3278,9 +3314,17 @@ class _StatisticsScreenState extends ConsumerState<StatisticsScreen> {
         lastMonthTotal = p.totalActualSpending.toDouble();
     }
 
+    final isEn = context.locale.languageCode == 'en';
     String insightText = 'statistics.insight_stable'.tr();
-    if (tracker?.personalInsight != null && tracker!.personalInsight!.isNotEmpty) {
-      insightText = tracker.personalInsight!;
+    final pEn = tracker?.personalInsightEn;
+    final pId = tracker?.personalInsightId;
+    final pRaw = tracker?.personalInsight;
+    if (isEn && pEn != null && pEn.isNotEmpty) {
+      insightText = pEn;
+    } else if (pId != null && pId.isNotEmpty) {
+      insightText = pId;
+    } else if (pRaw != null && pRaw.isNotEmpty) {
+      insightText = pRaw;
     } else if (lastMonthTotal > 0) {
       final diff = thisMonthTotal - lastMonthTotal;
       final percent = ((diff.abs() / lastMonthTotal) * 100).toStringAsFixed(1);

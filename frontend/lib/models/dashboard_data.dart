@@ -40,6 +40,8 @@ class DashboardData {
   final List<double> dailyExpenses;
   final List<ExpensePoint> expensePoints;
   final String marketInsight;
+  final String marketInsightId;
+  final String marketInsightEn;
   final String? marketInsightKey;
   final Map<String, String> marketInsightParams;
 
@@ -52,6 +54,8 @@ class DashboardData {
     this.dailyExpenses = const [],
     this.expensePoints = const [],
     this.marketInsight = '',
+    this.marketInsightId = '',
+    this.marketInsightEn = '',
     this.marketInsightKey,
     this.marketInsightParams = const <String, String>{},
   });

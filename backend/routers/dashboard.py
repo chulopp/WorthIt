@@ -50,6 +50,8 @@ async def get_dashboard(
             daily_expenses=data.get("daily_expenses", []),
             expense_points=data.get("expense_points", []),
             market_insight=data.get("market_insight", ""),
+            market_insight_id=data.get("market_insight_id", data.get("market_insight", "")),
+            market_insight_en=data.get("market_insight_en", data.get("market_insight", "")),
             market_insight_key=data.get("market_insight_key"),
             market_insight_params=data.get("market_insight_params", {}),
         )

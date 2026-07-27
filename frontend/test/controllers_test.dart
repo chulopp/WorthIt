@@ -391,6 +391,7 @@ class _FakeProductRepository extends ProductRepository {
   @override
   Future<ApiResult<List<ProductSummaryModel>>> searchProducts(
     String keyword, {
+    String? category,
     int limit = 50,
     int offset = 0,
   }) async {

@@ -1066,32 +1066,39 @@ class _ProductAnalysisSheetState extends ConsumerState<_ProductAnalysisSheet> {
         : warningTone
         ? const Color(0xFFF59E0B)
         : const Color(0xFFEF4444);
-    final bgColor = indicatorColor.withValues(alpha: 0.05);
     final tileIcon =
-        icon ?? (isPositive ? Icons.insights_rounded : Icons.warning_rounded);
+        icon ?? (isPositive ? Icons.auto_graph_rounded : Icons.warning_amber_rounded);
 
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: bgColor,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(
-          color: indicatorColor.withValues(alpha: 0.12),
-          width: 1,
-        ),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: indicatorColor.withValues(alpha: 0.10),
+            blurRadius: 16,
+            offset: const Offset(0, 5),
+          ),
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 6,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
-            width: 38,
-            height: 38,
+            width: 42,
+            height: 42,
             decoration: BoxDecoration(
-              color: indicatorColor.withValues(alpha: 0.10),
-              borderRadius: BorderRadius.circular(10),
+              color: indicatorColor.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(12),
             ),
             child: Center(
-              child: Icon(tileIcon, size: 20, color: indicatorColor),
+              child: Icon(tileIcon, size: 22, color: indicatorColor),
             ),
           ),
           const SizedBox(width: 14),
@@ -1113,22 +1120,22 @@ class _ProductAnalysisSheetState extends ConsumerState<_ProductAnalysisSheet> {
                     ),
                     Icon(
                       positiveTone
-                          ? Icons.check_circle_rounded
+                          ? Icons.verified_rounded
                           : warningTone
-                          ? Icons.warning_rounded
-                          : Icons.cancel_rounded,
+                          ? Icons.warning_amber_rounded
+                          : Icons.highlight_off_rounded,
                       size: 18,
                       color: indicatorColor,
                     ),
                   ],
                 ),
-                const SizedBox(height: 4),
+                const SizedBox(height: 6),
                 Text(
                   description,
                   style: GoogleFonts.urbanist(
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
-                    color: const Color(0xFF1E293B),
+                    color: const Color(0xFF475569),
                     height: 1.45,
                   ),
                 ),
@@ -1189,34 +1196,34 @@ class _ProductAnalysisSheetState extends ConsumerState<_ProductAnalysisSheet> {
   IconData _iconForExplanation(AnalyzeExplanationModel item, [int? index]) {
     switch (item.iconType) {
       case 'trend':
-        return Icons.trending_up_rounded;
+        return Icons.auto_graph_rounded;
       case 'range':
-        return Icons.stacked_line_chart_rounded;
+        return Icons.candlestick_chart_rounded;
       case 'urgency':
-        return Icons.schedule_rounded;
+        return Icons.timer_outlined;
       case 'anomaly':
         return item.tone == 'negative'
-            ? Icons.cancel_rounded
-            : Icons.check_circle_rounded;
+            ? Icons.highlight_off_rounded
+            : Icons.verified_rounded;
       case 'shrinkflation':
         return item.tone == 'negative'
-            ? Icons.remove_circle_rounded
-            : Icons.inventory_2_rounded;
+            ? Icons.layers_clear_rounded
+            : Icons.all_inbox_rounded;
       case 'lock':
-        return Icons.lock_rounded;
+        return Icons.lock_clock_rounded;
       default:
         if (index != null) {
           return switch (index) {
-            0 => Icons.trending_up_rounded,
-            1 => Icons.stacked_line_chart_rounded,
-            2 => Icons.schedule_rounded,
-            3 => Icons.price_check_rounded,
-            _ => Icons.inventory_2_rounded,
+            0 => Icons.auto_graph_rounded,
+            1 => Icons.candlestick_chart_rounded,
+            2 => Icons.timer_outlined,
+            3 => Icons.verified_rounded,
+            _ => Icons.all_inbox_rounded,
           };
         }
         return item.tone == 'negative'
-            ? Icons.cancel_rounded
-            : Icons.check_circle_rounded;
+            ? Icons.highlight_off_rounded
+            : Icons.verified_rounded;
     }
   }
 

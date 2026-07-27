@@ -505,7 +505,7 @@ class _ScannerScreenState extends State<ScannerScreen>
 
           // ── Layer 5: Bottom hint ──
           Positioned(
-            bottom: mq.padding.bottom + 32,
+            bottom: mq.size.height * 0.14 + mq.padding.bottom,
             left: 0,
             right: 0,
             child: Column(

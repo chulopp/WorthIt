@@ -34,6 +34,7 @@ class ProductRepository {
 
   Future<ApiResult<List<ProductSummaryModel>>> searchProducts(
     String keyword, {
+    String? category,
     int limit = productFetchLimit,
     int offset = 0,
   }) {
@@ -42,6 +43,7 @@ class ProductRepository {
         '/v1/products/search',
         queryParameters: <String, dynamic>{
           'keyword': keyword,
+          if (category != null && category.isNotEmpty) 'category': category,
           'limit': _boundedLimit(limit),
           'offset': offset,
         },

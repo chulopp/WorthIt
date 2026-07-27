@@ -871,6 +871,8 @@ class DashboardModel {
   final List<double> dailyExpenses;
   final List<ExpensePointModel> expensePoints;
   final String marketInsight;
+  final String marketInsightId;
+  final String marketInsightEn;
   final String? marketInsightKey;
   final Map<String, String> marketInsightParams;
 
@@ -884,6 +886,8 @@ class DashboardModel {
     this.dailyExpenses = const [],
     this.expensePoints = const <ExpensePointModel>[],
     this.marketInsight = '',
+    this.marketInsightId = '',
+    this.marketInsightEn = '',
     this.marketInsightKey,
     this.marketInsightParams = const <String, String>{},
   });
@@ -900,6 +904,7 @@ class DashboardModel {
           )
         : <String, String>{};
 
+    final marketInsight = _stringValue(json['market_insight']);
     return DashboardModel(
       monthlyBudget: _doubleValue(json['monthly_budget']),
       totalSpent: _doubleValue(json['total_spent']),
@@ -913,7 +918,9 @@ class DashboardModel {
       expensePoints: _jsonList(
         json['expense_points'],
       ).map(ExpensePointModel.fromJson).toList(growable: false),
-      marketInsight: _stringValue(json['market_insight']),
+      marketInsight: marketInsight,
+      marketInsightId: _stringValue(json['market_insight_id'], fallback: marketInsight),
+      marketInsightEn: _stringValue(json['market_insight_en'], fallback: marketInsight),
       marketInsightKey: _nullableString(json['market_insight_key']),
       marketInsightParams: marketInsightParams,
     );
@@ -933,6 +940,8 @@ class DashboardModel {
         .map((item) => item.toJson())
         .toList(growable: false),
     'market_insight': marketInsight,
+    'market_insight_id': marketInsightId,
+    'market_insight_en': marketInsightEn,
     'market_insight_key': marketInsightKey,
     'market_insight_params': marketInsightParams,
   };
@@ -1007,6 +1016,8 @@ class TrackerModel {
   final List<CategorySpendModel> byCategory;
   final List<TrackerItemModel> items;
   final String? personalInsight;
+  final String? personalInsightId;
+  final String? personalInsightEn;
 
   const TrackerModel({
     required this.totalSpent,
@@ -1015,9 +1026,12 @@ class TrackerModel {
     required this.byCategory,
     required this.items,
     this.personalInsight,
+    this.personalInsightId,
+    this.personalInsightEn,
   });
 
   factory TrackerModel.fromJson(JsonMap json) {
+    final personalInsight = _nullableString(json['personal_insight']);
     return TrackerModel(
       totalSpent: _doubleValue(json['total_spent']),
       totalItems: _intValue(json['total_items']),
@@ -1028,7 +1042,9 @@ class TrackerModel {
       items: _jsonList(
         json['items'],
       ).map(TrackerItemModel.fromJson).toList(growable: false),
-      personalInsight: _nullableString(json['personal_insight']),
+      personalInsight: personalInsight,
+      personalInsightId: _nullableString(json['personal_insight_id']) ?? personalInsight,
+      personalInsightEn: _nullableString(json['personal_insight_en']) ?? personalInsight,
     );
   }
 
@@ -1041,6 +1057,8 @@ class TrackerModel {
         .toList(growable: false),
     'items': items.map((item) => item.toJson()).toList(growable: false),
     'personal_insight': personalInsight,
+    'personal_insight_id': personalInsightId,
+    'personal_insight_en': personalInsightEn,
   };
 }
 

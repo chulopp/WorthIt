@@ -63,6 +63,9 @@ async def get_tracker(
             avg_per_item=data["avg_per_item"],
             by_category=by_category,
             items=items,
+            personal_insight=data.get("personal_insight", ""),
+            personal_insight_id=data.get("personal_insight_id", data.get("personal_insight", "")),
+            personal_insight_en=data.get("personal_insight_en", data.get("personal_insight", "")),
         )
     )
     return JSONResponse(

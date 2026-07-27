@@ -492,36 +492,105 @@ def _build_market_data_summary() -> tuple[list[dict], list[dict]]:
         return [], []
 
 
-def _build_user_top_categories(user_id: str, start_of_month: str) -> list[str]:
-    """Ambil top 3 kategori pengeluaran user bulan ini."""
-    sb = get_supabase()
-    try:
-        res = _safe_execute(
-            sb.table("purchase_history")
-            .select("purchased_price, quantity, products(category)")
-            .eq("user_id", user_id)
-            .gte("purchased_at", start_of_month)
-        )
-        cat_totals: dict[str, float] = {}
-        for row in res.data or []:
-            cat = (row.get("products") or {}).get("category", "Lainnya")
-            price = float(row.get("purchased_price") or 0) * float(row.get("quantity") or 1)
-            cat_totals[cat] = cat_totals.get(cat, 0) + price
-        sorted_cats = sorted(cat_totals.items(), key=lambda x: -x[1])
-        return [f"{cat}: Rp{int(total):,}" for cat, total in sorted_cats[:3]]
-    except Exception:
-        return []
+def _generate_bilingual_llm_insight(prompt: str, timeout_seconds: int = 25) -> dict[str, str]:
+    """
+    Panggil LLM untuk menghasilkan insight bilingual:
+    Return: {"id": "teks bahasa indonesia", "en": "english text"}
+    """
+    import requests
+    import concurrent.futures
+    import json
+    import os
+    import logging
+
+    # Step 1: DeepSeek API
+    api_key = os.getenv("DEEPSEEK_API_KEY", "")
+    if api_key:
+        def _call_deepseek():
+            headers = {
+                "Authorization": f"Bearer {api_key}",
+                "Content-Type": "application/json",
+            }
+            payload = {
+                "model": "deepseek-v4-flash",
+                "messages": [
+                    {
+                        "role": "system",
+                        "content": (
+                            "Kamu adalah API generator JSON murni. "
+                            "Output HANYA JSON format murni: {\"id\": \"teks_indonesia_di_sini\", \"en\": \"english_text_here\"}. "
+                            "Dilarang menyertakan markdown, backtick, draf, atau teks di luar JSON."
+                        ),
+                    },
+                    {"role": "user", "content": prompt},
+                ],
+                "max_tokens": 1000,
+                "temperature": 0.3,
+            }
+            resp = requests.post(
+                "https://api.deepseek.com/chat/completions",
+                json=payload,
+                headers=headers,
+                timeout=timeout_seconds,
+            )
+            resp.raise_for_status()
+            data = resp.json()
+            msg = data.get("choices", [{}])[0].get("message", {})
+            content = (msg.get("content") or "").strip()
+
+            if content:
+                try:
+                    cleaned = content.replace("```json", "").replace("```", "").strip()
+                    parsed = json.loads(cleaned)
+                    if isinstance(parsed, dict) and "id" in parsed and "en" in parsed:
+                        return {
+                            "id": str(parsed["id"]).strip(),
+                            "en": str(parsed["en"]).strip(),
+                        }
+                except Exception:
+                    pass
+            return None
+
+        try:
+            with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
+                future = executor.submit(_call_deepseek)
+                res = future.result(timeout=timeout_seconds + 2)
+                if res and res.get("id"):
+                    return res
+        except Exception as exc:
+            logging.warning("DeepSeek API bilingual insight call failed: %s", exc)
+
+    # Step 2: Fallback to Google Gemini
+    gemini_key = os.getenv("GEMINI_API_KEY", "")
+    if gemini_key:
+        try:
+            import google.generativeai as genai
+            genai.configure(api_key=gemini_key)
+            gemini_model = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
+            model = genai.GenerativeModel(gemini_model)
+            response = model.generate_content(
+                prompt + "\nKembalikan HANYA JSON murni: {\"id\": \"teks_indonesia\", \"en\": \"english_text\"}"
+            )
+            text = (response.text or "").strip()
+            cleaned = text.replace("```json", "").replace("```", "").strip()
+            parsed = json.loads(cleaned)
+            if isinstance(parsed, dict) and "id" in parsed and "en" in parsed:
+                return {
+                    "id": str(parsed["id"]).strip(),
+                    "en": str(parsed["en"]).strip(),
+                }
+        except Exception as exc:
+            logging.warning("Gemini API bilingual insight fallback failed: %s", exc)
+
+    return {"id": "", "en": ""}
 
 
 def get_weekly_market_insight(user_id: str) -> dict:
     """
-    Hasilkan market insight umum menggunakan DeepSeek v4 Flash API.
-    - Hanya menggunakan perubahan harga pasar (tidak dikaitkan ke user belanjaan)
-    - Cache per user per hari (in-memory)
+    Hasilkan market insight umum menggunakan DeepSeek v4 Flash API (dengan Gemini fallback).
+    - Fokus HANYA pada 1 topik pasar utama (maks 1 kalimat singkat).
+    - Cache per user per hari (in-memory) dengan versi ID & EN.
     """
-    import requests
-    import concurrent.futures
-
     now = datetime.now(timezone.utc)
     today_str = now.date().isoformat()
     cache_key = f"{user_id}:{today_str}"
@@ -531,79 +600,50 @@ def get_weekly_market_insight(user_id: str) -> dict:
 
     top_increases, top_decreases = _build_market_data_summary()
 
-    # Build prompt for general market price trends
-    inc_str = ", ".join(f"{d['name']}: +{d['delta_pct']}%" for d in top_increases) if top_increases else "tidak ada"
-    dec_str = ", ".join(f"{d['name']}: {d['delta_pct']}%" for d in top_decreases) if top_decreases else "tidak ada"
+    inc_str = ", ".join(f"{d['name']}: +{d['delta_pct']}%" for d in top_increases) if top_increases else "stabil"
+    dec_str = ", ".join(f"{d['name']}: {d['delta_pct']}%" for d in top_decreases) if top_decreases else "stabil"
 
     prompt = (
-        "Kamu asisten analisis belanja. Beri 2 insight SINGKAT tentang perkembangan harga pasar "
-        "(maks 2 kalimat per insight, maks total 150 karakter) berdasarkan data:\n"
-        f"Kenaikan harga: {inc_str}\n"
-        f"Penurunan harga: {dec_str}\n"
-        "Format: insight spesifik & informatif bagi pembeli umum. Jangan pakai template generik. "
-        "Contoh bagus: 'Harga minyak goreng naik 8%, sebaiknya stok sekarang. Kebalikannya, susu UHT turun 5%.'\n"
-        "PENTING: Jangan berpikir panjang. Selesaikan reasoning/thinking Anda sesingkat mungkin langsung berikan output insight akhir."
+        "Kamu asisten analisis belanja pintar. Berikan 1 INSIGHT SANGAT SINGKAT tentang perkembangan harga pasar. "
+        "ATURAN MUTLAK: FOKUS HANYA PADA 1 TOPIK PASAR UTAMA (maksimal 1 kalimat singkat per bahasa, maks total 80 karakter per kalimat) "
+        "berdasarkan data berikut:\n"
+        f"Kenaikan harga produk: {inc_str}\n"
+        f"Penurunan harga produk: {dec_str}\n"
+        "Format JSON: {\"id\": \"1 kalimat singkat bahasa Indonesia\", \"en\": \"1 short sentence in English\"}."
     )
 
-    api_key = os.getenv("DEEPSEEK_API_KEY", "")
-    result = _GEMINI_FALLBACK
-    if top_increases or top_decreases:
-        def _call_deepseek():
-            headers = {
-                "Authorization": f"Bearer {api_key}",
-                "Content-Type": "application/json",
-            }
-            payload = {
-                "model": "deepseek-v4-flash",
-                "messages": [
-                    {"role": "user", "content": prompt}
-                ],
-                "max_tokens": 3000,
-                "temperature": 0.2,
-            }
-            resp = requests.post(
-                "https://api.deepseek.com/chat/completions",
-                json=payload,
-                headers=headers,
-                timeout=8,
-            )
-            resp.raise_for_status()
-            data = resp.json()
-            return data["choices"][0]["message"]["content"].strip()
-
-        try:
-            with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
-                future = executor.submit(_call_deepseek)
-                try:
-                    text = future.result(timeout=10)
-                    if text:
-                        result = {
-                            "key": "dashboard.market_insight_messages.stable",
-                            "params": {},
-                            "text": text,
-                        }
-                except concurrent.futures.TimeoutError:
-                    logging.warning("DeepSeek API timeout setelah 10 detik")
-        except Exception as exc:
-            logging.warning("DeepSeek insight gagal: %s", exc)
+    bilingual = _generate_bilingual_llm_insight(prompt, timeout_seconds=25)
+    if bilingual.get("id"):
+        result = {
+            "key": None,
+            "params": {},
+            "text": bilingual["id"],
+            "text_id": bilingual["id"],
+            "text_en": bilingual["en"],
+        }
+    else:
+        result = {
+            "key": _GEMINI_FALLBACK["key"],
+            "params": {},
+            "text": _GEMINI_FALLBACK["text"],
+            "text_id": _GEMINI_FALLBACK["text"],
+            "text_en": "Market prices are stable this month with no significant fluctuations.",
+        }
 
     _insight_cache[cache_key] = result
     return result
 
 
-def get_personal_tracker_insight(user_id: str, month: str) -> str:
+def get_personal_tracker_insight(user_id: str, month: str) -> dict:
     """
-    Hasilkan personal tracker/spending insight menggunakan DeepSeek v4 Flash.
-    - Menganalisis total pengeluaran bulan ini vs bulan lalu, top kategori, dan barang termahal.
-    - Cache per user per bulan per hari.
+    Hasilkan personal tracker/spending insight menggunakan DeepSeek v4 Flash (dengan Gemini fallback).
+    - Cache per user per hari ATAU jika ada transaksi pembelian baru (versi ID & EN).
     """
-    import requests
-    import concurrent.futures
-
     sb = get_supabase()
     now = datetime.now(timezone.utc)
+    today_str = now.date().isoformat()
 
-    # Get last transaction timestamp to make cache dynamic per transaction
+    # Get last transaction timestamp to make cache dynamic per transaction/day
     try:
         stat_res = _safe_execute(
             sb.table("purchase_history")
@@ -616,10 +656,10 @@ def get_personal_tracker_insight(user_id: str, month: str) -> str:
     except Exception:
         last_purchase = "error"
 
-    cache_key = f"{user_id}:tracker_insight:{month}:{last_purchase}"
+    cache_key = f"{user_id}:tracker_insight:{month}:{today_str}:{last_purchase}"
 
     if cache_key in _insight_cache:
-        return _insight_cache[cache_key].get("text", "")
+        return _insight_cache[cache_key]
 
     try:
         year, mon = map(int, month.split("-"))
@@ -697,151 +737,127 @@ def get_personal_tracker_insight(user_id: str, month: str) -> str:
         percent = abs(diff) / last_month_spent * 100
         percent_str = f"{percent:.1f}%"
         if diff > 0:
-            fallback_text = f"Pengeluaran bulan ini naik {percent_str} dibanding bulan lalu. Pengeluaran terbanyak Anda berada pada kategori {top_cat_name}."
+            fallback_id = f"Pengeluaran bulan ini naik {percent_str} dibanding bulan lalu. Pengeluaran terbanyak Anda berada pada kategori {top_cat_name}."
+            fallback_en = f"This month's spending increased by {percent_str} compared to last month. Top category is {top_cat_name}."
         else:
-            fallback_text = f"Bagus! Pengeluaran bulan ini turun {percent_str} dibanding bulan lalu. Terus pertahankan pola belanja hemat Anda."
+            fallback_id = f"Bagus! Pengeluaran bulan ini turun {percent_str} dibanding bulan lalu. Terus pertahankan pola belanja hemat Anda."
+            fallback_en = f"Great job! This month's spending decreased by {percent_str} compared to last month. Keep up your smart spending habits."
     else:
-        fallback_text = f"Total belanja Anda bulan ini adalah Rp{int(this_month_spent):,}. Pengeluaran terbesar berada pada kategori {top_cat_name}."
+        fallback_id = f"Total belanja Anda bulan ini adalah Rp{int(this_month_spent):,}. Pengeluaran terbesar berada pada kategori {top_cat_name}."
+        fallback_en = f"Your total spending this month is Rp{int(this_month_spent):,}. Top category is {top_cat_name}."
 
     result = {
-        "text": fallback_text
+        "text": fallback_id,
+        "text_id": fallback_id,
+        "text_en": fallback_en,
     }
 
-    if this_month_spent > 0:
-        prompt = (
-            "Kamu asisten keuangan pribadi. Berikan 2 insight belanja personal yang sangat spesifik dan membantu "
-            "(maks 2 kalimat per insight, total maks 150 karakter) berdasarkan data belanja user bulan ini:\n"
-            f"- Total pengeluaran bulan ini ({month}): Rp{int(this_month_spent):,}\n"
-            f"- Total pengeluaran bulan lalu: Rp{int(last_month_spent):,}\n"
-            f"- Kategori pengeluaran terbesar: {cat_str}\n"
-            f"- 3 barang belanja termahal bulan ini: {expensive_items_str}\n"
-            "Format: insight spesifik, ramah, memotivasi hemat, dan membantu secara finansial. Jangan gunakan template generik. "
-            "Contoh bagus: 'Pengeluaran camilan Anda naik 12%. Hemat Rp 50rb bulan ini jika Anda kurangi beli camilan manis di toko.'\n"
-            "PENTING: Jangan berpikir panjang. Selesaikan reasoning/thinking Anda sesingkat mungkin langsung berikan output insight akhir."
-        )
+    prompt = (
+        "Kamu asisten keuangan pribadi. Berikan 1-2 insight belanja personal yang sangat spesifik dan membantu "
+        "(maksimal 2 kalimat singkat, total maks 150 karakter) berdasarkan data belanja user bulan ini:\n"
+        f"- Total pengeluaran bulan ini ({month}): Rp{int(this_month_spent):,}\n"
+        f"- Total pengeluaran bulan lalu: Rp{int(last_month_spent):,}\n"
+        f"- Kategori pengeluaran terbesar: {cat_str}\n"
+        f"- 3 barang belanja termahal bulan ini: {expensive_items_str}\n"
+        "Format JSON: {\"id\": \"teks bahasa Indonesia\", \"en\": \"English text\"}."
+    )
 
-        api_key = os.getenv("DEEPSEEK_API_KEY", "")
-        if api_key:
-            def _call_deepseek():
-                headers = {
-                    "Authorization": f"Bearer {api_key}",
-                    "Content-Type": "application/json",
-                }
-                payload = {
-                    "model": "deepseek-v4-flash",
-                    "messages": [
-                        {"role": "user", "content": prompt}
-                    ],
-                    "max_tokens": 3000,
-                    "temperature": 0.2,
-                }
-                resp = requests.post(
-                    "https://api.deepseek.com/chat/completions",
-                    json=payload,
-                    headers=headers,
-                    timeout=8,
-                )
-                resp.raise_for_status()
-                data = resp.json()
-                return data["choices"][0]["message"]["content"].strip()
-
-            try:
-                with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
-                    future = executor.submit(_call_deepseek)
-                    try:
-                        text = future.result(timeout=10)
-                        if text:
-                            result = {"text": text}
-                    except concurrent.futures.TimeoutError:
-                        logging.warning("DeepSeek personal insight timeout setelah 10 detik")
-            except Exception as exc:
-                logging.warning("DeepSeek personal insight gagal: %s", exc)
+    bilingual = _generate_bilingual_llm_insight(prompt, timeout_seconds=25)
+    if bilingual.get("id"):
+        result = {
+            "text": bilingual["id"],
+            "text_id": bilingual["id"],
+            "text_en": bilingual["en"],
+        }
 
     _insight_cache[cache_key] = result
-    return result["text"]
+    return result
 
 
 def get_dashboard_data(user_id: str) -> dict:
     """
-    Kumpulkan ringkasan dashboard dari purchase_history nyata.
-    total_below_normal_price: total selisih harga beli < harga normal (price_history) bulan ini.
+    Kumpulkan data ringkasan belanja untuk Dashboard utama user.
     """
     sb = get_supabase()
-    user = get_user(user_id) or {}
-    monthly_budget = float(user.get("monthly_budget") or 0)
     now = datetime.now(timezone.utc)
-    start_of_month = now.replace(
-        day=1, hour=0, minute=0, second=0, microsecond=0
-    ).isoformat()
 
-    if now.month == 12:
-        days_in_month = 31
-    else:
-        days_in_month = (now.replace(month=now.month + 1, day=1) - timedelta(days=1)).day
-    daily_expenses = [0.0] * days_in_month
+    # 1. Monthly Budget
+    try:
+        user_res = _safe_execute(
+            sb.table("users")
+            .select("monthly_budget")
+            .eq("user_id", user_id)
+            .maybe_single()
+        )
+        monthly_budget = float((user_res.data or {}).get("monthly_budget") or 0.0)
+    except Exception:
+        monthly_budget = 0.0
 
-    total_spent = 0.0
-    recent_items = []
-    expense_points = []
-    purchased_product_ids: list[str] = []
+    # 2. Purchases this month (for total_spent & daily_expenses)
+    start_of_month = datetime(now.year, now.month, 1, tzinfo=timezone.utc).isoformat()
 
     try:
-        purchase_res = _safe_execute(
+        purchases_res = _safe_execute(
             sb.table("purchase_history")
-            .select("id, product_id, purchased_price, quantity, purchased_at, products(id, name, image_url, category, unit_label)")
+            .select("purchased_price, quantity, purchased_at, products(name, category)")
             .eq("user_id", user_id)
             .gte("purchased_at", start_of_month)
             .order("purchased_at", desc=True)
         )
-        for row in purchase_res.data or []:
-            price = (row.get("purchased_price") or 0) * (row.get("quantity") or 1)
-            total_spent += price
-            expense_points.append({
-                "purchased_at": row.get("purchased_at", ""),
-                "amount": price,
-            })
-            pid = row.get("product_id")
-            if pid:
-                purchased_product_ids.append(pid)
-
-            try:
-                day = int(row["purchased_at"][8:10])
-                if 1 <= day <= days_in_month:
-                    daily_expenses[day - 1] += price
-            except Exception:
-                pass
-
-            if len(recent_items) < 5:
-                product = row.get("products") or {}
-                recent_items.append({
-                    "product_id":   row.get("product_id"),
-                    "product_name": product.get("name", "Produk Tidak Diketahui"),
-                    "price":        price,
-                    "decision":     "BUY",
-                    "color":        "green",
-                    "timestamp":    row.get("purchased_at", ""),
-                    "image_url":    product.get("image_url"),
-                    "category":     product.get("category"),
-                    "unit_label":   product.get("unit_label"),
-                })
+        purchases = purchases_res.data or []
     except Exception:
-        pass
+        purchases = []
 
-    # ── Total Belanja di Bawah Harga Normal ───────────────────────────────────
-    # Ambil harga normal (price_history terbaru) per produk yang dibeli bulan ini
+    total_spent = sum(
+        float(row.get("purchased_price") or 0) * float(row.get("quantity") or 1)
+        for row in purchases
+    )
+
+    # Daily expenses (last 7 days)
+    days_data: dict[str, float] = {}
+    for i in range(6, -1, -1):
+        day_date = (now - timedelta(days=i)).date().isoformat()
+        days_data[day_date] = 0.0
+
+    expense_points = []
+    for row in purchases:
+        p_at = row.get("purchased_at", "")
+        if p_at:
+            day_str = p_at[:10]
+            amount = float(row.get("purchased_price") or 0) * float(row.get("quantity") or 1)
+            if day_str in days_data:
+                days_data[day_str] += amount
+            expense_points.append({"purchased_at": p_at, "amount": amount})
+
+    daily_expenses = list(days_data.values())
+
+    # 3. Recent Activities (recent 5 purchases)
+    recent_items = []
+    for row in purchases[:5]:
+        prod = row.get("products") or {}
+        recent_items.append({
+            "productId": None,
+            "product_name": prod.get("name", "Unknown"),
+            "price": float(row.get("purchased_price") or 0),
+            "decision": "BUY",
+            "color": "green",
+            "timestamp": row.get("purchased_at", ""),
+            "category": prod.get("category", "Lainnya"),
+        })
+
+    # 4. Total below normal price calculation
     total_below_normal_price = 0.0
     try:
-        if purchased_product_ids:
-            # Ambil harga normal terbaru per produk
-            normal_prices = latest_prices_by_product(list(set(purchased_product_ids)))
-            # Re-query purchase_history untuk detail per row
-            purchase_detail_res = _safe_execute(
-                sb.table("purchase_history")
-                .select("product_id, purchased_price")
-                .eq("user_id", user_id)
-                .gte("purchased_at", start_of_month)
+        pids = list({row.get("product_id") for row in purchases if row.get("product_id")})
+        if pids:
+            products_res = _safe_execute(
+                sb.table("products").select("id, current_price").in_("id", pids)
             )
-            for row in purchase_detail_res.data or []:
+            normal_prices = {
+                p["id"]: float(p.get("current_price") or 0)
+                for p in (products_res.data or [])
+            }
+            for row in purchases:
                 pid = row.get("product_id")
                 paid = float(row.get("purchased_price") or 0)
                 normal = float(normal_prices.get(pid, 0))
@@ -869,6 +885,8 @@ def get_dashboard_data(user_id: str) -> dict:
         "daily_expenses":              daily_expenses,
         "expense_points":              list(reversed(expense_points)),
         "market_insight":              market_insight.get("text", ""),
+        "market_insight_id":           market_insight.get("text_id", market_insight.get("text", "")),
+        "market_insight_en":           market_insight.get("text_en", market_insight.get("text", "")),
         "market_insight_key":          market_insight.get("key"),
         "market_insight_params":       market_insight.get("params", {}),
     }

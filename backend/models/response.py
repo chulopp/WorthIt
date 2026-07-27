@@ -101,6 +101,8 @@ class DashboardData(BaseModel):
     daily_expenses: List[float] = Field(default_factory=list)
     expense_points: List[Dict[str, Any]] = Field(default_factory=list)
     market_insight: str = ""
+    market_insight_id: str = ""
+    market_insight_en: str = ""
     market_insight_key: Optional[str] = None
     market_insight_params: Dict[str, str] = Field(default_factory=dict)
 
@@ -133,6 +135,8 @@ class TrackerData(BaseModel):
     by_category: List[CategorySpend]
     items: List[TrackerItem]
     personal_insight: str = ""
+    personal_insight_id: str = ""
+    personal_insight_en: str = ""
 
 
 class TrackerResponse(BaseModel):

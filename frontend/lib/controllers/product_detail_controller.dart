@@ -41,21 +41,17 @@ class ProductDetailController extends Notifier<ProductDetailState> {
     return const ProductDetailState();
   }
 
-  Future<void> searchProducts(String keyword) async {
+  Future<void> searchProducts(String keyword, {String? category}) async {
     final requestId = ++_productListRequestId;
     final trimmedKeyword = keyword.trim();
     if (trimmedKeyword.isEmpty) {
-      state = state.copyWith(
-        isLoading: false,
-        errorMessage: null,
-        data: null,
-        searchResults: const [],
-      );
+      listProducts(category: category);
       return;
     }
 
     // Reset search pagination on new keyword
     _currentKeyword = trimmedKeyword;
+    _currentCategory = category;
     _searchOffset = 0;
     _searchHasMore = true;
 
@@ -68,7 +64,12 @@ class ProductDetailController extends Notifier<ProductDetailState> {
     try {
       final result = await ref
           .read(productRepositoryProvider)
-          .searchProducts(trimmedKeyword, limit: _pageSize, offset: 0);
+          .searchProducts(
+            trimmedKeyword,
+            category: category,
+            limit: _pageSize,
+            offset: 0,
+          );
       if (requestId != _productListRequestId) return;
       if (result.isFailure) {
         state = state.copyWith(
@@ -103,7 +104,12 @@ class ProductDetailController extends Notifier<ProductDetailState> {
     try {
       final result = await ref
           .read(productRepositoryProvider)
-          .searchProducts(_currentKeyword, limit: _pageSize, offset: _searchOffset);
+          .searchProducts(
+            _currentKeyword,
+            category: _currentCategory,
+            limit: _pageSize,
+            offset: _searchOffset,
+          );
       if (result.isSuccess) {
         final data = result.requireData;
         _searchOffset += data.length;
