@@ -48,16 +48,16 @@ class _WelcomePageState extends State<WelcomePage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 44),
 
-                  // ── Logo ─────────────────────────────────────────────
+                  // ── Logo (Diturunkan) ─────────────────────────
                   SvgPicture.asset(
                     'assets/svg/FULL LOGO.svg',
                     width: 150,
                     fit: BoxFit.contain,
                   ),
 
-                  const Spacer(),
+                  const SizedBox(height: 28),
 
                   // ── SVG Illustration ──────────────────────────────────
                   SvgPicture.asset(
@@ -68,39 +68,39 @@ class _WelcomePageState extends State<WelcomePage> {
 
                   const SizedBox(height: 32),
 
-                  // ── Headline ──────────────────────────────────────────
+                  // ── Headline (Outfit Sans-Serif Bold) ─────────────────
                   Text(
-                    'smart_shopping'.tr(),
+                    'Tau harga wajar,\nsebelum bayar',
                     textAlign: TextAlign.center,
-                    style: GoogleFonts.playfairDisplay(
+                    style: GoogleFonts.outfit(
                       color: Colors.white,
-                      fontSize: 34,
-                      fontWeight: FontWeight.w700,
+                      fontSize: 32,
+                      fontWeight: FontWeight.bold,
                       height: 1.25,
                     ),
                   ),
 
                   const SizedBox(height: 12),
 
-                  // ── Subtitle ──────────────────────────────────────────
+                  // ── Subtitle (Teks Revisi) ─────────────────────────────
                   Text(
-                    'welcome_subtitle'.tr(),
+                    'Scan label harga, lihat trennya,\nputuskan tanpa tebak-tebakan.',
                     textAlign: TextAlign.center,
                     style: GoogleFonts.outfit(
-                      color: Colors.white.withValues(alpha: 0.70),
+                      color: Colors.white.withValues(alpha: 0.75),
                       fontSize: 14,
                       fontWeight: FontWeight.w400,
-                      height: 1.5,
+                      height: 1.45,
                     ),
                   ),
 
                   const Spacer(),
 
-                  // ── Google Sign-In Button ─────────────────────────────
+                  // ── Google Sign-In Button (Solid Lime Green) ───────────
                   SizedBox(
                     width: double.infinity,
                     height: 54,
-                    child: OutlinedButton(
+                    child: ElevatedButton(
                       onPressed: _isLoading
                           ? null
                           : () async {
@@ -118,14 +118,11 @@ class _WelcomePageState extends State<WelcomePage> {
                                 }
                               }
                             },
-                      style: OutlinedButton.styleFrom(
-                        side: BorderSide(
-                          color: _isLoading
-                              ? _accentGreen.withValues(alpha: 0.4)
-                              : _accentGreen,
-                          width: 1.5,
-                        ),
-                        backgroundColor: Colors.transparent,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: _accentGreen,
+                        foregroundColor: _darkGreen,
+                        disabledBackgroundColor: _accentGreen.withValues(alpha: 0.5),
+                        elevation: 0,
                         shape: const StadiumBorder(),
                         padding: const EdgeInsets.symmetric(horizontal: 20),
                       ),
@@ -134,7 +131,7 @@ class _WelcomePageState extends State<WelcomePage> {
                               width: 22,
                               height: 22,
                               child: CircularProgressIndicator(
-                                color: Color(0xFFC9E88A),
+                                color: _darkGreen,
                                 strokeWidth: 2.5,
                               ),
                             )
@@ -147,11 +144,11 @@ class _WelcomePageState extends State<WelcomePage> {
                                 ),
                                 const SizedBox(width: 12),
                                 Text(
-                                  'login_register'.tr(),
+                                  'Masuk dengan Google',
                                   style: GoogleFonts.outfit(
-                                    color: Colors.white,
+                                    color: _darkGreen,
                                     fontSize: 16,
-                                    fontWeight: FontWeight.w600,
+                                    fontWeight: FontWeight.bold,
                                   ),
                                 ),
                               ],
@@ -159,9 +156,9 @@ class _WelcomePageState extends State<WelcomePage> {
                     ),
                   ),
 
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 12),
 
-                  // ── Guest Explore ─────────────────────────────────────
+                  // ── Guest Explore (Posisi Dinaikkan) ──────────────────
                   TextButton(
                     onPressed: () {
                       Navigator.pushReplacement(
@@ -176,9 +173,9 @@ class _WelcomePageState extends State<WelcomePage> {
                       overlayColor: Colors.white12,
                     ),
                     child: Text(
-                      'explore_first'.tr(),
+                      'Saya mau jelajahi dulu',
                       style: GoogleFonts.outfit(
-                        color: Colors.white,
+                        color: Colors.white.withValues(alpha: 0.90),
                         fontSize: 14,
                         fontWeight: FontWeight.w500,
                         decoration: TextDecoration.none,
@@ -186,7 +183,7 @@ class _WelcomePageState extends State<WelcomePage> {
                     ),
                   ),
 
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 28),
                 ],
               ),
             ),
