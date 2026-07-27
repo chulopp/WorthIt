@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'custom_splash_screen.dart';
 import '../services/auth_service.dart';
