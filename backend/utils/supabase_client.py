@@ -813,34 +813,23 @@ def get_dashboard_data(user_id: str) -> dict:
         for row in purchases
     )
 
-    # Monthly spending history from Day 1 to current day (Cumulative for smooth chart)
-    if now.month == 12:
-        days_in_month = 31
-    else:
-        days_in_month = (now.replace(month=now.month + 1, day=1) - timedelta(days=1)).day
+    # Monthly spending history for last 7 days (7-day rolling window)
+    days_data: dict[str, float] = {}
+    for i in range(6, -1, -1):
+        day_date = (now - timedelta(days=i)).date().isoformat()
+        days_data[day_date] = 0.0
 
-    daily_expenses_map = [0.0] * days_in_month
     expense_points = []
     for row in purchases:
         p_at = row.get("purchased_at", "")
         price = float(row.get("purchased_price") or 0) * float(row.get("quantity") or 1)
         if p_at:
-            try:
-                day = int(p_at[8:10])
-                if 1 <= day <= days_in_month:
-                    daily_expenses_map[day - 1] += price
-            except Exception:
-                pass
+            day_str = p_at[:10]
+            if day_str in days_data:
+                days_data[day_str] += price
             expense_points.append({"purchased_at": p_at, "amount": price})
 
-    current_day = max(1, min(now.day, days_in_month))
-    cumulative_expenses = []
-    running_total = 0.0
-    for d in range(current_day):
-        running_total += daily_expenses_map[d]
-        cumulative_expenses.append(running_total)
-
-    daily_expenses = cumulative_expenses if cumulative_expenses else [0.0]
+    daily_expenses = list(days_data.values())
 
     # 3. Recent Activities (recent 5 purchases with image_url and metadata)
     recent_items = []
@@ -927,7 +916,7 @@ def get_tracker_data(user_id: str, month: str) -> dict:
 
     try:
         purchase_query = (sb.table("purchase_history")
-            .select("id, product_id, purchased_price, quantity, purchased_at, products(id, name, category)")
+            .select("id, product_id, purchased_price, quantity, purchased_at, products(id, name, category, image_url)")
             .eq("user_id", user_id)
             .gte("purchased_at", start_dt.isoformat()))
         if end_dt:
@@ -953,6 +942,7 @@ def get_tracker_data(user_id: str, month: str) -> dict:
             "date":         (item.get("purchased_at") or "")[:10],
             "decision_score": None,
             "action_taken": "BUY",
+            "image_url": prod.get("image_url"),
         })
 
     total_items = len(tracker_items)
@@ -965,13 +955,19 @@ def get_tracker_data(user_id: str, month: str) -> dict:
 
     personal_insight = get_personal_tracker_insight(user_id, month)
 
+    p_text = personal_insight.get("text", "") if isinstance(personal_insight, dict) else str(personal_insight)
+    p_id = personal_insight.get("text_id", p_text) if isinstance(personal_insight, dict) else p_text
+    p_en = personal_insight.get("text_en", p_text) if isinstance(personal_insight, dict) else p_text
+
     return {
-        "total_spent":  total_spent,
-        "total_items":  total_items,
-        "avg_per_item": avg_per_item,
-        "by_category":  by_category,
-        "items":        tracker_items,
-        "personal_insight": personal_insight,
+        "total_spent":         total_spent,
+        "total_items":         total_items,
+        "avg_per_item":        avg_per_item,
+        "by_category":         by_category,
+        "items":               tracker_items,
+        "personal_insight":    p_text,
+        "personal_insight_id": p_id,
+        "personal_insight_en": p_en,
     }
 
 def find_product_by_name(name: str) -> dict | None:

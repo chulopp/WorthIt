@@ -1349,16 +1349,30 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                                   ? 100
                                   : highestSpending * 1.2;
 
-                              final List<FlSpot> chartSpots = expenses.isEmpty
-                                  ? const [FlSpot(1, 0), FlSpot(2, 0)]
-                                  : expenses.length == 1
-                                  ? [FlSpot(1, 0), FlSpot(2, expenses.first)]
-                                  : expenses.asMap().entries.map((e) {
-                                      return FlSpot(
-                                        (e.key + 1).toDouble(),
-                                        e.value,
-                                      );
-                                    }).toList();
+                              final List<FlSpot> chartSpots;
+                              if (expenses.isEmpty) {
+                                chartSpots = const [FlSpot(1, 0), FlSpot(2, 0)];
+                              } else {
+                                final nonZeroCount = expenses.where((v) => v > 0).length;
+                                if (nonZeroCount == 1 && expenses.last > 0) {
+                                  final lastVal = expenses.last;
+                                  final n = expenses.length;
+                                  chartSpots = List.generate(n, (i) {
+                                    final progress = (i + 1) / n;
+                                    return FlSpot(
+                                      (i + 1).toDouble(),
+                                      lastVal * (progress * progress),
+                                    );
+                                  });
+                                } else {
+                                  chartSpots = expenses.asMap().entries.map((e) {
+                                    return FlSpot(
+                                      (e.key + 1).toDouble(),
+                                      e.value,
+                                    );
+                                  }).toList();
+                                }
+                              }
                               final double chartMaxX = expenses.length <= 1
                                   ? 2
                                   : expenses.length.toDouble();
@@ -3315,16 +3329,19 @@ class _StatisticsScreenState extends ConsumerState<StatisticsScreen> {
     }
 
     final isEn = context.locale.languageCode == 'en';
-    String insightText = 'statistics.insight_stable'.tr();
+    String insightText = '';
     final pEn = tracker?.personalInsightEn;
     final pId = tracker?.personalInsightId;
     final pRaw = tracker?.personalInsight;
-    if (isEn && pEn != null && pEn.isNotEmpty) {
-      insightText = pEn;
-    } else if (pId != null && pId.isNotEmpty) {
-      insightText = pId;
-    } else if (pRaw != null && pRaw.isNotEmpty) {
-      insightText = pRaw;
+
+    if (isEn && pEn != null && pEn.trim().isNotEmpty) {
+      insightText = pEn.trim();
+    } else if (!isEn && pId != null && pId.trim().isNotEmpty) {
+      insightText = pId.trim();
+    } else if (pId != null && pId.trim().isNotEmpty) {
+      insightText = pId.trim();
+    } else if (pRaw != null && pRaw.trim().isNotEmpty) {
+      insightText = pRaw.trim();
     } else if (lastMonthTotal > 0) {
       final diff = thisMonthTotal - lastMonthTotal;
       final percent = ((diff.abs() / lastMonthTotal) * 100).toStringAsFixed(1);
@@ -3361,6 +3378,8 @@ class _StatisticsScreenState extends ConsumerState<StatisticsScreen> {
           : 'Lainnya';
       final mappedTopCat = _translateCategory(topCat).tr();
       insightText = 'Total belanja Anda bulan ini adalah Rp ${thisMonthTotal.round()}. Pengeluaran terbesar berada pada kategori $mappedTopCat.';
+    } else {
+      insightText = 'statistics.insight_stable'.tr();
     }
 
     final monthsLabels = <String>[];
@@ -3434,7 +3453,7 @@ class _StatisticsScreenState extends ConsumerState<StatisticsScreen> {
           (item) => {
             'name': item.productName,
             'icon': _iconForCategory(item.productName),
-            'imageUrl': getImageUrl(item.productName),
+            'imageUrl': item.imageUrl ?? getImageUrl(item.productName),
             'amount': _formatRp(item.pricePaid),
             'percent': '',
             'weight': '1 Pcs',
@@ -3470,109 +3489,144 @@ class _StatisticsScreenState extends ConsumerState<StatisticsScreen> {
         child: SingleChildScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
           padding: const EdgeInsets.all(24.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // TASK 2: Insight Card (Cream/Soft Yellow + Sparkles Icon)
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFFFF8E1), // Cream/Soft Yellow
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: const Color(0xFFFFC107).withValues(alpha: 0.3),
+          child: trackerState.isLoading && tracker == null
+              ? Column(
+                  children: List.generate(
+                    3,
+                    (index) => Padding(
+                      padding: const EdgeInsets.only(bottom: 24),
+                      child: Shimmer.fromColors(
+                        baseColor: Colors.grey.shade300.withValues(alpha: 0.3),
+                        highlightColor: Colors.grey.shade100.withValues(alpha: 0.2),
+                        child: Container(
+                          height: 180,
+                          width: double.infinity,
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                        ),
+                      ),
+                    ),
                   ),
-                ),
-                child: Row(
+                )
+              : Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Icon(Icons.auto_awesome, color: Color(0xFFFFC107)),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
+                    // TASK 2: Insight Card (Cream/Soft Yellow + Sparkles Icon)
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFFF8E1), // Cream/Soft Yellow
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: const Color(0xFFFFC107).withValues(alpha: 0.3),
+                        ),
+                      ),
+                      child: Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            'insight_stat_title'.tr(),
-                            style: GoogleFonts.bricolageGrotesque(
-                              fontWeight: FontWeight.w700,
-                              color: const Color(0xFF304423),
-                              fontSize: 14,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            insightText,
-                            style: GoogleFonts.bricolageGrotesque(
-                              fontWeight: FontWeight.w500,
-                              color: const Color(0xFF304423),
-                              fontSize: 12,
-                              height: 1.4,
+                          const Icon(Icons.auto_awesome, color: Color(0xFFFFC107)),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'insight_stat_title'.tr(),
+                                  style: GoogleFonts.bricolageGrotesque(
+                                    fontWeight: FontWeight.w700,
+                                    color: const Color(0xFF304423),
+                                    fontSize: 14,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  insightText,
+                                  style: GoogleFonts.bricolageGrotesque(
+                                    fontWeight: FontWeight.w500,
+                                    color: const Color(0xFF304423),
+                                    fontSize: 12,
+                                    height: 1.4,
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
                         ],
                       ),
                     ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 32),
-
-              // TUGAS 1: PERBAIKAN DIAGRAM DONAT
-              Container(
-                padding: const EdgeInsets.all(24),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(20),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.03),
-                      blurRadius: 10,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'expense_categories'.tr(),
-                      style: GoogleFonts.bricolageGrotesque(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w700,
-                        color: const Color(0xFF1E293B),
-                      ),
-                    ),
                     const SizedBox(height: 32),
-                    SizedBox(
-                      height: 200,
-                      child: Stack(
-                        alignment: Alignment.center,
+
+                    // TUGAS 1: PERBAIKAN DIAGRAM DONAT
+                    Container(
+                      padding: const EdgeInsets.all(24),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(20),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.03),
+                            blurRadius: 10,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          PieChart(
-                            PieChartData(
-                              sectionsSpace: 4,
-                              centerSpaceRadius:
-                                  60, // Diperlebar agar teks muat
-                              sections: expenses
-                                  .map(
-                                    (e) => PieChartSectionData(
-                                      color: e['color'] as Color,
-                                      value: (e['percent'] as int).toDouble(),
-                                      title: '${e['percent']}%',
-                                      radius: 45, // Diperlebar agar teks muat
-                                      titlePositionPercentageOffset: 0.55,
-                                      titleStyle:
-                                          GoogleFonts.bricolageGrotesque(
-                                            color: Colors.white,
-                                            fontWeight: FontWeight.bold,
-                                            fontSize: 11,
-                                          ),
-                                    ),
-                                  )
-                                  .toList(),
+                          Text(
+                            'expense_categories'.tr(),
+                            style: GoogleFonts.bricolageGrotesque(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w700,
+                              color: const Color(0xFF1E293B),
                             ),
                           ),
+                          const SizedBox(height: 32),
+                          SizedBox(
+                            height: 200,
+                            child: Stack(
+                              alignment: Alignment.center,
+                              children: [
+                                PieChart(
+                                  PieChartData(
+                                    sectionsSpace: 4,
+                                    centerSpaceRadius:
+                                        60, // Diperlebar agar teks muat
+                                    sections: expenses.isEmpty
+                                        ? [
+                                            PieChartSectionData(
+                                              color: const Color(0xFFCBD5E1),
+                                              value: 100,
+                                              title: '0%',
+                                              radius: 45,
+                                              titleStyle: GoogleFonts.bricolageGrotesque(
+                                                color: Colors.white,
+                                                fontWeight: FontWeight.bold,
+                                                fontSize: 11,
+                                              ),
+                                            )
+                                          ]
+                                        : expenses
+                                            .map(
+                                              (e) => PieChartSectionData(
+                                                color: e['color'] as Color,
+                                                value: ((e['percent'] as int) < 1 ? 1 : (e['percent'] as int)).toDouble(),
+                                                title: '${e['percent']}%',
+                                                radius: 45, // Diperlebar agar teks muat
+                                                titlePositionPercentageOffset: 0.55,
+                                                titleStyle:
+                                                    GoogleFonts.bricolageGrotesque(
+                                                      color: Colors.white,
+                                                      fontWeight: FontWeight.bold,
+                                                      fontSize: 11,
+                                                    ),
+                                              ),
+                                            )
+                                            .toList(),
+                                  ),
+                                ),
                           Center(
                             child: Column(
                               mainAxisSize: MainAxisSize.min,
