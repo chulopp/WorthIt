@@ -47,7 +47,7 @@ class _WelcomePageState extends State<WelcomePage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  const SizedBox(height: 44),
+                  const SizedBox(height: 64),
 
                   // ── Logo (Diturunkan) ─────────────────────────
                   SvgPicture.asset(
