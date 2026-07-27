@@ -510,6 +510,16 @@ class _ScannerScreenState extends State<ScannerScreen>
             right: 0,
             child: Column(
               children: [
+                Text(
+                  'scan_instruction'.tr(),
+                  style: GoogleFonts.urbanist(
+                    fontSize: 13,
+                    color: Colors.white60,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(height: 16),
+
                 // Capture button
                 GestureDetector(
                   onTap: _triggerScan,
@@ -546,15 +556,6 @@ class _ScannerScreenState extends State<ScannerScreen>
                               ),
                       ),
                     ),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  'scan_instruction'.tr(),
-                  style: GoogleFonts.urbanist(
-                    fontSize: 13,
-                    color: Colors.white60,
-                    fontWeight: FontWeight.w500,
                   ),
                 ),
               ],
@@ -895,6 +896,19 @@ class _ReviewBottomSheetState extends ConsumerState<_ReviewBottomSheet> {
       setState(() {
         _itemNameError = 'Produk tidak tersedia di database';
       });
+      return;
+    }
+
+    final dbCategory = product?.category;
+    if (dbCategory != null &&
+        dbCategory.isNotEmpty &&
+        _selectedKategori != null &&
+        _selectedKategori!.trim().toLowerCase() != dbCategory.trim().toLowerCase()) {
+      SnackbarHelper.showTopSnackbar(
+        context,
+        'Kategori tidak sesuai dengan produk di database ($dbCategory)',
+        icon: Icons.warning_amber_rounded,
+      );
       return;
     }
 

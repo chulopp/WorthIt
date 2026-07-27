@@ -11,6 +11,9 @@ final historyControllerProvider =
     );
 
 class HistoryController extends Notifier<BaseControllerState<HistoryData>> {
+  bool _isFetchingScans = false;
+  bool _isFetchingPurchases = false;
+
   @override
   BaseControllerState<HistoryData> build() {
     // Do NOT read `state` here — it is not yet initialised on first build.
@@ -19,7 +22,7 @@ class HistoryController extends Notifier<BaseControllerState<HistoryData>> {
       Future.microtask(() {
         final d = state.data;
         final isEmpty = d == null || (d.scans.isEmpty && d.purchases.isEmpty);
-        if (isEmpty && !state.isLoading) {
+        if (isEmpty && !state.isLoading && !_isFetchingScans && !_isFetchingPurchases) {
           fetchScans();
           fetchPurchases();
         }
@@ -29,19 +32,21 @@ class HistoryController extends Notifier<BaseControllerState<HistoryData>> {
   }
 
   Future<void> fetchScans() async {
+    if (_isFetchingScans) return;
+    _isFetchingScans = true;
     state = state.copyWith(isLoading: true, errorMessage: null);
     try {
       final result = await ref.read(historyRepositoryProvider).getScanHistory();
       if (result.isFailure) {
         state = state.copyWith(
-          isLoading: false,
+          isLoading: _isFetchingPurchases,
           errorMessage: apiErrorMessage(result.error),
         );
         return;
       }
 
       state = state.copyWith(
-        isLoading: false,
+        isLoading: _isFetchingPurchases,
         errorMessage: null,
         data: (state.data ?? const HistoryData()).copyWith(
           scans: result.requireData,
@@ -49,13 +54,17 @@ class HistoryController extends Notifier<BaseControllerState<HistoryData>> {
       );
     } catch (error) {
       state = state.copyWith(
-        isLoading: false,
+        isLoading: _isFetchingPurchases,
         errorMessage: unexpectedErrorMessage(error),
       );
+    } finally {
+      _isFetchingScans = false;
     }
   }
 
   Future<void> fetchPurchases() async {
+    if (_isFetchingPurchases) return;
+    _isFetchingPurchases = true;
     state = state.copyWith(isLoading: true, errorMessage: null);
     try {
       final result = await ref
@@ -63,14 +72,14 @@ class HistoryController extends Notifier<BaseControllerState<HistoryData>> {
           .getPurchaseHistory();
       if (result.isFailure) {
         state = state.copyWith(
-          isLoading: false,
+          isLoading: _isFetchingScans,
           errorMessage: apiErrorMessage(result.error),
         );
         return;
       }
 
       state = state.copyWith(
-        isLoading: false,
+        isLoading: _isFetchingScans,
         errorMessage: null,
         data: (state.data ?? const HistoryData()).copyWith(
           purchases: result.requireData,
@@ -78,9 +87,11 @@ class HistoryController extends Notifier<BaseControllerState<HistoryData>> {
       );
     } catch (error) {
       state = state.copyWith(
-        isLoading: false,
+        isLoading: _isFetchingScans,
         errorMessage: unexpectedErrorMessage(error),
       );
+    } finally {
+      _isFetchingPurchases = false;
     }
   }
 }

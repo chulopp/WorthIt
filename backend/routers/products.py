@@ -55,6 +55,9 @@ def _product_summaries(products: list[dict]) -> list[ProductSummary]:
 def _validate_category(category: str | None) -> str | None:
     if not category:
         return None
+    cat_lower = category.strip().lower()
+    if cat_lower in {"all", "semua", "semua kategori"}:
+        return None
     if category not in OFFICIAL_CATEGORIES:
         raise HTTPException(
             status_code=422,

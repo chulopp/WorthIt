@@ -861,6 +861,7 @@ def get_dashboard_data(user_id: str) -> dict:
 
     return {
         "monthly_budget":              monthly_budget,
+        "total_spent":                 total_spent,
         "budget_remaining":            budget_remaining,
         "total_below_normal_price":    total_below_normal_price,
         "total_below_normal_message":  total_below_normal_message,
@@ -1173,35 +1174,50 @@ def search_products(
     if not normalized:
         return list_products(category=category, limit=limit, offset=offset)
 
-    def _search_with_offset(query_str: str) -> list[dict]:
-        sb = get_supabase()
-        pattern = f"%{query_str}%"
-        query = (
-            sb.table("products")
-            .select(PRODUCT_SELECT)
-            .or_(f"name.ilike.{pattern},brand.ilike.{pattern}")
-            .order("name")
-            .range(offset, offset + limit - 1)
-        )
-        query = _apply_product_category(query, category)
-        res = _safe_execute(query)
-        return res.data or []
+    sb = get_supabase()
+    pattern = f"%{normalized}%"
 
-    rows = _search_with_offset(normalized)
+    # Primary query: ilike on name or brand
+    query = (
+        sb.table("products")
+        .select(PRODUCT_SELECT)
+        .or_(f"name.ilike.{pattern},brand.ilike.{pattern}")
+        .order("name")
+    )
+    query = _apply_product_category(query, category)
+    
+    res = _safe_execute(query.range(offset, offset + limit - 1))
+    rows = res.data or []
+
     if rows:
         return rows
 
-    # Fallback token search (offset tidak dipakai di fallback untuk simplisitas)
+    # Fallback token search if multi-word query returned 0 rows
+    tokens = [part for part in re.split(r"\W+", normalized) if len(part) >= 2]
+    if not tokens:
+        return []
+
     seen: set[str] = set()
-    fallback: list[dict] = []
-    for token in [part for part in re.split(r"\W+", normalized) if len(part) >= 3]:
-        for row in _search_once(token, category, limit):
+    fallback_results: list[dict] = []
+    for token in tokens:
+        token_pattern = f"%{token}%"
+        token_query = (
+            sb.table("products")
+            .select(PRODUCT_SELECT)
+            .or_(f"name.ilike.{token_pattern},brand.ilike.{token_pattern}")
+            .order("name")
+            .limit(limit * 2)
+        )
+        token_query = _apply_product_category(token_query, category)
+        res = _safe_execute(token_query)
+        for row in res.data or []:
             if row["id"] not in seen:
-                fallback.append(row)
                 seen.add(row["id"])
-            if len(fallback) >= limit:
-                return fallback
-    return fallback
+                fallback_results.append(row)
+
+    start = max(0, offset)
+    end = start + limit
+    return fallback_results[start:end]
 
 
 def latest_prices_by_product(product_ids: list[str]) -> dict[str, float]:

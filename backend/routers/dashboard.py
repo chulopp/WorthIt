@@ -42,6 +42,7 @@ async def get_dashboard(
     response_data = DashboardResponse(
         data=DashboardData(
             monthly_budget=data["monthly_budget"],
+            total_spent=data.get("total_spent", 0.0),
             budget_remaining=data["budget_remaining"],
             total_below_normal_price=data.get("total_below_normal_price", 0.0),
             total_below_normal_message=data.get("total_below_normal_message", ""),

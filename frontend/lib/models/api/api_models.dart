@@ -863,6 +863,7 @@ class ExpensePointModel {
 
 class DashboardModel {
   final double monthlyBudget;
+  final double totalSpent;
   final double budgetRemaining;
   final double totalBelowNormalPrice;
   final String totalBelowNormalMessage;
@@ -875,6 +876,7 @@ class DashboardModel {
 
   const DashboardModel({
     required this.monthlyBudget,
+    this.totalSpent = 0,
     required this.budgetRemaining,
     required this.totalBelowNormalPrice,
     this.totalBelowNormalMessage = '',
@@ -900,6 +902,7 @@ class DashboardModel {
 
     return DashboardModel(
       monthlyBudget: _doubleValue(json['monthly_budget']),
+      totalSpent: _doubleValue(json['total_spent']),
       budgetRemaining: _doubleValue(json['budget_remaining']),
       totalBelowNormalPrice: _doubleValue(json['total_below_normal_price']),
       totalBelowNormalMessage: _stringValue(json['total_below_normal_message']),
@@ -918,6 +921,7 @@ class DashboardModel {
 
   JsonMap toJson() => <String, dynamic>{
     'monthly_budget': monthlyBudget,
+    'total_spent': totalSpent,
     'budget_remaining': budgetRemaining,
     'total_below_normal_price': totalBelowNormalPrice,
     'total_below_normal_message': totalBelowNormalMessage,

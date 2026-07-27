@@ -1025,9 +1025,12 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     final historyState = ref.watch(historyControllerProvider);
     final trackerState = ref.watch(trackerControllerProvider);
     final data = _dashboardDataFromApi(dashboardState.data);
-    final dashboardTotalPengeluaran = _totalCurrentMonthPurchases(
+    final computedPurchasesTotal = _totalCurrentMonthPurchases(
       historyState.data?.purchases ?? const <PurchaseHistoryModel>[],
     );
+    final dashboardTotalPengeluaran = computedPurchasesTotal > 0
+        ? computedPurchasesTotal
+        : (dashboardState.data?.totalSpent ?? 0.0);
     final totalBelowNormalPrice = data.totalBelowNormalPrice;
     final totalBelowNormalMessage = data.totalBelowNormalMessage;
     const Color textPrimary = Color(0xFF1E293B);

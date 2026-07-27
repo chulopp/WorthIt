@@ -218,10 +218,13 @@ class _ExpenseHistoryScreenState extends ConsumerState<ExpenseHistoryScreen> {
     final filteredItems = data.recentItems
         .where((item) => DateHelper.isCurrentMonth(item.date))
         .toList();
-    final calculatedTotal = filteredItems.fold(
+    final filteredItemsTotal = filteredItems.fold(
       0.0,
       (sum, item) => sum + item.price,
     );
+    final calculatedTotal = filteredItemsTotal > 0
+        ? filteredItemsTotal
+        : (dashboardState.data?.totalSpent ?? 0.0);
     final calculatedSaved = data.totalBelowNormalPrice;
     final historyErrorMessage = historyState.errorMessage;
     final shouldShowHistoryError =

@@ -93,6 +93,7 @@ class RecentActivityItem(BaseModel):
 
 class DashboardData(BaseModel):
     monthly_budget: float
+    total_spent: float = 0.0
     budget_remaining: float
     total_below_normal_price: float = 0.0
     total_below_normal_message: str = ""

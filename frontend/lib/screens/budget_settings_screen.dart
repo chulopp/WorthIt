@@ -113,6 +113,11 @@ class _BudgetSettingsScreenState extends State<BudgetSettingsScreen> {
                   fontWeight: FontWeight.w600,
                 ),
                 decoration: InputDecoration(
+                  hintText: 'Masukkan anggaran bulanan...',
+                  hintStyle: GoogleFonts.bricolageGrotesque(
+                    color: Colors.grey.shade400,
+                    fontSize: 16,
+                  ),
                   filled: true,
                   fillColor: Colors.white,
                   border: OutlineInputBorder(
