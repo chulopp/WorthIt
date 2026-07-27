@@ -1,0 +1,66 @@
+<svg width="240" height="260" viewBox="0 0 240 260" xmlns="http://www.w3.org/2000/svg" role="img">
+  <title>Ilustrasi struk dengan garis scan dan lencana centang</title>
+  <desc>Struk kertas krem dengan barcode, tiga baris harga, satu baris total, area viewfinder scan bergaris lime, dan lencana centang lime di sudut kanan atas.</desc>
+
+  <!-- shadow layer (efek tumpuk kertas, flat, tanpa blur) -->
+  <path d="M36,44 H216 V226 L204,241 L192,226 L180,241 L168,226 L156,241 L144,226 L132,241 L120,226 L108,241 L96,226 L84,241 L72,226 L60,241 L48,226 L36,241 Z"
+        fill="#141F0D"></path>
+
+  <!-- badan struk utama -->
+  <path d="M30,36 H210 V226 L197.5,241 L185,226 L172.5,241 L160,226 L147.5,241 L135,226 L122.5,241 L110,226 L97.5,241 L85,226 L72.5,241 L60,226 L47.5,241 L35,226 L30,226 Z"
+        fill="#F2EEDD"></path>
+
+  <!-- garis lipatan tipis -->
+  <line x1="34" y1="50" x2="206" y2="50" stroke="#E2DCC5" stroke-width="1"></line>
+
+  <!-- barcode -->
+  <g fill="#22331A">
+    <rect x="54" y="60" width="2" height="34"></rect>
+    <rect x="59" y="60" width="4" height="34"></rect>
+    <rect x="66" y="60" width="2" height="34"></rect>
+    <rect x="71" y="60" width="3" height="34"></rect>
+    <rect x="77" y="60" width="5" height="34"></rect>
+    <rect x="85" y="60" width="2" height="34"></rect>
+    <rect x="90" y="60" width="2" height="34"></rect>
+    <rect x="95" y="60" width="4" height="34"></rect>
+    <rect x="102" y="60" width="3" height="34"></rect>
+    <rect x="108" y="60" width="2" height="34"></rect>
+    <rect x="113" y="60" width="5" height="34"></rect>
+    <rect x="121" y="60" width="2" height="34"></rect>
+    <rect x="126" y="60" width="3" height="34"></rect>
+    <rect x="132" y="60" width="2" height="34"></rect>
+    <rect x="137" y="60" width="4" height="34"></rect>
+    <rect x="144" y="60" width="2" height="34"></rect>
+    <rect x="149" y="60" width="3" height="34"></rect>
+    <rect x="155" y="60" width="2" height="34"></rect>
+    <rect x="160" y="60" width="4" height="34"></rect>
+    <rect x="167" y="60" width="2" height="34"></rect>
+  </g>
+
+  <!-- baris item harga -->
+  <rect x="54" y="112" width="110" height="6" rx="1.5" fill="#D8D3C0"></rect>
+  <rect x="54" y="128" width="76" height="6" rx="1.5" fill="#D8D3C0"></rect>
+  <rect x="54" y="144" width="96" height="6" rx="1.5" fill="#D8D3C0"></rect>
+
+  <!-- baris total (lebih tegas) -->
+  <rect x="54" y="166" width="132" height="8" rx="1.5" fill="#B7AF92"></rect>
+
+  <!-- viewfinder scan -->
+  <g stroke="#CBE86C" stroke-width="3" stroke-linecap="round" fill="none">
+    <path d="M46,180 H62"></path>
+    <path d="M46,180 V196"></path>
+    <path d="M194,180 H178"></path>
+    <path d="M194,180 V196"></path>
+    <path d="M46,216 H62"></path>
+    <path d="M46,216 V200"></path>
+    <path d="M194,216 H178"></path>
+    <path d="M194,216 V200"></path>
+  </g>
+  <rect x="50" y="194" width="140" height="9" rx="2.5" fill="#CBE86C" opacity="0.92"></rect>
+
+  <!-- lencana centang -->
+  <g transform="rotate(-8 196 40)">
+    <circle cx="196" cy="40" r="26" fill="#CBE86C"></circle>
+    <path d="M185,41 L193,49 L208,29" fill="none" stroke="#1F2E16" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"></path>
+  </g>
+</svg>
