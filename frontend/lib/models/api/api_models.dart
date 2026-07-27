@@ -999,7 +999,7 @@ class TrackerItemModel {
           ? null
           : _intValue(json['decision_score']),
       actionTaken: _stringValue(json['action_taken']),
-      imageUrl: _nullableStringValue(json['image_url']),
+      imageUrl: _nullableString(json['image_url']),
     );
   }
 
