@@ -126,6 +126,7 @@ class TrackerItem(BaseModel):
     date: str
     decision_score: Optional[int]
     action_taken: str
+    image_url: Optional[str] = None
 
 
 class TrackerData(BaseModel):

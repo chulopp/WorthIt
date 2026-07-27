@@ -979,6 +979,7 @@ class TrackerItemModel {
   final String date;
   final int? decisionScore;
   final String actionTaken;
+  final String? imageUrl;
 
   const TrackerItemModel({
     required this.productName,
@@ -986,6 +987,7 @@ class TrackerItemModel {
     required this.date,
     this.decisionScore,
     required this.actionTaken,
+    this.imageUrl,
   });
 
   factory TrackerItemModel.fromJson(JsonMap json) {
@@ -997,6 +999,7 @@ class TrackerItemModel {
           ? null
           : _intValue(json['decision_score']),
       actionTaken: _stringValue(json['action_taken']),
+      imageUrl: _nullableStringValue(json['image_url']),
     );
   }
 
@@ -1006,6 +1009,7 @@ class TrackerItemModel {
     'date': date,
     'decision_score': decisionScore,
     'action_taken': actionTaken,
+    'image_url': imageUrl,
   };
 }
 

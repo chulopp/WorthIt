@@ -52,6 +52,7 @@ async def get_tracker(
             date=i["date"],
             decision_score=i.get("decision_score"),
             action_taken=i["action_taken"],
+            image_url=i.get("image_url"),
         )
         for i in data["items"]
     ]
