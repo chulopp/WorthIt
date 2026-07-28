@@ -104,6 +104,13 @@ class AuthService {
       userEmail.value = null;
       final prefs = await SharedPreferences.getInstance();
       await prefs.setBool('is_pro', false);
+      await prefs.remove('username');
+      final keys = prefs.getKeys();
+      for (final key in keys) {
+        if (key.startsWith('username_')) {
+          await prefs.remove(key);
+        }
+      }
     }
   }
 

@@ -75,10 +75,15 @@ final profileUsernameProvider =
     );
 
 class ProfileUsernameNotifier extends AsyncNotifier<String> {
+  String _userKey(String userId) => 'username_$userId';
+
   @override
   FutureOr<String> build() async {
+    final user = Supabase.instance.client.auth.currentUser;
+    if (user == null) return '';
+
     final prefs = await SharedPreferences.getInstance();
-    final cached = prefs.getString('username');
+    final cached = prefs.getString(_userKey(user.id));
     if (cached != null && cached.isNotEmpty) {
       Future.microtask(() async {
         try {
@@ -102,16 +107,18 @@ class ProfileUsernameNotifier extends AsyncNotifier<String> {
         final displayName = result.requireData;
         if (displayName.isNotEmpty) {
           final prefs = await SharedPreferences.getInstance();
+          await prefs.setString(_userKey(user.id), displayName);
           await prefs.setString('username', displayName);
           return displayName;
         }
       }
     } catch (_) {}
 
-    // 2. Fallback to Google Auth metadata
+    // 2. Fallback to Google Auth metadata or email prefix
     final authName = userNameFromAuth(user);
     if (authName.isNotEmpty) {
       final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(_userKey(user.id), authName);
       await prefs.setString('username', authName);
       try {
         await Supabase.instance.client
@@ -122,7 +129,7 @@ class ProfileUsernameNotifier extends AsyncNotifier<String> {
       return authName;
     }
 
-    return '';
+    return 'User';
   }
 
   Future<void> updateUsername(String newName) async {
@@ -133,6 +140,8 @@ class ProfileUsernameNotifier extends AsyncNotifier<String> {
       return;
     }
 
+    final user = Supabase.instance.client.auth.currentUser;
+
     // 1. Update via backend API
     try {
       await ref.read(userRepositoryProvider).updateUsername(trimmed);
@@ -141,7 +150,6 @@ class ProfileUsernameNotifier extends AsyncNotifier<String> {
     }
 
     // 2. Also update Supabase users table directly
-    final user = Supabase.instance.client.auth.currentUser;
     if (user != null) {
       try {
         await Supabase.instance.client
@@ -153,6 +161,9 @@ class ProfileUsernameNotifier extends AsyncNotifier<String> {
 
     // 3. Persist to SharedPreferences
     final prefs = await SharedPreferences.getInstance();
+    if (user != null) {
+      await prefs.setString(_userKey(user.id), trimmed);
+    }
     await prefs.setString('username', trimmed);
     state = AsyncValue.data(trimmed);
   }
