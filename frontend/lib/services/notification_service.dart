@@ -98,16 +98,26 @@ class NotificationService {
         : <NotificationModel>[...notifications.value, ...mocks];
   }
 
+  final Set<String> _shownNotifKeys = {};
+
+  void triggerSystemNotification(NotificationModel notification, {String? notifId}) {
+    final key = notifId ?? '${notification.title}_${notification.dateTime}';
+    if (_shownNotifKeys.contains(key)) return;
+    _shownNotifKeys.add(key);
+
+    final translatedTitle = notification.title.tr(namedArgs: notification.titleArgs);
+    final translatedMessage = notification.message.tr(namedArgs: notification.messageArgs);
+    showLocalNotification(translatedTitle, translatedMessage);
+  }
+
   void addNotification(NotificationModel notification) {
     final current = List<NotificationModel>.from(notifications.value);
     current.insert(0, notification);
     notifications.value = current;
 
-    // Translate before triggering actual system notification
-    final translatedTitle = notification.title.tr(namedArgs: notification.titleArgs);
-    final translatedMessage = notification.message.tr(namedArgs: notification.messageArgs);
-    showLocalNotification(translatedTitle, translatedMessage);
+    triggerSystemNotification(notification);
   }
+
 
 
   void markAllAsRead() {

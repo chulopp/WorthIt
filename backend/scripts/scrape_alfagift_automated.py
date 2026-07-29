@@ -1010,8 +1010,10 @@ async def aggregate_monthly_prices_job() -> None:
         for row in rows:
             product_prices[row["product_id"]].append(row["price"])
 
+        updated_prices_map = {}
         for pid, prices in product_prices.items():
             avg_price = sum(prices) / len(prices)
+            updated_prices_map[pid] = float(avg_price)
             prod_resp = supabase.table("products").select("base_weight_gram, unit_label").eq("id", pid).execute()
             weight = 1000
             unit_label = None
@@ -1031,6 +1033,15 @@ async def aggregate_monthly_prices_job() -> None:
         # tidak mengizinkan DELETE tanpa filter (sebagai proteksi data).
         supabase.table("weekly_prices").delete().neq("id", "00000000-0000-0000-0000-000000000000").execute()
         LOGGER.info("Monthly price aggregation completed for %d products.", len(product_prices))
+
+        # Picu notifikasi penurunan harga untuk barang favorit user (threshold >= 5%)
+        try:
+            from utils.supabase_client import check_and_notify_price_drops
+            sent_count = check_and_notify_price_drops(updated_prices_map, min_drop_percent=5.0)
+            LOGGER.info("Triggered %d favorite price drop notifications.", sent_count)
+        except Exception as notif_exc:
+            LOGGER.warning("Failed to trigger price drop notifications: %s", notif_exc)
+
     except Exception as exc:
         LOGGER.exception("Failed to aggregate monthly prices: %s", exc)
 

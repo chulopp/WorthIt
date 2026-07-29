@@ -1641,7 +1641,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                         const SizedBox(width: 10),
                         Flexible(
                           child: _QuickAction(
-                            icon: Icons.qr_code_scanner,
+                            icon: Icons.document_scanner,
                             label: 'dashboard.scan'.tr(),
                             onTap: () => guardAction(
                               context,
@@ -1966,7 +1966,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                     ],
                   ),
                   child: const Icon(
-                    Icons.qr_code_scanner,
+                    Icons.document_scanner,
                     color: Colors.white,
                     size: 28,
                   ),

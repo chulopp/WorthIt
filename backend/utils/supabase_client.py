@@ -1449,7 +1449,13 @@ def upload_product_image(
 
 # ─── Notifications ────────────────────────────────────────────────────────────
 
-def create_notification(user_id: str, title: str, body: str = "", notif_type: str = "INFO") -> dict | None:
+def create_notification(
+    user_id: str,
+    title: str,
+    body: str = "",
+    notif_type: str = "INFO",
+    payload: dict | None = None,
+) -> dict | None:
     """Simpan notifikasi baru ke tabel notifications di Supabase."""
     sb = get_supabase()
     res = _safe_execute(
@@ -1458,6 +1464,7 @@ def create_notification(user_id: str, title: str, body: str = "", notif_type: st
             "title": title,
             "body": body,
             "type": notif_type,
+            "payload": payload or {},
             "is_read": False,
         })
     )
@@ -1469,7 +1476,7 @@ def get_user_notifications(user_id: str, limit: int = 20) -> list[dict]:
     sb = get_supabase()
     res = _safe_execute(
         sb.table("notifications")
-        .select("id, title, body, type, is_read, created_at")
+        .select("id, title, body, type, payload, is_read, created_at")
         .eq("user_id", user_id)
         .order("created_at", desc=True)
         .limit(limit)
@@ -1485,3 +1492,95 @@ def mark_notifications_as_read(user_id: str, notification_ids: list[str] | None 
         query = query.in_("id", notification_ids)
     _safe_execute(query)
     return True
+
+
+def check_and_notify_price_drops(updated_prices: dict[str, float], min_drop_percent: float = 5.0) -> int:
+    """
+    Periksa apakah produk yang di-update harganya mengalami penurunan >= min_drop_percent (default 5.0%).
+    Jika ya, cari semua user yang memfavoritkan produk tersebut di `favorite_products`
+    dan buatkan notifikasi PRICE_DROP di Supabase.
+    Returns: jumlah notifikasi yang berhasil dibuat.
+    """
+    if not updated_prices:
+        return 0
+
+    sb = get_supabase()
+    notif_count = 0
+
+    for product_id, new_price in updated_prices.items():
+        if new_price <= 0:
+            continue
+
+        prod = get_product(product_id)
+        if not prod:
+            continue
+        prod_name = prod.get("name", "Produk")
+
+        # Ambil 2 riwayat harga terbaru
+        history_res = _safe_execute(
+            sb.table("price_history")
+            .select("price, recorded_at")
+            .eq("product_id", product_id)
+            .order("recorded_at", desc=True)
+            .limit(2)
+        )
+        history_rows = history_res.data or []
+        if len(history_rows) < 2:
+            continue
+
+        prev_price = float(history_rows[1].get("price") or 0)
+        if prev_price <= 0 or new_price >= prev_price:
+            continue
+
+        drop_pct = ((prev_price - new_price) / prev_price) * 100.0
+        if drop_pct < min_drop_percent:
+            continue
+
+        # Cari user pencinta produk ini
+        fav_res = _safe_execute(
+            sb.table("favorite_products")
+            .select("user_id")
+            .eq("product_id", product_id)
+        )
+        fav_users = fav_res.data or []
+        if not fav_users:
+            continue
+
+        drop_pct_formatted = f"{drop_pct:.1f}" if drop_pct % 1 != 0 else f"{int(drop_pct)}"
+
+        for fav in fav_users:
+            uid = fav.get("user_id")
+            if not uid:
+                continue
+
+            # Anti-spam: hindari duplikasi notifikasi penurunan harga produk yang sama di hari yang sama
+            today_str = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+            existing = _safe_execute(
+                sb.table("notifications")
+                .select("id")
+                .eq("user_id", uid)
+                .eq("type", "PRICE_DROP")
+                .gte("created_at", f"{today_str}T00:00:00Z")
+                .limit(1)
+            )
+            if existing.data:
+                continue
+
+            created = create_notification(
+                user_id=uid,
+                title="notifications.favorite_price_drop.title",
+                body="notifications.favorite_price_drop.desc",
+                notif_type="PRICE_DROP",
+                payload={
+                    "product": prod_name,
+                    "percent": drop_pct_formatted,
+                    "product_id": product_id,
+                    "prev_price": prev_price,
+                    "new_price": new_price,
+                },
+            )
+            if created:
+                notif_count += 1
+
+    return notif_count
+

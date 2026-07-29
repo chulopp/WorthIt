@@ -20,6 +20,7 @@ class NotificationCreateRequest(BaseModel):
     title: str
     body: str = ""
     type: str = "INFO"
+    payload: dict | None = None
 
 
 class MarkReadRequest(BaseModel):
@@ -56,6 +57,7 @@ async def post_notification(
         title=body.title,
         body=body.body,
         notif_type=body.type,
+        payload=body.payload,
     )
     if not notif:
         raise HTTPException(

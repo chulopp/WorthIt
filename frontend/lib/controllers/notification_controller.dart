@@ -25,17 +25,28 @@ class NotificationController extends AsyncNotifier<List<NotificationModel>> {
     try {
       final res = await Supabase.instance.client
           .from('notifications')
-          .select('id, title, body, type, is_read, created_at')
+          .select('id, title, body, type, payload, is_read, created_at')
           .eq('user_id', user.id)
           .order('created_at', ascending: false)
           .limit(20);
 
       final list = (res as List).map<NotificationModel>((map) {
+        final notifId = map['id']?.toString();
         final title = map['title']?.toString() ?? 'Notifikasi';
         final body = map['body']?.toString() ?? '';
         final createdAtStr = map['created_at']?.toString() ?? '';
         final isRead = map['is_read'] == true;
         final rawType = map['type']?.toString();
+        final rawPayload = map['payload'];
+
+        final Map<String, String> messageArgs = {};
+        if (rawPayload is Map) {
+          rawPayload.forEach((key, value) {
+            if (key != null && value != null) {
+              messageArgs[key.toString()] = value.toString();
+            }
+          });
+        }
 
         DateTime? dt = DateTime.tryParse(createdAtStr)?.toLocal();
         String formattedTime = dt != null
@@ -60,16 +71,27 @@ class NotificationController extends AsyncNotifier<List<NotificationModel>> {
             case 'SPENDING_COMPARE':
               notifType = NotificationType.monthlySpendingComparison;
               break;
+            case 'SHOPPING_REMINDER':
+              notifType = NotificationType.shoppingListReminder;
+              break;
           }
         }
 
-        return NotificationModel(
+        final model = NotificationModel(
           title: title,
           message: body,
+          messageArgs: messageArgs,
           dateTime: formattedTime,
           isUnread: !isRead,
           type: notifType,
         );
+
+        // Jika notifikasi belum dibaca, trigger pop-up notifikasi sistem HP
+        if (!isRead) {
+          NotificationService().triggerSystemNotification(model, notifId: notifId);
+        }
+
+        return model;
       }).toList();
 
       if (list.isNotEmpty) {
