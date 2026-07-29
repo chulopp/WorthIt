@@ -1,0 +1,67 @@
+name: Daily Notification Cron Job
+
+on:
+  # Berjalan setiap hari pada jam 00:00 UTC = 07:00 WIB
+  schedule:
+    - cron: '0 0 * * *'
+
+  # Bisa di-trigger manual dari GitHub Actions UI untuk testing
+  workflow_dispatch:
+
+jobs:
+  notify:
+    name: Run Daily Notification Cron (Pro Expiry & Monthly Comparison)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    env:
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      TZ: Asia/Jakarta
+
+    steps:
+      # ─────────────────────────────────────────
+      # 1. Checkout repo
+      # ─────────────────────────────────────────
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # ─────────────────────────────────────────
+      # 2. Setup Python
+      # ─────────────────────────────────────────
+      - name: Set up Python 3.10
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+          cache: 'pip'
+          cache-dependency-path: backend/requirements.txt
+
+      # ─────────────────────────────────────────
+      # 3. Install dependencies
+      # ─────────────────────────────────────────
+      - name: Install Python dependencies
+        run: |
+          pip install --upgrade pip
+          pip install python-dotenv supabase requests
+        working-directory: .
+
+      # ─────────────────────────────────────────
+      # 4. Jalankan script daily notification cron
+      # ─────────────────────────────────────────
+      - name: Run daily notification cron script
+        run: |
+          python backend/scripts/daily_notification_cron.py
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+
+      # ─────────────────────────────────────────
+      # 5. Summary
+      # ─────────────────────────────────────────
+      - name: Print run summary
+        if: always()
+        run: |
+          echo "## 🔔 Daily Notification Cron Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- **Tanggal run**: $(date +'%Y-%m-%d %H:%M:%S %Z')" >> $GITHUB_STEP_SUMMARY
+          echo "- **Status**: ✅ Executed \`backend/scripts/daily_notification_cron.py\`" >> $GITHUB_STEP_SUMMARY
