@@ -32,24 +32,24 @@
 
 ## System Architecture
 
-```
-┌─────────────────────────────────────────────────────────┐
-│                    FRONTEND (Mobile)                    │
-│   Flutter 3.x  ·  Riverpod  ·  Dio  ·  Supabase SDK   │
-├─────────────────────────────────────────────────────────┤
-│                    BACKEND (Python)                     │
-│   FastAPI  ·  Uvicorn  ·  PyJWT  ·  Supabase Python   │
-├─────────────────────────────────────────────────────────┤
-│                      C-ENGINE                           │
-│   worthit_engine.c  ·  ctypes bridge (c_bridge.py)    │
-│   WMA · Support · Resistance · SR Position            │
-├─────────────────────────────────────────────────────────┤
-│                    INFRASTRUCTURE                       │
-│   Supabase (Auth + PostgreSQL + Storage)               │
-│   WSL2 (Ubuntu)  ·  Microsoft Dev Tunnels              │
-│   Gemini 2.5 Flash (OCR/Vision)                       │
-│   Playwright + APScheduler (Alfagift Scraper)         │
-└─────────────────────────────────────────────────────────┘
+```text
++───────────────────────────────────────────────────────────+
+|                     FRONTEND (Mobile)                     |
+|    Flutter 3.x  -  Riverpod  -  Dio  -  Supabase SDK      |
++───────────────────────────────────────────────────────────+
+|                     BACKEND (Python)                      |
+|    FastAPI  -  Uvicorn  -  PyJWT  -  Supabase Python      |
++───────────────────────────────────────────────────────────+
+|                        C-ENGINE                           |
+|    worthit_engine.c  -  ctypes bridge (c_bridge.py)      |
+|    WMA  -  Support  -  Resistance  -  SR Position         |
++───────────────────────────────────────────────────────────+
+|                      INFRASTRUCTURE                       |
+|    Supabase (Auth + PostgreSQL + Storage)                 |
+|    WSL2 (Ubuntu)  -  Microsoft Dev Tunnels                |
+|    Gemini 2.5 Flash (OCR/Vision)                          |
+|    Playwright + APScheduler (Alfagift Scraper)            |
++───────────────────────────────────────────────────────────+
 ```
 
 ---
