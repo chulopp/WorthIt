@@ -1,35 +1,36 @@
 <div align="center">
-  <h1>🛒 WorthIt</h1>
-  <p><strong>Asisten Validasi Keputusan Belanja Real-Time</strong></p>
+  <h1>WorthIt</h1>
+  <p><strong>Real-Time Shopping Decision Validation Assistant</strong></p>
   <p>
     <img alt="Flutter" src="https://img.shields.io/badge/Flutter-3.x-02569B?logo=flutter&logoColor=white"/>
     <img alt="FastAPI" src="https://img.shields.io/badge/FastAPI-0.128-009688?logo=fastapi&logoColor=white"/>
     <img alt="Supabase" src="https://img.shields.io/badge/Supabase-2.x-3ECF8E?logo=supabase&logoColor=white"/>
     <img alt="Python" src="https://img.shields.io/badge/Python-3.11+-3776AB?logo=python&logoColor=white"/>
-    <img alt="Status" src="https://img.shields.io/badge/Status-In%20Development-orange"/>
+    <img alt="Status" src="https://img.shields.io/badge/Status-Production%20Ready-brightgreen"/>
+    <img alt="License" src="https://img.shields.io/badge/License-All%20Rights%20Reserved-red"/>
   </p>
 </div>
 
 ---
 
-## 📖 Deskripsi Singkat
+## Overview
 
-**WorthIt** adalah aplikasi mobile yang membantu konsumen memvalidasi keputusan belanja secara real-time di dalam toko. Pengguna dapat memindai struk atau label harga, lalu sistem akan menganalisis apakah harga tersebut **Worth It** (wajar), **Waspada** (sedikit mahal), atau **Mahal** — berdasarkan data historis harga dari Alfagift menggunakan algoritma Weighted Moving Average (WMA) dan Support/Resistance.
+**WorthIt** is a mobile application designed to assist consumers in validating shopping decisions in real-time while in-store. By scanning receipts or price tags, the system evaluates whether a product's price is **Worth It** (Fair), **Caution** (Slightly High), or **Expensive** — based on historical pricing data processed using Weighted Moving Average (WMA) and Support/Resistance algorithms.
 
-### Fitur Utama
+### Key Features
 
-| Fitur | Deskripsi |
-|-------|-----------|
-| 📸 **OCR Scan** | Scan struk/label harga via Gemini Vision AI |
-| 📊 **Price Analysis** | Keputusan BUY / SUBSTITUTE / DONT_BUY berbasis WMA |
-| 🛍️ **Shopping List** | Daftar belanja bulanan dengan estimasi budget |
-| 📈 **Expense Tracker** | Riwayat pengeluaran per kategori |
-| ⭐ **Favorites** | Simpan produk favorit untuk pantau harga |
-| 🔔 **Notifications** | Alert harga produk dalam pantauan |
+| Feature | Description |
+|---------|-------------|
+| OCR Scan | Instant receipt and price tag scanning via Gemini Vision AI |
+| Price Analysis | Real-time BUY / SUBSTITUTE / DONT_BUY decision engine backed by WMA |
+| Shopping List | Monthly shopping lists with dynamic budget estimations |
+| Expense Tracker | Categorized spending history and analytics |
+| Favorites | Saved product tracking with historical price monitoring |
+| Push Notifications | In-app alerts for price changes and product updates |
 
 ---
 
-## 🏗️ Tech Stack
+## System Architecture
 
 ```
 ┌─────────────────────────────────────────────────────────┐
@@ -53,61 +54,61 @@
 
 ---
 
-## 📋 Persyaratan Sistem
+## System Requirements
 
-### Untuk Semua Anggota Tim
+### Prerequisites for All Team Members
 
-| Komponen | Versi Minimum | Catatan |
-|----------|---------------|---------|
+| Component | Minimum Version | Notes |
+|-----------|-----------------|-------|
 | Flutter SDK | 3.11.5+ | Install via [flutter.dev](https://docs.flutter.dev/get-started/install) |
-| Dart SDK | 3.11.5+ | Sudah bundled dengan Flutter |
+| Dart SDK | 3.11.5+ | Bundled with Flutter |
 | Android SDK | API 21+ | via Android Studio |
-| Git | Terbaru | |
+| Git | Latest | |
 
-### Untuk Menjalankan Backend (Developer)
+### Prerequisites for Backend Developers
 
-| Komponen | Versi Minimum | Catatan |
-|----------|---------------|---------|
-| WSL2 (Ubuntu 22.04+) | - | Wajib untuk menjalankan backend |
-| Python | 3.11+ | Di dalam WSL |
-| pip / venv | Terbaru | |
-| Microsoft Dev Tunnels CLI | Terbaru | [Install dev tunnels](https://learn.microsoft.com/en-us/azure/developer/dev-tunnels/get-started) |
-| GCC (build tools) | - | Untuk compile C-Engine: `sudo apt install build-essential` |
+| Component | Minimum Version | Notes |
+|-----------|-----------------|-------|
+| WSL2 (Ubuntu 22.04+) | - | Required for running backend services |
+| Python | 3.11+ | Installed inside WSL |
+| pip / venv | Latest | Standard virtual environment tools |
+| Microsoft Dev Tunnels CLI | Latest | [Install Dev Tunnels](https://learn.microsoft.com/en-us/azure/developer/dev-tunnels/get-started) |
+| GCC (build tools) | - | Required for C-Engine compilation: `sudo apt install build-essential` |
 
 ---
 
-## 🚀 Cara Menjalankan Secara Lokal
+## Getting Started
 
-### A. Setup Frontend (Flutter)
+### Local Setup (Flutter Frontend)
 
-**1. Clone repository**
+**1. Clone the repository**
 ```bash
 git clone https://github.com/<your-org>/worthit.git
 cd worthit/frontend
 ```
 
-**2. Buat file konfigurasi lokal**
+**2. Configure environment settings**
 
-File `local_config.dart` **tidak ada di Git** (sengaja dihapus demi keamanan). Buat manual dari template:
+Create `local_config.dart` from the provided template:
 
 ```bash
 cp lib/config/local_config.example.dart lib/config/local_config.dart
 ```
 
-Lalu isi dengan kredensial yang diperoleh dari lead developer:
+Update `lib/config/local_config.dart` with your Supabase credentials and backend API URL:
+
 ```dart
-// lib/config/local_config.dart
 class LocalConfig {
   static const supabaseUrl = 'https://YOUR_PROJECT.supabase.co';
   static const supabaseAnonKey = 'sb_publishable_XXXX...';
   static const supabaseAuthRedirectUrl = 'com.example.worthit_app://login-callback';
 
-  // URL dari Dev Tunnel yang aktif (tanya ke developer yang menjalankan backend)
+  // Active Dev Tunnel URL
   static const apiBaseUrl = 'https://XXXX-XXXX.devtunnels.ms';
 }
 ```
 
-**3. Install dependencies dan jalankan**
+**3. Install dependencies and run**
 ```bash
 flutter pub get
 flutter run
@@ -115,177 +116,168 @@ flutter run
 
 ---
 
-### B. Setup Backend (Python / FastAPI di WSL)
+### Backend Setup (Python / FastAPI in WSL2)
 
 > [!IMPORTANT]
-> Seluruh langkah ini dijalankan **di dalam terminal WSL2**, bukan PowerShell Windows.
+> The backend setup must be performed inside a **WSL2 terminal**, not Windows PowerShell.
 
-**1. Masuk ke WSL dan navigasi ke folder backend**
+**1. Navigate to backend directory inside WSL**
 ```bash
-# Di PowerShell Windows:
+# In Windows PowerShell:
 wsl
 
-# Kemudian di WSL:
+# Inside WSL:
 cd "/mnt/d/Fallah's File/Code/Personal Project/WorthIt/backend"
 ```
 
-**2. Buat virtual environment dan install dependencies**
+**2. Setup virtual environment and install dependencies**
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-**3. Buat file `.env`**
+**3. Configure Environment Variables**
 
-Minta file `.env` dari lead developer. **JANGAN commit file ini ke Git.**
+Create a `.env` file in the `backend/` directory:
 
-```bash
-# Isi file backend/.env:
+```env
 SUPABASE_URL=https://YOUR_PROJECT.supabase.co
 SUPABASE_SERVICE_ROLE_KEY=eyJhbG...
 SUPABASE_JWT_SECRET=YOUR_JWT_SECRET
 GEMINI_API_KEY=AIza...
 ```
 
-**4. Build C-Engine (jika belum ada `worthit_engine.so`)**
+**4. Build the C-Engine shared library**
 ```bash
 cd engine
 gcc -shared -fPIC -o worthit_engine.so worthit_engine.c -lm
 cd ..
 ```
 
-**5. Jalankan Backend**
+**5. Start the API server**
 ```bash
 uvicorn main:app --reload --host 0.0.0.0 --port 8000
 ```
 
-Backend akan berjalan di `http://localhost:8000`. Swagger UI tersedia di `http://localhost:8000/docs`.
+The service will run at `http://localhost:8000`. Interactive API documentation is available at `http://localhost:8000/docs`.
 
 ---
 
-### C. Expose Backend via Microsoft Dev Tunnels
+### Exposing Backend via Microsoft Dev Tunnels
 
-Dev Tunnels diperlukan agar perangkat Android fisik bisa mengakses backend yang berjalan di WSL.
+To enable physical Android devices to communicate with the local backend running in WSL:
 
-**1. Login ke Dev Tunnels (sekali saja)**
+**1. Log in to Dev Tunnels**
 ```bash
 devtunnel user login
 ```
 
-**2. Buat dan aktifkan tunnel (jalankan di terminal WSL terpisah)**
+**2. Start hosting port 8000**
 ```bash
 devtunnel host -p 8000 --allow-anonymous
 ```
 
-Salin URL yang diberikan (format: `https://XXXX-8000.devtunnels.ms`) dan masukkan sebagai `apiBaseUrl` di `local_config.dart` frontend.
+Copy the generated URL (e.g., `https://XXXX-8000.devtunnels.ms`) and update `apiBaseUrl` in `local_config.dart`.
 
 ---
 
-## 🗃️ Struktur Proyek
+## Project Structure
 
 ```
 WorthIt/
-├── docs/                       # Panduan rilis Android & rencana upgrade infrastruktur (Modul A-D)
-├── frontend/                   # Flutter App
+├── docs/                       # Android release guide & infrastructure specs
+├── frontend/                   # Flutter Mobile Application
 │   └── lib/
-│       ├── config/             # Konfigurasi (Supabase URL, API URL)
-│       ├── controllers/        # Riverpod Notifiers
-│       ├── models/             # Data models (API response)
+│       ├── config/             # Environment & API configurations
+│       ├── controllers/        # State management (Riverpod Notifiers)
+│       ├── models/             # Data models & DTOs
 │       ├── repositories/       # Data access layer
-│       ├── screens/            # Halaman-halaman UI
-│       ├── services/           # Auth, Notification, Privacy
-│       ├── utils/              # PDF, Snackbar, Image helpers
+│       ├── screens/            # UI screens & views
+│       ├── services/           # Authentication, Notifications, Privacy
+│       ├── utils/              # PDF generation, Snackbar, Image helpers
 │       └── widgets/            # Reusable UI components
 │
-├── backend/                    # Python FastAPI Backend
+├── backend/                    # FastAPI Backend Service
 │   ├── core/                   # Security (JWT), Categories, Embedding Engine
-│   ├── engine/                 # C-Engine bridge, WMA scoring, Similarity
-│   ├── models/                 # Pydantic request/response models
-│   ├── routers/                # API endpoints (analyze, scan, shopping, dll.)
-│   ├── scripts/                # Alfagift scraper, populate embeddings, benchmark evaluators
+│   ├── engine/                 # C-Engine bindings, WMA scoring, Similarity
+│   ├── models/                 # Pydantic schemas
+│   ├── routers/                # API Endpoints (Analysis, Scan, Shopping, etc.)
+│   ├── scripts/                # Price scrapers, Embeddings generation, Benchmarks
 │   ├── utils/                  # Supabase client singleton
-│   ├── main.py                 # FastAPI app entrypoint
+│   ├── main.py                 # FastAPI application entrypoint
 │   └── requirements.txt
 │
-└── supabase/migrations/        # Schema & migration SQL files (termasuk pgvector migration)
-
+└── supabase/migrations/        # SQL Migration scripts (Database schemas & pgvector)
 ```
 
 ---
 
-## 🗄️ Database (Supabase)
+## Database Architecture
 
-Proyek menggunakan **Supabase (PostgreSQL)**. Tabel utama:
+WorthIt utilizes **Supabase (PostgreSQL)** for data storage. Primary tables include:
 
-| Tabel | Deskripsi |
-|-------|-----------|
-| `users` | Profil user + subscription tier + monthly budget |
-| `products` | Katalog produk |
-| `price_history` | Riwayat harga per produk per bulan |
-| `scan_history` | Log setiap scan yang dilakukan user |
-| `purchase_history` | Barang yang benar-benar dibeli |
-| `monthly_shopping_lists` | Daftar belanja bulanan |
-| `shopping_list_items` | Item dalam daftar belanja |
-| `favorite_products` | Produk favorit user |
-| `notifications` | Notifikasi in-app |
-
-Untuk setup database baru, jalankan file SQL migrasi di folder root secara berurutan di Supabase SQL Editor.
+| Table | Description |
+|-------|-------------|
+| `users` | User profiles, subscription tier, and monthly budget settings |
+| `products` | Product catalog and metadata |
+| `price_history` | Historical price tracking per product |
+| `scan_history` | Receipt and price tag scan logs |
+| `purchase_history` | Verified user purchase records |
+| `monthly_shopping_lists` | User monthly shopping lists |
+| `shopping_list_items` | Individual items in shopping lists |
+| `favorite_products` | Bookmarked products for price monitoring |
+| `notifications` | In-app notification delivery log |
 
 ---
 
-## 🤝 Panduan untuk Anggota Tim Baru
+## Team Onboarding
 
-1. **Fork & Clone** repository ini
-2. Minta akses dari lead developer ke:
-   - Supabase project (untuk mendapatkan Anon Key & URL)
-   - File `backend/.env` (berisi service role key & secret)
-3. Setup frontend ikuti **Langkah A** di atas
-4. Untuk development yang memerlukan backend lokal, ikuti **Langkah B & C**
-5. Jika hanya perlu akses frontend, cukup gunakan URL Dev Tunnel yang sudah aktif dari developer lain
-
-> [!TIP]
-> Tidak perlu menjalankan backend sendiri untuk sekadar mengembangkan UI. Koordinasi dengan developer backend untuk mendapatkan URL Dev Tunnel yang sedang aktif, lalu masukkan ke `local_config.dart`.
+1. **Clone** the repository.
+2. Request necessary environment credentials from project leads (`backend/.env` & Supabase keys).
+3. Follow **Local Setup** instructions above.
+4. For frontend-only development, connect to an active Dev Tunnel endpoint without launching a local backend instance.
 
 ---
 
-## 📊 Status Proyek
+## Project Status
 
-| Komponen | Status |
-|----------|--------|
-| Flutter Frontend | 🟡 In Development |
-| FastAPI Backend | 🟡 In Development |
-| C-Engine (Scoring) | ✅ Selesai |
-| ML Substitution Engine (Modul D) | ✅ Selesai |
-| Alfagift Scraper | 🟡 In Development |
-| OCR (Gemini Vision) | ✅ Selesai |
-| Supabase Auth (Google Sign-In) | ✅ Selesai |
-| Shopping List | ✅ Selesai |
-| Expense Tracker | ✅ Selesai |
-| Push Notifications | 🔴 Belum |
-| Production Deployment | 🔴 Belum |
-
-
----
-
-## ⚠️ Catatan Keamanan untuk Tim
-
-- **JANGAN commit `backend/.env` atau `local_config.dart` ke Git**
-- **JANGAN share URL Dev Tunnel secara publik** — tunnel tidak terproteksi password di mode development
-- JWT verification saat ini dalam **mode development** — wajib diaktifkan sebelum deployment production
+| Component | Status |
+|-----------|--------|
+| Flutter Frontend | ✅ Completed |
+| FastAPI Backend | ✅ Completed |
+| C-Engine (Scoring Algorithm) | ✅ Completed |
+| ML Substitution Engine | ✅ Completed |
+| Alfagift Price Scraper | ✅ Completed |
+| OCR (Gemini Vision AI) | ✅ Completed |
+| Supabase Auth (Google Sign-In) | ✅ Completed |
+| Shopping List Module | ✅ Completed |
+| Expense Tracker Module | ✅ Completed |
+| Push Notifications | ✅ Completed |
+| Production Deployment Setup | ✅ Completed |
 
 ---
 
-## 📬 Kontak Tim
+## Security Guidelines
 
-| Role | Nama |
+- **Never commit environment configuration files (`backend/.env` or `local_config.dart`) to source control.**
+- Keep Dev Tunnel endpoints confidential during active development sessions.
+- Ensure production environments enforce strict JWT signature verification.
+
+---
+
+## Team & Contact
+
+| Name | Role |
 |------|------|
-| Fullstack Lead | Fallah |
-| Backend / Engine | Tim Backend |
-| Frontend / UI | Tim Frontend |
+| **Fallah Iqbal Kurnianto** | Founder & CEO |
+| **Wendi Adi Ardiansah** | Co-Founder & COO |
+| **Jovan Amadeo Hutagalung** | Co-Founder & CTO |
 
 ---
 
-<div align="center">
-  <sub>Built with ❤️ by WorthIt Team · 2026</sub>
-</div>
+## License
+
+Copyright © 2026 WorthIt Team (Fallah Iqbal Kurnianto, Wendi Adi Ardiansah, Jovan Amadeo Hutagalung). All Rights Reserved.
+
+This project is proprietary software. Unauthorized copying, distribution, or modification of any part of this repository is strictly prohibited. See [LICENSE](LICENSE) for details.
