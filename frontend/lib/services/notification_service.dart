@@ -42,9 +42,6 @@ class NotificationService {
 
     // 2. Request permission (Android 13+)
     await requestNotificationPermission();
-
-    // 3. Check for EOM reminders
-    await checkEndOfMonthReminders();
   }
 
   Future<void> requestNotificationPermission() async {
@@ -100,13 +97,78 @@ class NotificationService {
 
   final Set<String> _shownNotifKeys = {};
 
+  String _safeTranslate(String textOrKey, Map<String, String> args) {
+    if (textOrKey.isEmpty) return '';
+
+    String result = textOrKey;
+    try {
+      result = textOrKey.tr(namedArgs: args);
+    } catch (_) {}
+
+    if (result.contains('notifications.') || result == textOrKey) {
+      switch (textOrKey) {
+        case 'notifications.shopping_list.title':
+          return 'Daftar belanjamu hampir reset';
+        case 'notifications.shopping_list.desc':
+          final count = args['count'] ?? '1';
+          final days = args['days'] ?? '3';
+          return 'Masih ada $count item yang belum dicentang. Selesaikan dalam $days hari sebelum daftar bulan ini otomatis direset.';
+        case 'notifications.over_budget.title':
+          return 'Anggaran bulan ini sudah tersentuh';
+        case 'notifications.over_budget.desc':
+          final spent = args['spent'] ?? '0';
+          final budget = args['budget'] ?? '0';
+          return 'Pengeluaranmu sudah $spent, sementara batasmu $budget. Yuk tahan dulu belanja impulsif dan prioritaskan kebutuhan utama.';
+        case 'notifications.pro_expiring.title':
+          return 'Masa aktif PRO hampir habis';
+        case 'notifications.pro_expiring.desc':
+          final days = args['days'] ?? '7';
+          return 'Benefit PRO kamu tinggal $days hari lagi. Perpanjang agar ekspor PDF dan insight premium tetap siap dipakai.';
+        case 'notifications.pdf_success.title':
+          return 'Laporan PDF berhasil dibuat';
+        case 'notifications.pdf_success.desc':
+          return 'Riwayat belanja bulan ini sudah siap. Kamu bisa menyimpan atau membagikannya untuk evaluasi pengeluaran.';
+        case 'notifications.favorite_price_drop.title':
+          return 'Barang favoritmu sedang turun harga';
+        case 'notifications.favorite_price_drop.desc':
+          final prod = args['product'] ?? 'Barang favorit';
+          final pct = args['percent'] ?? '5';
+          return '$prod turun sekitar $pct% bulan ini. Momen bagus untuk cek stok sebelum harga bergerak lagi.';
+        case 'notifications.monthly_comparison.saving_title':
+          return 'Kamu lebih hemat bulan lalu';
+        case 'notifications.monthly_comparison.saving_desc':
+          final m1 = args['lastMonth'] ?? 'bulan lalu';
+          final t1 = args['lastTotal'] ?? 'Rp 0';
+          final diff = args['difference'] ?? 'Rp 0';
+          final m2 = args['twoMonthsAgo'] ?? 'dua bulan lalu';
+          final t2 = args['previousTotal'] ?? 'Rp 0';
+          return 'Pengeluaran $m1 sebesar $t1, turun $diff dibanding $m2 ($t2). Ritmenya sudah bagus, pertahankan.';
+        case 'notifications.monthly_comparison.overspent_title':
+          return 'Pengeluaran bulan lalu naik';
+        case 'notifications.monthly_comparison.overspent_desc':
+          final m1 = args['lastMonth'] ?? 'bulan lalu';
+          final t1 = args['lastTotal'] ?? 'Rp 0';
+          final diff = args['difference'] ?? 'Rp 0';
+          final m2 = args['twoMonthsAgo'] ?? 'dua bulan lalu';
+          final t2 = args['previousTotal'] ?? 'Rp 0';
+          return 'Pengeluaran $m1 mencapai $t1, naik $diff dari $m2 ($t2). Kita rapikan prioritas bulan ini pelan-pelan.';
+      }
+
+      if (result.startsWith('notifications.')) {
+        return textOrKey.split('.').last.replaceAll('_', ' ');
+      }
+    }
+
+    return result;
+  }
+
   void triggerSystemNotification(NotificationModel notification, {String? notifId}) {
     final key = notifId ?? '${notification.title}_${notification.dateTime}';
     if (_shownNotifKeys.contains(key)) return;
     _shownNotifKeys.add(key);
 
-    final translatedTitle = notification.title.tr(namedArgs: notification.titleArgs);
-    final translatedMessage = notification.message.tr(namedArgs: notification.messageArgs);
+    final translatedTitle = _safeTranslate(notification.title, notification.titleArgs);
+    final translatedMessage = _safeTranslate(notification.message, notification.messageArgs);
     showLocalNotification(translatedTitle, translatedMessage);
   }
 
