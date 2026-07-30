@@ -364,7 +364,7 @@
   "category": "Category",
   "item_price": "Item Price",
   "weight_volume": "Weight / Volume",
-  "urgency_level": "Urgency Level",
+  "urgency_level": "Purchase Urgency Level",
   "low": "Low",
   "medium": "Medium",
   "high": "High",
