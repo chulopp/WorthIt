@@ -339,21 +339,21 @@ class AboutScreen extends StatelessWidget {
                           children: [
                             Expanded(
                               child: _buildTeamMember(
-                                svgPath: 'assets/svg/WENDI.svg',
+                                imagePath: 'assets/images/wendibaru.png',
                                 name: 'Wendi Adi Ardiansah',
                                 role: 'Co-Founder & COO',
                               ),
                             ),
                             Expanded(
                               child: _buildTeamMember(
-                                svgPath: 'assets/svg/FALLAH.svg',
+                                imagePath: 'assets/svg/FALLAH.svg',
                                 name: 'Fallah Iqbal Kurnianto',
                                 role: 'Founder & CEO',
                               ),
                             ),
                             Expanded(
                               child: _buildTeamMember(
-                                svgPath: 'assets/svg/JOVAN.svg',
+                                imagePath: 'assets/svg/JOVAN.svg',
                                 name: 'Jovan Amadeo Hutagalung',
                                 role: 'Co-Founder & CTO',
                               ),
@@ -426,6 +426,30 @@ class AboutScreen extends StatelessWidget {
                           height: 1.6,
                         ),
                       ),
+                      const SizedBox(height: 12),
+
+                      // Third-Party Licenses Button
+                      GestureDetector(
+                        onTap: () {
+                          showLicensePage(
+                            context: context,
+                            applicationName: 'WorthIt',
+                            applicationVersion: '1.0.0',
+                            applicationLegalese: 'about.legalese'.tr(),
+                          );
+                        },
+                        child: Text(
+                          'about.third_party_licenses'.tr(),
+                          textAlign: TextAlign.center,
+                          style: GoogleFonts.bricolageGrotesque(
+                            color: _worthItGreen,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                            decoration: TextDecoration.underline,
+                            decorationColor: _worthItGreen,
+                          ),
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -439,10 +463,11 @@ class AboutScreen extends StatelessWidget {
 
   // ── HELPER: Team Member ──
   Widget _buildTeamMember({
-    required String svgPath,
+    required String imagePath,
     required String name,
     required String role,
   }) {
+    final isSvg = imagePath.endsWith('.svg');
     return Column(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
@@ -454,7 +479,9 @@ class AboutScreen extends StatelessWidget {
             color: Color(0xFFF3F4F6),
           ),
           clipBehavior: Clip.antiAlias,
-          child: SvgPicture.asset(svgPath, fit: BoxFit.cover),
+          child: isSvg
+              ? SvgPicture.asset(imagePath, fit: BoxFit.cover)
+              : Image.asset(imagePath, fit: BoxFit.cover),
         ),
         const SizedBox(height: 14),
         Text(
