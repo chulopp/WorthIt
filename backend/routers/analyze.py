@@ -18,8 +18,9 @@ Alur Eksekusi:
 
 import logging
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 
+from core.limiter import limiter
 from core.security import get_current_user
 from engine.scoring import run_analysis
 from engine.templates import build_explanations
@@ -56,7 +57,9 @@ router = APIRouter(prefix="/v1", tags=["Analyze"])
         "deteksi shrinkflation (PRO). Hasil disimpan ke scan_history."
     ),
 )
+@limiter.limit("30/minute")
 async def analyze_product(
+    request: Request,
     body: AnalyzeRequest,
     user_id: str = Depends(get_current_user),
 ):

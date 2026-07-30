@@ -10,8 +10,9 @@ from pathlib import Path
 import google.generativeai as genai
 import requests
 from dotenv import load_dotenv
-from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
+from fastapi import APIRouter, Depends, File, HTTPException, Request, UploadFile, status
 
+from core.limiter import limiter
 from core.security import get_current_user
 from models.scanner import ScanErrorResponse, ScanSuccessResponse
 from utils.supabase_client import search_products, weights_match
@@ -138,7 +139,9 @@ def _try_openrouter_scan(file_bytes: bytes, prompt_text: str) -> dict | None:
         500: {"model": ScanErrorResponse},
     },
 )
+@limiter.limit("20/minute")
 async def scan_receipt(
+    request: Request,
     file: UploadFile = File(...),
     user_id: str = Depends(get_current_user),
 ):

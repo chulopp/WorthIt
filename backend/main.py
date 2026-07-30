@@ -43,7 +43,9 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
+from slowapi.errors import RateLimitExceeded
 
+from core.limiter import limiter
 from routers import (
     analyze,
     dashboard,
@@ -92,6 +94,8 @@ Token diperoleh dari Supabase Google OAuth flow di sisi Flutter client.
     redoc_url="/redoc",
 )
 
+app.state.limiter = limiter
+
 # ─── CORS Middleware ───────────────────────────────────────────────────────────
 # Load allowed origins from environment variable, default to wildcard for local dev convenience
 allowed_origins = [orig.strip() for orig in os.getenv("ALLOWED_ORIGINS", "*").split(",") if orig.strip()]
@@ -105,6 +109,24 @@ app.add_middleware(
 )
 
 # ─── Exception Handlers ───────────────────────────────────────────────────────
+
+@app.exception_handler(RateLimitExceeded)
+async def rate_limit_exception_handler(request: Request, exc: RateLimitExceeded):
+    """
+    Handler untuk RateLimitExceeded (HTTP 429 Too Many Requests).
+    """
+    return JSONResponse(
+        status_code=429,
+        content={
+            "status": "error",
+            "error": {
+                "code":       "RATE_LIMIT_EXCEEDED",
+                "message":    "Batas jumlah request terlampaui.",
+                "suggestion": "Tunggu sebentar sebelum mencoba mengirim request kembali.",
+            },
+        },
+    )
+
 
 @app.exception_handler(RequestValidationError)
 async def validation_exception_handler(request: Request, exc: RequestValidationError):
