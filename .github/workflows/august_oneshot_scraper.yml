@@ -1,0 +1,118 @@
+name: August 1st One-Shot Scraper & Promotion
+
+on:
+  # Trigger khusus 1 kali pada 1 Agustus 00:00 WIB (31 Juli 17:00 UTC)
+  schedule:
+    - cron: '0 17 31 7 *'
+
+  # Bisa di-trigger manual dari GitHub Actions UI untuk testing
+  workflow_dispatch:
+    inputs:
+      limit:
+        description: 'Jumlah produk yang di-scrape (kosongkan = semua produk)'
+        required: false
+        default: ''
+      dry_run:
+        description: 'Mode dry run untuk promotion script'
+        required: false
+        default: 'false'
+        type: choice
+        options:
+          - 'false'
+          - 'true'
+
+jobs:
+  august_oneshot:
+    name: Run August 1st One-Shot Scrape & Immediate Promotion
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+
+    env:
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      TZ: Asia/Jakarta
+
+    steps:
+      # ─────────────────────────────────────────
+      # 1. Checkout repo
+      # ─────────────────────────────────────────
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # ─────────────────────────────────────────
+      # 2. Setup Python
+      # ─────────────────────────────────────────
+      - name: Set up Python 3.10
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+          cache: 'pip'
+          cache-dependency-path: backend/requirements.txt
+
+      # ─────────────────────────────────────────
+      # 3. Install Python dependencies
+      # ─────────────────────────────────────────
+      - name: Install Python dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -r backend/requirements.txt
+        working-directory: .
+
+      # ─────────────────────────────────────────
+      # 4. Install Playwright + Chromium
+      # ─────────────────────────────────────────
+      - name: Install Playwright Chromium
+        run: playwright install chromium --with-deps
+
+      # ─────────────────────────────────────────
+      # 5. Jalankan scraper
+      # ─────────────────────────────────────────
+      - name: Run Alfagift price scraper (August 1st One-Shot)
+        run: |
+          LIMIT_ARG=""
+          if [[ -n "${{ github.event.inputs.limit }}" ]]; then
+            LIMIT_ARG="--limit ${{ github.event.inputs.limit }}"
+            echo "🔢 Scraping dengan limit: ${{ github.event.inputs.limit }} produk"
+          else
+            echo "🚀 Scraping semua produk..."
+          fi
+
+          python backend/scripts/scrape_alfagift_automated.py --now $LIMIT_ARG \
+            --log-level INFO \
+            --headless \
+            --delay-min 3.0 \
+            --delay-max 7.0
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+
+      # ─────────────────────────────────────────
+      # 6. Promote weekly_prices ke price_history (recorded_at = 2026-08-01) & clear weekly_prices
+      # ─────────────────────────────────────────
+      - name: Promote August 1st prices to price_history & clear weekly_prices
+        run: |
+          DRY_RUN_ARG=""
+          if [[ "${{ github.event.inputs.dry_run }}" == "true" ]]; then
+            DRY_RUN_ARG="--dry-run"
+            echo "🔍 Mode DRY RUN untuk promotion."
+          fi
+
+          python backend/scripts/promote_weekly_to_monthly.py \
+            --recorded-at 2026-08-01 \
+            --clear-weekly \
+            $DRY_RUN_ARG
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+
+      # ─────────────────────────────────────────
+      # 7. Summary
+      # ─────────────────────────────────────────
+      - name: Print run summary
+        if: always()
+        run: |
+          echo "## ✅ August 1st One-Shot Scrape & Promotion Selesai" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- **Tanggal**: $(date +'%Y-%m-%d %H:%M:%S %Z')" >> $GITHUB_STEP_SUMMARY
+          echo "- **Recorded At**: 2026-08-01" >> $GITHUB_STEP_SUMMARY
+          echo "- **Status**: Scrape sukses, data di-promote ke \`price_history\`, dan \`weekly_prices\` dibersihkan." >> $GITHUB_STEP_SUMMARY

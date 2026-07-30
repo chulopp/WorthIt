@@ -84,6 +84,14 @@ jobs:
             exit 0
           fi
 
+          # Cek jika bulan saat ini adalah Agustus 2026 (2026-08)
+          CURRENT_MONTH=$(date +%Y-%m)
+          if [[ "$CURRENT_MONTH" == "2026-08" ]]; then
+            echo "⏭️ Bulan Agustus 2026 menggunakan skenario one-shot (1 Agustus). Scrape mingguan di-skip."
+            echo "should_run=false" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
           # ISO week number (1–53), hilangkan leading zero
           ISO_WEEK=$(date +%V | sed 's/^0*//')
           if [[ -z "$ISO_WEEK" ]]; then
