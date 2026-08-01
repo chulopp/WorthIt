@@ -78,8 +78,8 @@ MEASUREMENT_PATTERN = re.compile(
     re.I,
 )
 
-GENERIC_BRANDS = {"cap", "curah", "-", ""}
-ALTERNATIVE_MIN_SCORE = 55
+GENERIC_BRANDS = {"cap", "curah", "-", "", "none", "null", "n/a", "undefined"}
+ALTERNATIVE_MIN_SCORE = 50
 COMMON_PRODUCT_WORDS = {
     "air", "ayam", "barang", "beras", "bubuk", "buah", "cair", "cap", "curah", "dapur",
     "enak", "gula", "instan", "instant", "makanan", "mie", "mi", "minuman", "minyak",
@@ -211,31 +211,36 @@ def fetch_products_from_supabase(supabase: Client) -> list[InputProduct]:
 
 
 def _strip_unit_from_name(name: str, unit: str) -> str:
-    """Remove unit string from product name to avoid double weight in queries.
+    """Remove unit string and trailing size specifications from product name to avoid double weight in queries.
     e.g. 'Kentang Goreng Straight Cut 500 g' + unit '500 g' -> 'Kentang Goreng Straight Cut'
     """
     clean = name.strip()
     if unit and unit in clean:
         clean = clean.replace(unit, "").strip()
-        # Also remove trailing parentheses if left empty
-        clean = re.sub(r"\(\s*\)", "", clean).strip()
+    clean = re.sub(r"\b\d+(?:[.,]\d+)?\s*(g|gram|gr|kg|ml|l|ltr|liter|pcs|pc|pack|oz|s)\b", "", clean, flags=re.I).strip()
+    clean = re.sub(r"\(\s*\)", "", clean).strip()
     return clean
 
 
 def build_strict_queries(product: InputProduct) -> list[str]:
     queries = []
-    brand = product.brand.strip()
+    brand = (product.brand or "").strip()
     clean_name = _strip_unit_from_name(product.name, product.unit)
     if normalize_text(brand) not in GENERIC_BRANDS:
-        queries.append(f"{brand} {clean_name} {product.unit}")
+        queries.append(f"{brand} {clean_name} {product.unit}".strip())
+        queries.append(f"{brand} {clean_name}".strip())
     else:
-        queries.append(f"{clean_name} {product.unit}")
+        queries.append(f"{clean_name} {product.unit}".strip())
+        queries.append(clean_name)
     return dedupe_queries(queries)
 
 
 def build_alternative_queries(product: InputProduct) -> list[str]:
     clean_name = _strip_unit_from_name(product.name, product.unit)
-    queries = [f"{clean_name} {product.unit}", clean_name, smart_query(product)]
+    queries = [f"{clean_name} {product.unit}".strip(), clean_name, smart_query(product)]
+    tokens = [t for t in normalize_text(clean_name).split() if t not in {"dan", "atau", "rasa", "dengan", "untuk", "anak"} and len(t) > 2]
+    if len(tokens) >= 2:
+        queries.append(" ".join(tokens[:3]))
     category = normalize_text(product.category)
     if category:
         queries.append(f"{category} {product.unit}".strip())
