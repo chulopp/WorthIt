@@ -139,7 +139,9 @@ def compute_sr_score(sr_position: float) -> int:
     return 5
 
 
-def compute_urgency_score(urgency: int, price_delta_percent: float) -> int:
+def compute_urgency_score(
+    urgency: int, price_delta_percent: float, caps: tuple[int, int, int] | None = None
+) -> int:
     """
     Hitung komponen Urgency Score (0–15 poin) berdasarkan urgensi pembelian
     yang diinput pengguna.
@@ -149,11 +151,19 @@ def compute_urgency_score(urgency: int, price_delta_percent: float) -> int:
       2 = Biasa saja
       3 = Sangat mendesak (perlu beli hari ini)
 
+    caps: opsional tuple (low_cap, neutral_cap, high_cap) untuk hyperparameter tuning.
+          Jika None, gunakan default produksi (3, 8, 15).
+
     Proteksi: jika harga sudah sangat mahal (delta > 25%), urgency score
     dibatasi maksimum 3 poin sehingga urgensi tidak "menyelamatkan" skor
     produk yang secara objektif tidak WorthIt.
     """
-    base_score = {1: 3, 2: 8, 3: 15}.get(urgency, 8)
+    if caps is not None:
+        score_map = {1: caps[0], 2: caps[1], 3: caps[2]}
+    else:
+        score_map = {1: 3, 2: 8, 3: 15}
+
+    base_score = score_map.get(urgency, score_map[2])
     if price_delta_percent > 25: return min(base_score, 3)
     if price_delta_percent > 15: return min(base_score, 6)
     return base_score

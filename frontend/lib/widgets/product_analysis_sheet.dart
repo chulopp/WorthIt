@@ -537,6 +537,7 @@ class _ProductAnalysisSheetState extends ConsumerState<_ProductAnalysisSheet> {
     }
 
     int quantity = 1;
+    bool isSubmitting = false;
     final int itemPrice = _itemPrice();
 
     showModalBottomSheet(
@@ -597,7 +598,9 @@ class _ProductAnalysisSheetState extends ConsumerState<_ProductAnalysisSheet> {
                           initialItem: quantity - 1,
                         ),
                         onSelectedItemChanged: (index) {
-                          setModalState(() => quantity = index + 1);
+                          if (!isSubmitting) {
+                            setModalState(() => quantity = index + 1);
+                          }
                         },
                         children: List.generate(99, (i) {
                           return Center(
@@ -629,76 +632,109 @@ class _ProductAnalysisSheetState extends ConsumerState<_ProductAnalysisSheet> {
                       width: double.infinity,
                       height: 56,
                       child: ElevatedButton(
-                        onPressed: () async {
-                          if (_productId == null || _productId!.isEmpty) {
-                            await _resolveProduct();
-                          }
-                          final productId = _productId;
-                          if (productId == null || productId.isEmpty) {
-                            if (!context.mounted) return;
-                            if (!widget.historyCtx.mounted) return;
-                            SnackbarHelper.showTopSnackbar(
-                              widget.historyCtx,
-                              'product_not_found_database'.tr(),
-                              icon: Icons.warning_amber_rounded,
-                            );
-                            return;
-                          }
-                          final result = await ref
-                              .read(historyRepositoryProvider)
-                              .createPurchase(
-                                productId: productId,
-                                purchasedPrice: itemPrice,
-                                quantity: quantity,
-                              );
-                          if (!context.mounted) return;
-                          if (!widget.historyCtx.mounted) return;
-                          if (result.isFailure) {
-                            SnackbarHelper.showTopSnackbar(
-                              widget.historyCtx,
-                              result.error?.message ??
-                                  'purchase_record_failed'.tr(),
-                              icon: Icons.warning_amber_rounded,
-                            );
-                            return;
-                          }
-                          await ref
-                              .read(historyControllerProvider.notifier)
-                              .fetchPurchases();
-                          await ref
-                              .read(historyControllerProvider.notifier)
-                              .fetchScans();
-                          await ref
-                              .read(dashboardControllerProvider.notifier)
-                              .fetchDashboard();
-                          await ref
-                              .read(trackerControllerProvider.notifier)
-                              .fetchTracker();
-                          Navigator.pop(pickerCtx);
-                          Navigator.pop(sheetCtx);
-                          SnackbarHelper.showTopSnackbar(
-                            widget.historyCtx,
-                            'success_purchased'.tr(),
-                            backgroundColor: const Color(0xFFC9E88A),
-                            textColor: const Color(0xFF304423),
-                            iconColor: const Color(0xFF304423),
-                            icon: Icons.check_circle,
-                          );
-                        },
+                        onPressed: isSubmitting
+                            ? null
+                            : () async {
+                                setModalState(() {
+                                  isSubmitting = true;
+                                });
+
+                                if (_productId == null || _productId!.isEmpty) {
+                                  await _resolveProduct();
+                                }
+                                final productId = _productId;
+                                if (productId == null || productId.isEmpty) {
+                                  if (statefulCtx.mounted) {
+                                    setModalState(() {
+                                      isSubmitting = false;
+                                    });
+                                  }
+                                  if (sheetCtx.mounted) {
+                                    SnackbarHelper.showTopSnackbar(
+                                      sheetCtx,
+                                      'product_not_found_database'.tr(),
+                                      icon: Icons.warning_amber_rounded,
+                                    );
+                                  }
+                                  return;
+                                }
+
+                                final result = await ref
+                                    .read(historyRepositoryProvider)
+                                    .createPurchase(
+                                      productId: productId,
+                                      purchasedPrice: itemPrice,
+                                      quantity: quantity,
+                                    );
+
+                                if (result.isFailure) {
+                                  if (statefulCtx.mounted) {
+                                    setModalState(() {
+                                      isSubmitting = false;
+                                    });
+                                  }
+                                  if (sheetCtx.mounted) {
+                                    SnackbarHelper.showTopSnackbar(
+                                      sheetCtx,
+                                      result.error?.message ??
+                                          'purchase_record_failed'.tr(),
+                                      icon: Icons.warning_amber_rounded,
+                                    );
+                                  }
+                                  return;
+                                }
+
+                                await Future.wait([
+                                  ref
+                                      .read(historyControllerProvider.notifier)
+                                      .fetchPurchases(),
+                                  ref
+                                      .read(historyControllerProvider.notifier)
+                                      .fetchScans(),
+                                  ref
+                                      .read(dashboardControllerProvider.notifier)
+                                      .fetchDashboard(),
+                                  ref
+                                      .read(trackerControllerProvider.notifier)
+                                      .fetchTracker(),
+                                ]);
+
+                                if (pickerCtx.mounted) {
+                                  Navigator.pop(pickerCtx);
+                                }
+                                if (sheetCtx.mounted) {
+                                  SnackbarHelper.showTopSnackbar(
+                                    sheetCtx,
+                                    'success_purchased'.tr(),
+                                    backgroundColor: const Color(0xFFC9E88A),
+                                    textColor: const Color(0xFF304423),
+                                    iconColor: const Color(0xFF304423),
+                                    icon: Icons.check_circle,
+                                  );
+                                }
+                              },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFF304423),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(16),
                           ),
                         ),
-                        child: Text(
-                          'confirm_purchase'.tr(),
-                          style: GoogleFonts.urbanist(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w700,
-                            color: Colors.white,
-                          ),
-                        ),
+                        child: isSubmitting
+                            ? const SizedBox(
+                                width: 24,
+                                height: 24,
+                                child: CupertinoActivityIndicator(
+                                  color: Colors.white,
+                                ),
+                              )
+                            : Text(
+                                'confirm_purchase'.tr(),
+                                style: GoogleFonts.urbanist(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w700,
+                                  color: Colors.white,
+                                ),
+                              ),
                       ),
                     ),
                   ],

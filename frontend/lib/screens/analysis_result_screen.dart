@@ -1033,6 +1033,7 @@ class _AnalysisResultScreenState extends ConsumerState<AnalysisResultScreen> {
     AnalyzeResponseModel analysis,
   ) {
     int quantity = 1;
+    bool isSubmitting = false;
     final int itemPrice = analysis.scannedPrice.round();
 
     showModalBottomSheet(
@@ -1101,9 +1102,11 @@ class _AnalysisResultScreenState extends ConsumerState<AnalysisResultScreen> {
                           initialItem: quantity - 1,
                         ),
                         onSelectedItemChanged: (index) {
-                          setModalState(() {
-                            quantity = index + 1;
-                          });
+                          if (!isSubmitting) {
+                            setModalState(() {
+                              quantity = index + 1;
+                            });
+                          }
                         },
                         children: List.generate(99, (index) {
                           return Center(
@@ -1139,58 +1142,81 @@ class _AnalysisResultScreenState extends ConsumerState<AnalysisResultScreen> {
                       width: double.infinity,
                       height: 56,
                       child: ElevatedButton(
-                        onPressed: () async {
-                          Navigator.pop(ctx); // Close sheet
-                          await ref
-                              .read(analyzeControllerProvider.notifier)
-                              .buyProduct(quantity: quantity);
-                          if (!context.mounted) return;
-                          final state = ref.read(analyzeControllerProvider);
-                          if (state.errorMessage != null) {
-                            SnackbarHelper.showTopSnackbar(
-                              context,
-                              state.errorMessage!,
-                              icon: Icons.warning_amber_rounded,
-                            );
-                            return;
-                          }
-                          await ref
-                              .read(historyControllerProvider.notifier)
-                              .fetchPurchases();
-                          await ref
-                              .read(historyControllerProvider.notifier)
-                              .fetchScans();
-                          await ref
-                              .read(dashboardControllerProvider.notifier)
-                              .fetchDashboard();
-                          await ref
-                              .read(trackerControllerProvider.notifier)
-                              .fetchTracker();
-                          if (!context.mounted) return;
-                          SnackbarHelper.showTopSnackbar(
-                            context,
-                            'success_purchased'.tr(),
-                            backgroundColor: const Color(0xFFC9E88A),
-                            textColor: const Color(0xFF304423),
-                            iconColor: const Color(0xFF304423),
-                            icon: Icons.check_circle,
-                          );
-                          Navigator.pop(context); // Close screen
-                        },
+                        onPressed: isSubmitting
+                            ? null
+                            : () async {
+                                setModalState(() {
+                                  isSubmitting = true;
+                                });
+                                await ref
+                                    .read(analyzeControllerProvider.notifier)
+                                    .buyProduct(quantity: quantity);
+                                final state = ref.read(analyzeControllerProvider);
+                                if (state.errorMessage != null) {
+                                  if (statefulCtx.mounted) {
+                                    setModalState(() {
+                                      isSubmitting = false;
+                                    });
+                                  }
+                                  if (context.mounted) {
+                                    SnackbarHelper.showTopSnackbar(
+                                      context,
+                                      state.errorMessage!,
+                                      icon: Icons.warning_amber_rounded,
+                                    );
+                                  }
+                                  return;
+                                }
+                                await Future.wait([
+                                  ref
+                                      .read(historyControllerProvider.notifier)
+                                      .fetchPurchases(),
+                                  ref
+                                      .read(historyControllerProvider.notifier)
+                                      .fetchScans(),
+                                  ref
+                                      .read(dashboardControllerProvider.notifier)
+                                      .fetchDashboard(),
+                                  ref
+                                      .read(trackerControllerProvider.notifier)
+                                      .fetchTracker(),
+                                ]);
+                                if (ctx.mounted) {
+                                  Navigator.pop(ctx); // Close sheet
+                                }
+                                if (context.mounted) {
+                                  SnackbarHelper.showTopSnackbar(
+                                    context,
+                                    'success_purchased'.tr(),
+                                    backgroundColor: const Color(0xFFC9E88A),
+                                    textColor: const Color(0xFF304423),
+                                    iconColor: const Color(0xFF304423),
+                                    icon: Icons.check_circle,
+                                  );
+                                }
+                              },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: _accentGreen,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(16),
                           ),
                         ),
-                        child: Text(
-                          'confirm_purchase'.tr(),
-                          style: GoogleFonts.urbanist(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w700,
-                            color: Colors.white,
-                          ),
-                        ),
+                        child: isSubmitting
+                            ? const SizedBox(
+                                width: 24,
+                                height: 24,
+                                child: CupertinoActivityIndicator(
+                                  color: Colors.white,
+                                ),
+                              )
+                            : Text(
+                                'confirm_purchase'.tr(),
+                                style: GoogleFonts.urbanist(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w700,
+                                  color: Colors.white,
+                                ),
+                              ),
                       ),
                     ),
                   ],
