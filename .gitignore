@@ -55,6 +55,7 @@ skills-lock.json
 # ─── OS Files ─────────────────────────────────────────────────────────────────
 .DS_Store
 Thumbs.db
+*.lnk
 .history
 .svn/
 .swiftpm/
@@ -84,3 +85,5 @@ app.*.map.json
 
 # ─── Personal/Private ─────────────────────────────────────────────────────────
 personal/
+Gapenting/
+

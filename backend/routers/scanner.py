@@ -96,6 +96,7 @@ def _try_openrouter_scan(file_bytes: bytes, prompt_text: str) -> dict | None:
         payload = {
             "model": model_name,
             "messages": messages,
+            "response_format": {"type": "json_object"},
             "max_tokens": 500,
             "temperature": 0.2,
         }
@@ -136,6 +137,7 @@ def _try_openrouter_scan(file_bytes: bytes, prompt_text: str) -> dict | None:
     responses={
         404: {"model": ScanErrorResponse},
         400: {"model": ScanErrorResponse},
+        429: {"model": ScanErrorResponse},
         500: {"model": ScanErrorResponse},
     },
 )
@@ -169,6 +171,7 @@ async def scan_receipt(
     )
 
     parsed_json = None
+    gemini_rate_limited = False
 
     # Step 1: Coba Gemini Vision
     try:
@@ -184,6 +187,9 @@ async def scan_receipt(
         )
         parsed_json = _parse_scan_json(response.text)
     except Exception as exc:
+        exc_str = str(exc).lower()
+        if "429" in exc_str or "quota" in exc_str or "resourceexhausted" in exc_str:
+            gemini_rate_limited = True
         logging.warning("Gemini Vision OCR gagal/limit: %s. Melakukan fallback ke OpenRouter...", exc)
 
     # Step 2: Fallback ke OpenRouter jika Gemini gagal
@@ -191,9 +197,14 @@ async def scan_receipt(
         parsed_json = await asyncio.to_thread(_try_openrouter_scan, file_bytes, prompt_text)
 
     if not parsed_json:
+        status_code = (
+            status.HTTP_429_TOO_MANY_REQUESTS
+            if gemini_rate_limited
+            else status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Gagal memproses OCR gambar dari semua model AI.",
+            status_code=status_code,
+            detail="Layanan scan AI sedang padat. Silakan coba beberapa saat lagi atau input manual.",
         )
 
     extracted_name = parsed_json.get("product_name", "")

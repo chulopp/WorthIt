@@ -248,4 +248,4 @@ int sequential_search_fuzzy(const char* name, const char* query) {
     query_lower[i] = '\0';
 
     return strstr(name_lower, query_lower) != NULL;
-}
+}

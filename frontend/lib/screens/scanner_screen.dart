@@ -234,7 +234,17 @@ class _ScannerScreenState extends State<ScannerScreen>
         );
         return;
       }
-      _showScannerMessage('Gagal membaca gambar. Coba arahkan kamera lagi.');
+      if (error.statusCode == 429 || error.statusCode == 503) {
+        _showScannerMessage(
+          'Layanan scan AI sedang padat. Silakan coba beberapa saat lagi atau input manual.',
+        );
+        return;
+      }
+      _showScannerMessage(
+        error.message.isNotEmpty
+            ? error.message
+            : 'Gagal membaca gambar. Coba arahkan kamera lagi.',
+      );
     }
   }
 
