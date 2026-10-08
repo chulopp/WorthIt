@@ -1,8 +1,10 @@
 <div align="center">
+  <img src="frontend/assets/images/FULL.png" alt="WorthIt Logo" width="360"/>
+  <br/><br/>
   <h1>WorthIt</h1>
   <p><strong>Real-Time Shopping Decision Validation Assistant</strong></p>
   <p>
-    <img alt="Flutter" src="https://img.shields.io/badge/Flutter-3.x-02569B?logo=flutter&logoColor=white"/>
+    <img alt="Flutter" src="https://img.shields.io/badge/Flutter-3.22+-02569B?logo=flutter&logoColor=white"/>
     <img alt="FastAPI" src="https://img.shields.io/badge/FastAPI-0.128-009688?logo=fastapi&logoColor=white"/>
     <img alt="Supabase" src="https://img.shields.io/badge/Supabase-2.x-3ECF8E?logo=supabase&logoColor=white"/>
     <img alt="Python" src="https://img.shields.io/badge/Python-3.11+-3776AB?logo=python&logoColor=white"/>
@@ -60,8 +62,8 @@
 
 | Component | Minimum Version | Notes |
 |-----------|-----------------|-------|
-| Flutter SDK | 3.11.5+ | Install via [flutter.dev](https://docs.flutter.dev/get-started/install) |
-| Dart SDK | 3.11.5+ | Bundled with Flutter |
+| Flutter SDK | 3.22+ | Install via [flutter.dev](https://docs.flutter.dev/get-started/install) |
+| Dart SDK | 3.4+ | Bundled with Flutter SDK |
 | Android SDK | API 21+ | via Android Studio |
 | Git | Latest | |
 
@@ -83,8 +85,8 @@
 
 **1. Clone the repository**
 ```bash
-git clone https://github.com/<your-org>/worthit.git
-cd worthit/frontend
+git clone https://github.com/chulopp/WorthIt.git
+cd WorthIt/frontend
 ```
 
 **2. Configure environment settings**
@@ -127,7 +129,7 @@ flutter run
 wsl
 
 # Inside WSL:
-cd "/mnt/d/Fallah's File/Code/Personal Project/WorthIt/backend"
+cd /path/to/WorthIt/backend
 ```
 
 **2. Setup virtual environment and install dependencies**
@@ -139,7 +141,13 @@ pip install -r requirements.txt
 
 **3. Configure Environment Variables**
 
-Create a `.env` file in the `backend/` directory:
+Copy the provided `.env.example` template:
+
+```bash
+cp .env.example .env
+```
+
+Update `.env` with your Supabase credentials and Gemini API key:
 
 ```env
 SUPABASE_URL=https://YOUR_PROJECT.supabase.co
@@ -161,6 +169,20 @@ uvicorn main:app --reload --host 0.0.0.0 --port 8000
 ```
 
 The service will run at `http://localhost:8000`. Interactive API documentation is available at `http://localhost:8000/docs`.
+
+---
+
+### Docker Deployment (Alternative)
+
+You can also run the backend using Docker, which automatically compiles the C-Engine:
+
+```bash
+# Build the Docker image
+docker build -t worthit-backend .
+
+# Run the container
+docker run -p 8000:8000 --env-file backend/.env worthit-backend
+```
 
 ---
 
@@ -268,16 +290,14 @@ WorthIt utilizes **Supabase (PostgreSQL)** for data storage. Primary tables incl
 
 ## Team & Contact
 
-| Name | Role |
-|------|------|
-| **Fallah Iqbal Kurnianto** | Founder & CEO |
-| **Wendi Adi Ardiansah** | Co-Founder & COO |
-| **Jovan Amadeo Hutagalung** | Co-Founder & CTO |
+Developed and maintained with ❤️ by the **WorthIt Team**.
+
+For questions, feedback, or inquiries, please open an [Issue](https://github.com/chulopp/WorthIt/issues).
 
 ---
 
 ## License
 
-Copyright © 2026 WorthIt Team (Fallah Iqbal Kurnianto, Wendi Adi Ardiansah, Jovan Amadeo Hutagalung). All Rights Reserved.
+Copyright © 2026 WorthIt Team. All Rights Reserved.
 
 This project is proprietary software. Unauthorized copying, distribution, or modification of any part of this repository is strictly prohibited. See [LICENSE](LICENSE) for details.
