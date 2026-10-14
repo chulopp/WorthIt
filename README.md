@@ -32,27 +32,90 @@
 
 ---
 
+## 📱 Application Showcase
+
+> 🛒 **Live In-Store Consumer Experience:**
+> *WorthIt assists buyers at the point of purchase by transforming receipt and price-tag scans into instant valuation decisions, historical price trends, and contextual substitutions.*
+
+| 1. Welcome & Onboarding | 2. Main Dashboard | 3. Real-Time Price Decision | 4. Supermarket Catalog | 5. Mission & Transparency |
+|:---:|:---:|:---:|:---:|:---:|
+| <img src="frontend/assets/images/home.jpeg" width="180" alt="Welcome Screen"/> | <img src="frontend/assets/images/dashboard.jpeg" width="180" alt="Dashboard Screen"/> | <img src="frontend/assets/images/analysis.jpeg" width="180" alt="Price Decision Result"/> | <img src="frontend/assets/images/katalog.jpeg" width="180" alt="Product Catalog"/> | <img src="frontend/assets/images/about.jpeg" width="180" alt="About & Mission Screen"/> |
+| *Tagline & Google Sign-In* | *Expense tracking & market pulse* | *WMA valuation & Caution badge* | *Indexed supermarket products* | *Consumer price advocacy* |
+
+---
+
 ## System Architecture
 
-```text
-+───────────────────────────────────────────────────────────+
-|                     FRONTEND (Mobile)                     |
-|    Flutter 3.x  -  Riverpod  -  Dio  -  Supabase SDK      |
-+───────────────────────────────────────────────────────────+
-|                     BACKEND (Python)                      |
-|    FastAPI  -  Uvicorn  -  PyJWT  -  Supabase Python      |
-+───────────────────────────────────────────────────────────+
-|                        C-ENGINE                           |
-|    worthit_engine.c  -  ctypes bridge (c_bridge.py)      |
-|    WMA  -  Support  -  Resistance  -  SR Position         |
-+───────────────────────────────────────────────────────────+
-|                      INFRASTRUCTURE                       |
-|    Supabase (Auth + PostgreSQL + Storage)                 |
-|    WSL2 (Ubuntu)  -  Microsoft Dev Tunnels                |
-|    Gemini 2.5 Flash (OCR/Vision)                          |
-|    Playwright + APScheduler (Alfagift Scraper)            |
-+───────────────────────────────────────────────────────────+
+```mermaid
+flowchart TD
+    subgraph Client["📱 Mobile Client (Flutter 3.22+)"]
+        UI["Flutter UI & Riverpod State"]
+        Camera["In-Store Scanner (Camera)"]
+    end
+
+    subgraph Gateway["⚡ Backend (FastAPI + Python)"]
+        API["FastAPI 0.128 Gateway"]
+        MLSubst["Hybrid ML Substitution Engine"]
+        Limiter["Rate Limiter & JWT Security"]
+    end
+
+    subgraph Native["⚙️ Algorithmic Core (C-Engine)"]
+        CEngine["worthit_engine.so (Ctypes Bridge)<br/>• Weighted Moving Average (WMA)<br/>• Support & Resistance (S/R) Position<br/>• Sub-millisecond Execution"]
+    end
+
+    subgraph Cloud["☁️ Infrastructure & Intelligence"]
+        Gemini["Google Gemini 2.5 Flash<br/>(Receipt & Shelf Label OCR)"]
+        Postgres[("Supabase PostgreSQL<br/>• pgvector Semantic Embeddings<br/>• Product Catalog & Price History")]
+        Automations["GitHub Actions Cron Scraper<br/>(Weekly Automated E-Commerce Ingestion)"]
+    end
+
+    Camera -->|1. Image Payload| API
+    API -->|2. Vision Extraction| Gemini
+    Gemini -->|3. Structured Product & Price| API
+    API -->|4. Historical Price Series| Native
+    Native -->|5. Valuation & Score Matrix| API
+    API -->|6. Vector Similarity Query| Postgres
+    Postgres -->|7. Candidate Embeddings| MLSubst
+    API -->|8. Real-Time Recommendation| UI
+    Automations -.->|Batch Ingestion| Postgres
 ```
+
+---
+
+## 🔬 Engineering Highlights & Benchmarks
+
+WorthIt is engineered for real-time in-store decision making with low-latency algorithmic guarantees and data fidelity:
+
+### 1. High-Performance C-Engine (`worthit_engine.c`)
+Pricing time-series evaluations (Weighted Moving Average and Support/Resistance ladder calculations) are executed in a native compiled **C shared library (`worthit_engine.so`)** bridged via Python `ctypes`:
+- **Latency:** Sub-millisecond execution (< 0.01 ms per time-series evaluation).
+- **Zero Overhead:** Eliminates Python interpreter overhead on recursive floating-point array operations.
+- **Portability:** Built within a multi-stage Docker container for reliable production parity.
+
+### 2. Hybrid ML Substitution Pipeline
+When a scanned item is categorized as **Expensive** or **Caution**, the system suggests contextually relevant and more affordable alternatives. Rather than relying on naive keyword matching, WorthIt utilizes **PostgreSQL `pgvector` semantic similarity** bounded by deterministic category guardrails:
+
+| Metric | Legacy / Baseline | WorthIt ML Hybrid | Engineering Impact |
+|--------|-------------------|-------------------|--------------------|
+| **Average Savings Realized** | 12.42% | **29.83%** | **+17.41% higher budget savings** |
+| **Cross-Category Errors** | 0 | **0** | **0% false substitutions (Strict Category Fence)** |
+| **Size & Quantity Similarity** | 0.41 | **0.62** | **+50.8% better portion/size accuracy** |
+| **End-to-End Latency** | 417 ms | 621 ms | High semantic fidelity within interactive UX budget |
+
+### 3. Resilient OCR Extraction
+- Handles distorted, unevenly lit, and crumpled receipts using structured JSON output prompts with Gemini 2.5 Flash.
+- Automated fallback and rate-limit recovery mechanisms ensure the scanner interface remains responsive during high traffic.
+
+---
+
+## 📚 Technical Documentation & Specs
+
+For comprehensive engineering specifications, architectural roadmaps, and testing methodology, refer to the following documents in [`docs/`](docs/):
+
+- 📘 [Android Release & Keystore Guide](docs/ANDROID_RELEASE_GUIDE.md) — Production build, app signing, Sentry integration, and Google Play SOP.
+- 📊 [Backtest Academic Plan](docs/BACKTEST_ACADEMIC_PLAN.md) — Algorithmic backtesting framework and validation methodology.
+- 🏗️ [Infrastructure Upgrade Plan](docs/INFRASTRUCTURE_UPGRADE_PLAN.md) — Scalability specifications, containerization, and cloud topologies.
+- 🧪 [Usability Testing Plan](docs/USABILITY_TESTING_PLAN.md) — User experience research methodology and acceptance criteria.
 
 ---
 

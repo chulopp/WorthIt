@@ -29,14 +29,18 @@ from __future__ import annotations
 import os
 import logging
 import traceback
-import sentry_sdk
 
 sentry_dsn = os.getenv("SENTRY_DSN")
 if sentry_dsn:
-    sentry_sdk.init(
-        dsn=sentry_dsn,
-        traces_sample_rate=1.0,
-    )
+    try:
+        import sentry_sdk
+
+        sentry_sdk.init(
+            dsn=sentry_dsn,
+            traces_sample_rate=1.0,
+        )
+    except ImportError:
+        logging.warning("SENTRY_DSN terdeteksi tetapi library 'sentry_sdk' belum terpasang.")
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.exceptions import RequestValidationError
@@ -88,7 +92,7 @@ Token diperoleh dari Supabase Google OAuth flow di sisi Flutter client.
     version="1.0.0",
     contact={
         "name": "WorthIt Team",
-        "url":  "https://github.com/worthit",
+        "url":  "https://github.com/chulopp/WorthIt",
     },
     docs_url="/docs",
     redoc_url="/redoc",

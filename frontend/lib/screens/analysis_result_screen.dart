@@ -884,7 +884,6 @@ class _AnalysisResultScreenState extends ConsumerState<AnalysisResultScreen> {
         : warningTone
         ? const Color(0xFFF59E0B)
         : const Color(0xFFEF4444); // Red
-    final bgColor = indicatorColor.withValues(alpha: 0.05);
     final tileIcon =
         icon ?? (isPositive ? Icons.auto_graph_rounded : Icons.warning_amber_rounded);
 
